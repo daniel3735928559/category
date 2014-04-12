@@ -1,0 +1,80 @@
+#node{
+    height:80%;
+    width:200px;
+    float:left;
+    text-align:center;
+    margin: 15px 50px;
+}
+
+#edges{
+    height:80%;
+    float:left;
+    margin: 15px 50px;
+}
+
+#search{
+    height:15%;
+    margin: 15px 50px;
+}
+
+div.edgeTitle{
+    display:inline-block;
+    cursor:pointer;
+}
+
+div.nodeBox{
+    margin: 5px 10px; 
+    padding: 5px;
+    border: 2px black solid;
+    background-color:#fa3;
+    display:inline-block;
+    cursor:pointer;
+}
+
+div.edgeBox{
+    align:left;
+    font:Serif;
+    font-size:2em;
+}
+
+
+div.tagBox{
+    display:inline-block;
+    outline:2px solid;
+    margin: 5px 10px;
+    padding: 5px;
+}
+
+
+input.tagBoxInput{
+    align: left;
+    display:inline-block;
+}
+
+div.tagBoxTag{
+    align: left;
+    background-color:#0F7;
+    display:inline-block;
+}
+
+div.tagBoxPlus{
+    align: right;
+    display:inline-block;
+}
+
+div.tagBoxMinus{
+    align: right;
+    display:inline-block;
+}
+
+div.searchSuggBox{
+    position:absolute;
+    outline: 1px solid;
+    background:white;
+}
+
+ul {
+     list-style-type: none;
+     margin:1;
+     padding:1;
+}
