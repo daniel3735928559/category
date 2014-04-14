@@ -4,7 +4,7 @@ var has1 = new Node(1, "has1", 0,[],[]);
 var root = new Node(0, "root", 0, {'foo':[has1]}, []);
 
 var nodes = {}
-
+var tagBoxList = [];
 $.couch.urlPrefix = "http://localhost:11111/db";
 
 function couchError(status){
@@ -54,6 +54,8 @@ function queryUpdated(){
     // will call sendQuery with inputs constructed from the query
 }
 
+
+
 function TagBox(text){
     this.state = 'input';
     this.id = 'tagbox'+tagBoxID;
@@ -77,15 +79,16 @@ function TagBox(text){
     var __construct = function (that) {
 	//Construct Input Element	
 	that.inputElement =  $("<input />",{"type":"text","value":that.text,"class":"tagBoxInput"});
-	that.inputElement.keyup(function(e){ console.log("hi"); if(e.keyCode == 13) that.toggleState('tag'); })
+	that.inputElement.keyup(function(e){ console.log("hi"); if(e.keyCode == 13) that.toggleState('tag'); that.text = that.inputElement.val(); })
 	that.inputElement.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
 	that.inputElement.appendTo(that.div);
 	that.tagElement = $("<div />",{class:'tagBoxTag'});
 	that.tagElement.click(function(e){ that.toggleState('input'); });
 	$("<div />",{class:'tagBoxMinus',text:'X',click:function(e){console.log('removing','#'+that.id);$('#'+that.id).remove();}}).appendTo(that.div);
+	//Add before the plus
 	that.div.insertBefore($("#tagBoxPlus"))
-    }(this)
-    
+	tagBoxList.push(that);
+    }(this);
 }
 
 // The point is that now searching will add a bunch of nodes' divs to
@@ -95,6 +98,64 @@ function TagBox(text){
 // be preceeded with "foo has colour ..." and ultimately selecting a
 // node will not root the tree at that node, but will fill in the
 // edge-to-be with that node
+
+//Bizarre use of static functions
+function TagManager(){}
+
+    TagManager.dualize  = function(s){
+	if(s.indexOf('has') == 0){
+	    return s.replace(/has ([a-zA-Z0-9]+): ([a-zA-Z0-9]+)/, 'is $1 of:' );
+	}
+	
+	else if(s.indexOf('is') == 0){
+	return s.replace(/is ([a-zA-Z0-9]+) of: ([a-zA-Z0-9]+)/, 'has $1:' );
+	}
+	
+    }
+
+    
+    TagManager.getQuery = function(s){
+	//Returns target of the text
+	var match  = s.match(/([has|is]) ([a-zA-Z0-9_ ]+)(?: of)?: *([a-zA-Z0-9_ ]+)/i);
+	if(match == null){
+	    var dir = null;
+	    var edge = null;
+	    var node = s;
+	}
+	else{
+	    var dir = match[1] + (match[1] == "is" ? "Of" : "");
+	    var edge = match[2];
+	    var node = match[3];
+	}
+	return {"dir":dir,"edge":edge,"node":node};
+    }
+    
+    
+    TagManager.add = function(s){
+	var q_s = TagManager.getQuery(s);
+	for(var i=tagBoxList.length-1; i>=0; i--){
+	    var t = tagBoxList[i]; 
+	    
+	    var q_t = TagManager.getQuery(t.text);
+	    //If this is a "pure" node rather than an edge, remove it 
+	    console.log(t.text);
+	    console.log("q_t " + q_t['node']);
+	    console.log("q_s "+ q_s['node']);
+	    if(s == t.text){
+		return;
+	    } else if(q_t['node'] == q_s['node'] && q_t['dir'] == null && q_t['edge']==null){
+		console.log("q_t "+q_t['node']+ " q_s "+q_s['node']);
+		t.div.remove()
+		tagBoxList.splice( i, 1 );
+	    }	
+	    //If we find this node already here, get out of dodge
+	}
+	var tagBox = new TagBox(s);
+	tagBox.toggleState('tag');
+    }
+
+
+sss
 
 function Node(name, timestamp, hasList, isOfList, content){
     this.name  = name;
@@ -113,15 +174,20 @@ function Node(name, timestamp, hasList, isOfList, content){
 	var buildEdgeDiv = function(that,s,edgeList){
 	    var edgeSource = [];
 	    var edgeDiv = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',that.edgesDiv));
+	    // edgeDisplayDiv stuff: 
 	    var edgeDisplayDiv = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv);
-	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv).click(function(e){
-		var tagBox = new TagBox();
-		for(var v;)
+	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv).click(function(e){		
+		var dualizedText = TagManager.dualize(s+ ": "+that.nameDiv.text())+ " "+that.nameDiv.text();
+		TagManager.add(dualizedText);
 		queryUpdated();
 	    });
+
 	    console.log('AA',JSON.stringify(edgeList));
 	    for(var node in edgeList[n]){
-		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv);
+		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv).click(function(e) {
+		    TagManager.add($(this).text());
+		    queryUpdated();		  
+		});
 		edgeSource.push(s+": "+edgeList[n][node]);
 	    }
 	    // Add edit button for each edge, which replaces that edge
@@ -129,7 +195,7 @@ function Node(name, timestamp, hasList, isOfList, content){
 	    // which is then parsed to recreate the edge
 	    var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(edgeDisplayDiv);
 	
-
+	    // edgeEditDiv stuff: 
 	    var src = edgeSource.join(", ");
 	    that.edgeSources.push(src);
 	    var edgeEditDiv = $("<div />",{class:"edgeBox"});
