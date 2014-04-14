@@ -23,7 +23,7 @@ function nodeFromDict(dict){
 
 function drawTree(root){
     root.div.appendTo($("#nodes"));
-    new AddConn();
+    //new AddConn();
 }
 
 window.onload = function(){
@@ -44,39 +44,14 @@ window.onload = function(){
     new TagBox("Mickey's");
 }
 
-function AddConn(){
-    this.div = $("<div />",{id:this.id,class:'tagBox'});
-    this.hasState = "has";
-    this.escape = function(){ this.div.remove(); }
-    this.toggleHas = function(state){
-	this.hasState = state;
-	this.hasToggle.detach();
-	if(state == "has") this.hasInput.text("").append(this.hasToggle).append("has ").append(this.wordInput);
-	else if(state == "isof") this.hasInput.text("").append(this.hasToggle).append("is ").append(this.wordInput).append(" of");
-    };
-    this.confirm = function(){
-	alert("done");
-    };
-    var __construct = function (that) {
-	//Construct Input Element	
-	that.hasInput = $("<div />",{text:"has ","class":"tagBox"}).appendTo(that.div);
-	that.hasToggle = $("<div />",{text:"(s)","class":"tagBox"}).prependTo(that.hasInput);
-	that.wordInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.hasInput);
-	that.nodeInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.div);
-	that.hasToggle.click(function(e){ 
-	    that.toggleHas(that.hasState == "has" ? "isof" : "has");
-	});
-	that.wordInput.keyup(function(e){ 
-	    if(e.keyCode == 13){ that.nodeInput.focus(); console.log("ha"); }
-	    that.wordInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
-	});
-	that.nodeInput.keyup(function(e){ 
-	    if(e.keyCode == 13) that.confirm(); 
-	    that.nodeInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
-	});
-	$("<div />",{class:'tagBoxMinus',text:'X',click:that.escape}).appendTo(that.div);
-	that.div.appendTo($("#edges"))
-    }(this);
+
+function sendQuery(targets, hasList, isOfList){
+
+}
+
+function queryUpdated(){
+    // Call this whenever the query has been updated.  THis function
+    // will call sendQuery with inputs constructed from the query
 }
 
 function TagBox(text){
@@ -130,18 +105,20 @@ function Node(name, timestamp, hasList, isOfList, content){
 	that.div = $("<div />",{id:that.name, class:"node"});
 	that.nameDiv = $("<div />",{id:that.name+"_name", class:"name"}).appendTo(that.div);
 	that.edgesDiv = $("<div />",{id:that.name+"_edges", class:"edges"}).appendTo(that.div);
-	that.contentDiv = $("<div />",{id:that.name+"_content", class:"content",text:content}).appendTo(that.div);
+	that.contentDiv = $("<div />",{id:that.name+"_content", class:"content",contenteditable:"true",text:content}).appendTo(that.div);
 	// Name div stuff: 
 	that.nameLabel = $("<div />",{id:that.name+"_name_label", class:"nodeBox", text:that.name, click: function(e){ drawTree(that); }}).appendTo(that.nameDiv);
 	// Edges div stuff: 
 	that.edgeSources = [];
-	that.edgeDivs = [];
-	that.edgeEditDivs = [];
 	var buildEdgeDiv = function(that,s,edgeList){
 	    var edgeSource = [];
-	    var edgeDiv = $("<div />",{class:"edgeBox"}).appendTo(that.edgesDiv);
+	    var edgeDiv = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',that.edgesDiv));
 	    var edgeDisplayDiv = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv);
-	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv);
+	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv).click(function(e){
+		var tagBox = new TagBox();
+		for(var v;)
+		queryUpdated();
+	    });
 	    console.log('AA',JSON.stringify(edgeList));
 	    for(var node in edgeList[n]){
 		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv);
@@ -151,21 +128,23 @@ function Node(name, timestamp, hasList, isOfList, content){
 	    // with a textbox allowing the editing of edgeSource,
 	    // which is then parsed to recreate the edge
 	    var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(edgeDisplayDiv);
-	    that.edgeDivs.push(edgeDiv);
+	
 
 	    var src = edgeSource.join(", ");
 	    that.edgeSources.push(src);
 	    var edgeEditDiv = $("<div />",{class:"edgeBox"});
-	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"tagBoxInput"}).appendTo(edgeEditDiv);
+	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"edgeInput"}).appendTo(edgeEditDiv);
 	    var parseEdge = function(text){
+		
 		// parse the edge, send the appropriate update to the
 		// db if it was valid, or return an error message to
 		// display if it wasn't
-		return null;
+		return {"success":true};
 	    }
 	    var editDone = function(){
 		var result = parseEdge(edgeEditInput.text())
-		if(result == null){
+		if(result["success"]){
+		    //also refresh edgeDisplayDiv with the content from the result div
 		    edgeEditDiv.detach();
 		    edgeDisplayDiv.prependTo(edgeDiv);
 		    return true;
@@ -176,35 +155,139 @@ function Node(name, timestamp, hasList, isOfList, content){
 		}
 	    }
 	    edgeEditInput.keyup(function(e){
+		console.log(e.keyCode,'sz',edgeDiv.prev('div.edgeBox').size())
 		if(e.keyCode == 13){
 		    editDone();
 		}
-		else if(e.keyCode == "up"){
-		    if(editDone()){
+		//Up
+		else if(e.keyCode == 38){
+		    if(edgeDiv.prev('div.edgeBox').size() > 0 && editDone()){
+			$('div.edgeEdit',edgeDiv.prev()).click();
+			$('input',edgeDiv.prev()).focus();
 			// Also start editing previous edge, if any
 		    }
 		}
-		else if(e.keyCode == "down" || e.keyCode == "comma"){
-		    if(editDone()){
+		//Down
+		else if(e.keyCode == 40){
+		    if(edgeDiv.next('div.edgeBox').size() > 0 && editDone()){
+			$('div.edgeEdit',edgeDiv.next()).click();
+			$('input',edgeDiv.next()).focus();
 			// Also start editing next edge, if any, or add new edge if not
 		    }
+		    else if(edgeDiv.next('div.edgeBox').size() == 0 && editDone()){
+			console.log("at end",$('div.edgeAdd',that.edgesDiv).size());
+			$('div.edgeAdd',that.edgesDiv).click();
+		    }
+		}
+		else if(e.keyCode == 8 && e.ctrlKey && e.shiftKey){
+		    if($('input',edgeDiv).val() == "") edgeDiv.remove();
 		}
 		else if(e.keyCode == "?"){
 		    // Initiate a search for the target node or edge word, depending on where we are
 		}
+		else{
+		    // autogenerate suggestions
+		}
 	    });
+
 	    editEdge.click(function(e){
 		edgeDisplayDiv.detach();
 		edgeEditDiv.prependTo(edgeDiv);
+		console.log(edgeEditInput);
 		edgeEditInput.focus();
 	    });
 	    //that.edgeEditDivs.push(edgeEditDiv);
-	}
+	}//End of buildEdgeDiv
+
+	$("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(that.edgesDiv).click(function(e) {
+	    buildEdgeDiv(that,"",[]);
+	    $('div.edgeEdit',that.edgesDiv.children('div.edgeBox').last()).click();
+	    $('div.edgeInput',that.edgesDiv.children('div.edgeBox').last()).focus();
+	});
+
 	for(var n in that.hasList) buildEdgeDiv(that,'has ' + n,that.hasList);
 	for(var n in that.isOfList) buildEdgeDiv(that,'is ' + n + ' of',that.isOfList);
 	// Add in + button at end of edges list
-	$("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(that.edgesDiv);
     }(this)
 }
 
 // expects: {'ID':nodeID, 'content':content, 'timestamp':timestamp, 'has':hasList, 'isof':isOfList, 'content':content}
+// function AddConn(){
+//     this.div = $("<div />",{id:this.id,class:'addBox'});
+//     this.hasState = "has";
+//     this.escape = function(){ this.div.remove(); }
+//     this.toggleHas = function(state){
+// 	this.hasState = state;
+// 	this.hasToggle.detach();
+// 	if(state == "has") this.hasInput.text("").append(this.hasToggle).append("has ").append(this.wordInput);
+// 	else if(state == "isof") this.hasInput.text("").append(this.hasToggle).append("is ").append(this.wordInput).append(" of");
+//     };
+//     this.confirm = function(){
+// 	alert("done");
+//     };
+//     var __construct = function (that) {
+// 	//Construct Input Element	
+// 	that.hasInput = $("<div />",{text:"has ","class":"addBox"}).appendTo(that.div);
+// 	that.hasToggle = $("<div />",{text:"(s)","class":"addBox"}).prependTo(that.hasInput);
+// 	that.wordInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.hasInput);
+// 	that.nodeInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.div);
+// 	that.hasToggle.click(function(e){ 
+// 	    that.toggleHas(that.hasState == "has" ? "isof" : "has");
+// 	});
+// 	that.wordInput.keyup(function(e){ 
+// 	    if(e.keyCode == 13){ that.nodeInput.focus(); console.log("ha"); }
+// 	    that.wordInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
+// 	});
+// 	that.nodeInput.keyup(function(e){ 
+// 	    if(e.keyCode == 13) that.confirm(); 
+// 	    that.nodeInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
+// 	});
+// 	$("<div />",{class:'tagBoxMinus',text:'X',click:that.escape}).appendTo(that.div);
+// 	that.div.appendTo($("#nodes"))
+//     }(this);
+// }
+
+/*
+
+Searching: 
+
+1. Actions for clicking on an edge
+2. Actions for clicking on a target of an edge
+3. Action when enter is hit on TagBox
+4. Create a sendQuery function - default behavior, 
+
+sendQuery inputs: hasList, isOfList, target
+emit: list of documents 
+
+Search Results Shown:
+
+-Search Query is single node: show the node
+
+-Search Query is multiple nodes: show all nodes connected to all query nodes, plus the query nodes themselves
+
+-Search Query has edge (has *, A, is * of A)+ Nodes B's: show all nodes satisfying  edge conditions and connected to all B's
+
+
+Click behaviour at all times: 
+
+-When node is clicked: Put node (without edge specifier) into query
+
+-When edge "A has * B" is clicked: If A is in search query without edge specifier, replace in query with "is * of A".  Otherwise, add "is * of A" to query
+
+-When enter is pressed in search box: 
+
+
+Editing (frontend done): 
+
+1. Editing an edge
+2. Deleting an edge
+3. Adding an edge
+4. Very basic content editing
+5. ??????????
+6. Profit! 
+
+Content editing: 
+
+When double-click on content area, put editor into lightbox.  Otherwise, all nodes currently displayed are editable
+
+*/

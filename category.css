@@ -45,6 +45,9 @@ div.edgeTitle{
     display:inline-block;
     cursor:pointer;
 }
+div.edgeTitle:hover{
+    color:#f33;
+}
 
 div.nodeBox{
     margin: 5px 10px; 
@@ -72,6 +75,12 @@ div.edgeAdd{
 
 div.edgeAdd:hover{
     color:#f33;
+}
+
+
+div.addBox{
+    display:inline-block;
+    padding: 2px;
 }
 
 
