@@ -22,9 +22,7 @@ function nodeFromDict(dict){
 }
 
 function drawTree(root){
-    root.display.appendTo($("#node"));
-    for(var d in root.edgeDisplays)
-	root.edgeDisplays[d].appendTo($("#edges"));
+    root.div.appendTo($("#nodes"));
     new AddConn();
 }
 
@@ -142,20 +140,20 @@ function Node(name, timestamp, hasList, isOfList, content){
 	var buildEdgeDiv = function(that,s,edgeList){
 	    var edgeSource = [];
 	    var edgeDiv = $("<div />",{class:"edgeBox"}).appendTo(that.edgesDiv);
-	    var edgeDisplayDiv = $("<div />",{class:"edgeBox"}).appendTo(that.edgeDiv);
+	    var edgeDisplayDiv = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv);
 	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv);
 	    console.log('AA',JSON.stringify(edgeList));
 	    for(var node in edgeList[n]){
 		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv);
-		edgeSource.push(s+n+": "+node);
+		edgeSource.push(s+": "+edgeList[n][node]);
 	    }
-	    var editEdge = $("<div />",{class:"edgeEdit",text:"Edit"}).appendTo(edgeDisplayDiv);
+	    var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(edgeDisplayDiv);
 	    that.edgeDivs.push(edgeDiv);
 
 	    var src = edgeSource.join(", ");
 	    that.edgeSources.push(src);
 	    var edgeEditDiv = $("<div />",{class:"edgeBox"});
-	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"tagBoxInput"}).appendTo(editEdgeDiv);
+	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"tagBoxInput"}).appendTo(edgeEditDiv);
 	    edgeEditInput.keyup(function(e){
 		if(e.keyCode == 13){
 		    edgeEditDiv.detach();
@@ -168,6 +166,7 @@ function Node(name, timestamp, hasList, isOfList, content){
 	    editEdge.click(function(e){
 		edgeDisplayDiv.detach();
 		edgeEditDiv.prependTo(edgeDiv);
+		edgeEditInput.focus();
 	    });
 	    that.edgeEditDivs.push(edgeEditDiv);
 	    // Add in + button at end of edges list and edit button
@@ -177,7 +176,7 @@ function Node(name, timestamp, hasList, isOfList, content){
 	}
 	for(var n in that.hasList) buildEdgeDiv(that,'has ' + n,that.hasList);
 	for(var n in that.isOfList) buildEdgeDiv(that,'is ' + n + ' of',that.isOfList);
-	that.addEdge
+	$("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(that.edgesDiv);
     }(this)
 }
 
