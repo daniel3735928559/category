@@ -147,6 +147,9 @@ function Node(name, timestamp, hasList, isOfList, content){
 		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv);
 		edgeSource.push(s+": "+edgeList[n][node]);
 	    }
+	    // Add edit button for each edge, which replaces that edge
+	    // with a textbox allowing the editing of edgeSource,
+	    // which is then parsed to recreate the edge
 	    var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(edgeDisplayDiv);
 	    that.edgeDivs.push(edgeDiv);
 
@@ -154,13 +157,40 @@ function Node(name, timestamp, hasList, isOfList, content){
 	    that.edgeSources.push(src);
 	    var edgeEditDiv = $("<div />",{class:"edgeBox"});
 	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"tagBoxInput"}).appendTo(edgeEditDiv);
-	    edgeEditInput.keyup(function(e){
-		if(e.keyCode == 13){
+	    var parseEdge = function(text){
+		// parse the edge, send the appropriate update to the
+		// db if it was valid, or return an error message to
+		// display if it wasn't
+		return null;
+	    }
+	    var editDone = function(){
+		var result = parseEdge(edgeEditInput.text())
+		if(result == null){
 		    edgeEditDiv.detach();
 		    edgeDisplayDiv.prependTo(edgeDiv);
+		    return true;
+		}
+		else{
+		    alert(result);
+		    return false;
+		}
+	    }
+	    edgeEditInput.keyup(function(e){
+		if(e.keyCode == 13){
+		    editDone();
 		}
 		else if(e.keyCode == "up"){
-		    
+		    if(editDone()){
+			// Also start editing previous edge, if any
+		    }
+		}
+		else if(e.keyCode == "down" || e.keyCode == "comma"){
+		    if(editDone()){
+			// Also start editing next edge, if any, or add new edge if not
+		    }
+		}
+		else if(e.keyCode == "?"){
+		    // Initiate a search for the target node or edge word, depending on where we are
 		}
 	    });
 	    editEdge.click(function(e){
@@ -168,14 +198,11 @@ function Node(name, timestamp, hasList, isOfList, content){
 		edgeEditDiv.prependTo(edgeDiv);
 		edgeEditInput.focus();
 	    });
-	    that.edgeEditDivs.push(edgeEditDiv);
-	    // Add in + button at end of edges list and edit button
-	    // for each edge, which replaces that edge with a textbox
-	    // allowing the editing of edgeSource, which is then
-	    // parsed to recreate the edge
+	    //that.edgeEditDivs.push(edgeEditDiv);
 	}
 	for(var n in that.hasList) buildEdgeDiv(that,'has ' + n,that.hasList);
 	for(var n in that.isOfList) buildEdgeDiv(that,'is ' + n + ' of',that.isOfList);
+	// Add in + button at end of edges list
 	$("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(that.edgesDiv);
     }(this)
 }
