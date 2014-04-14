@@ -36,6 +36,8 @@ div.content{
 }
 
 
+
+
 div.edgeTitle{
     display:inline-block;
     cursor:pointer;

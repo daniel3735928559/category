@@ -3,6 +3,8 @@ var tagBoxID = 0;
 var has1 = new Node(1, "has1", 0,[],[]);
 var root = new Node(0, "root", 0, {'foo':[has1]}, []);
 
+var nodes = {}
+
 $.couch.urlPrefix = "http://localhost:11111/db";
 
 function couchError(status){
@@ -16,14 +18,14 @@ function populateView(data){
 }
 
 function nodeFromDict(dict){
-    return new Node(dict["name"],dict["timestamp"],dict["hasList"],dict["isOfList"]);
+    return new Node(dict["name"],dict["timestamp"],dict["hasList"],dict["isOfList"],dict["content"]);
 }
-
 
 function drawTree(root){
     root.display.appendTo($("#node"));
     for(var d in root.edgeDisplays)
 	root.edgeDisplays[d].appendTo($("#edges"));
+    new AddConn();
 }
 
 window.onload = function(){
@@ -42,6 +44,41 @@ window.onload = function(){
     console.log("cn",JSON.stringify(currentNode));
     $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'+',click:function(e){new TagBox('');}}).appendTo("#search");
     new TagBox("Mickey's");
+}
+
+function AddConn(){
+    this.div = $("<div />",{id:this.id,class:'tagBox'});
+    this.hasState = "has";
+    this.escape = function(){ this.div.remove(); }
+    this.toggleHas = function(state){
+	this.hasState = state;
+	this.hasToggle.detach();
+	if(state == "has") this.hasInput.text("").append(this.hasToggle).append("has ").append(this.wordInput);
+	else if(state == "isof") this.hasInput.text("").append(this.hasToggle).append("is ").append(this.wordInput).append(" of");
+    };
+    this.confirm = function(){
+	alert("done");
+    };
+    var __construct = function (that) {
+	//Construct Input Element	
+	that.hasInput = $("<div />",{text:"has ","class":"tagBox"}).appendTo(that.div);
+	that.hasToggle = $("<div />",{text:"(s)","class":"tagBox"}).prependTo(that.hasInput);
+	that.wordInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.hasInput);
+	that.nodeInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.div);
+	that.hasToggle.click(function(e){ 
+	    that.toggleHas(that.hasState == "has" ? "isof" : "has");
+	});
+	that.wordInput.keyup(function(e){ 
+	    if(e.keyCode == 13){ that.nodeInput.focus(); console.log("ha"); }
+	    that.wordInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
+	});
+	that.nodeInput.keyup(function(e){ 
+	    if(e.keyCode == 13) that.confirm(); 
+	    that.nodeInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
+	});
+	$("<div />",{class:'tagBoxMinus',text:'X',click:that.escape}).appendTo(that.div);
+	that.div.appendTo($("#edges"))
+    }(this);
 }
 
 function TagBox(text){
@@ -78,24 +115,70 @@ function TagBox(text){
     
 }
 
-function Node(name, timestamp, hasList, isOfList){
+// The point is that now searching will add a bunch of nodes' divs to
+// the #nodes div and as more terms are added this will be narrowed
+// down.  If you want to add an edge "has colour ???" to node "foo"
+// but need to search for the target, type "?" and the search bar will
+// be preceeded with "foo has colour ..." and ultimately selecting a
+// node will not root the tree at that node, but will fill in the
+// edge-to-be with that node
+
+function Node(name, timestamp, hasList, isOfList, content){
     this.name  = name;
     this.timestamp = timestamp;
     this.hasList = hasList;
     this.isOfList = isOfList;
     var __construct = function (that) {
-	that.display = $("<div />",{id:that.name, class:"nodeBox", text:that.name});
-	that.edgeDisplays = []
+	that.div = $("<div />",{id:that.name, class:"node"});
+	that.nameDiv = $("<div />",{id:that.name+"_name", class:"name"}).appendTo(that.div);
+	that.edgesDiv = $("<div />",{id:that.name+"_edges", class:"edges"}).appendTo(that.div);
+	that.contentDiv = $("<div />",{id:that.name+"_content", class:"content",text:content}).appendTo(that.div);
+	// Name div stuff: 
+	that.nameLabel = $("<div />",{id:that.name+"_name_label", class:"nodeBox", text:that.name, click: function(e){ drawTree(that); }}).appendTo(that.nameDiv);
+	// Edges div stuff: 
+	that.edgeSources = [];
+	that.edgeDivs = [];
+	that.edgeEditDivs = [];
 	var buildEdgeDiv = function(that,s,edgeList){
-	    var ediv = $("<div />",{class:"edgeBox"});
-	    $("<div />",{class:"edgeTitle",text:s}).appendTo(ediv);
+	    var edgeSource = [];
+	    var edgeDiv = $("<div />",{class:"edgeBox"}).appendTo(that.edgesDiv);
+	    var edgeDisplayDiv = $("<div />",{class:"edgeBox"}).appendTo(that.edgeDiv);
+	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv);
 	    console.log('AA',JSON.stringify(edgeList));
-	    for(var node in edgeList[n]) $("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(ediv);
-	    that.edgeDisplays.push(ediv);
+	    for(var node in edgeList[n]){
+		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv);
+		edgeSource.push(s+n+": "+node);
+	    }
+	    var editEdge = $("<div />",{class:"edgeEdit",text:"Edit"}).appendTo(edgeDisplayDiv);
+	    that.edgeDivs.push(edgeDiv);
+
+	    var src = edgeSource.join(", ");
+	    that.edgeSources.push(src);
+	    var edgeEditDiv = $("<div />",{class:"edgeBox"});
+	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"tagBoxInput"}).appendTo(editEdgeDiv);
+	    edgeEditInput.keyup(function(e){
+		if(e.keyCode == 13){
+		    edgeEditDiv.detach();
+		    edgeDisplayDiv.prependTo(edgeDiv);
+		}
+		else if(e.keyCode == "up"){
+		    
+		}
+	    });
+	    editEdge.click(function(e){
+		edgeDisplayDiv.detach();
+		edgeEditDiv.prependTo(edgeDiv);
+	    });
+	    that.edgeEditDivs.push(edgeEditDiv);
+	    // Add in + button at end of edges list and edit button
+	    // for each edge, which replaces that edge with a textbox
+	    // allowing the editing of edgeSource, which is then
+	    // parsed to recreate the edge
 	}
-	for(var n in that.hasList) buildEdgeDiv(that,'has ' + n,that.hasList)
-	for(var n in that.isOfList) buildEdgeDiv(that,'is ' + n + ' of',that.isOfList)
+	for(var n in that.hasList) buildEdgeDiv(that,'has ' + n,that.hasList);
+	for(var n in that.isOfList) buildEdgeDiv(that,'is ' + n + ' of',that.isOfList);
+	that.addEdge
     }(this)
 }
 
-// expects: {'ID':nodeID, 'content':content, 'timestamp':timestamp, 'has':hasList, 'isof':isOfList}
+// expects: {'ID':nodeID, 'content':content, 'timestamp':timestamp, 'has':hasList, 'isof':isOfList, 'content':content}
