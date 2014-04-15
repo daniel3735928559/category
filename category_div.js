@@ -34,12 +34,24 @@ window.onload = function(){
     
     $.couch.db("test").query(mapFunction, null, "javascript", {
 	success: function(data) {
-            console.log('data',JSON.stringify(data),data["rows"][0]["id"]);
-	    $.couch.db("test").openDoc(data["rows"][0]["id"],{success:populateView, error:couchError});
+            console.log('data',JSON.stringify(data),data["rows"][1]["id"]);
+	    $.couch.db("test").openDoc(data["rows"][1]["id"],{success:populateView, error:couchError});
+	    
 	},
 	error: couchError,
 	reduce: false
     });
+
+    $.couch.db("test").view("cat/round0", {
+	success: function(data) {
+            console.log('data foo: ',JSON.stringify(data));
+	},
+	keys:["Mickies","Madison"],
+	error: couchError,
+	reduce: false
+    });
+
+
     console.log("cn",JSON.stringify(currentNode));
     $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'+',click:function(e){new TagBox('');}}).appendTo("#search");
     new TagBox("Mickey's");
