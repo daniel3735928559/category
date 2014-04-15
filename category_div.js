@@ -18,6 +18,11 @@ function populateView(data){
     drawTree(currentNode);
 }
 
+function appendToView(data){
+    console.log('app',JSON.stringify(data));
+    nodeFromDict(data).div.appendTo($("#nodes"));
+}
+
 function nodeFromDict(dict){
     return new Node(dict["name"],dict["timestamp"],dict["hasList"],dict["isOfList"],dict["content"]);
 }
@@ -34,25 +39,64 @@ window.onload = function(){
     
     $.couch.db("test").query(mapFunction, null, "javascript", {
 	success: function(data) {
-            console.log('data',JSON.stringify(data),data["rows"][0]["id"]);
-	    $.couch.db("test").openDoc(data["rows"][0]["id"],{success:populateView, error:couchError});
+            console.log('data',JSON.stringify(data),data["rows"][1]["id"]);
+	    $.couch.db("test").openDoc(data["rows"][1]["id"],{success:populateView, error:couchError});
 	},
 	error: couchError,
 	reduce: false
     });
+    
+    //sendQueryHelper([{"dir":"has","edge":"city","node":"Madison"}],0,null,function(data){ console.log("GOT",JSON.stringify(data)); });
+
     console.log("cn",JSON.stringify(currentNode));
-    $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'+',click:function(e){new TagBox('');}}).appendTo("#search");
+    $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'[+]',click:function(e){new TagBox('');}}).appendTo("#search");
+    $("<div />",{id:'tagBoxPlus',style:"display:inline-block",text:'[search]',click:function(e){sendQuery();}}).appendTo("#search");
     new TagBox("Mickey's");
 }
 
+function recvQueryData(data){
+    console.log("res",JSON.stringify(data));
+    uniqIDs = []
+    for(var d in data){
+	if(uniqIDs.indexOf(data[d]["id"]) < 0) uniqIDs.push(data[d]["id"])
+    }
+    for(var i in uniqIDs)
+	$.couch.db("test").openDoc(uniqIDs[i],{success:appendToView, error:couchError});
+}
 
 function sendQuery(){
-    console.log("SQ");
-    $.couch.db(theDB).query(TagManager.getQueryFunction(), null, "javascript", {
+    $("#nodes").children().remove();
+    sendQueryHelper(TagManager.getQueryList(),0,null,recvQueryData);
+}
+
+function sendQueryHelper(queries,index,result,success){
+    if(index == 0){
+	var view = (queries[index]["dir"] == null ? "connB" : "relB");
+	var nextKeys = (queries[index]["dir"] == null ? [queries[index]["node"]] : [queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]]);
+    }
+    else{
+	var view = (queries[index]["dir"] == null ? "AconnB" : "ArelB");
+	var nextKeys = []
+	if(queries[index]["dir"] == null)
+	    for(var r in result)
+		nextKeys.push(result[r]["value"] + " " + queries[index]["node"]);
+	else
+	    for(var r in result)
+		nextKeys.push(result[r]["value"] + " " + queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]);
+
+    }
+    console.log("SQ",JSON.stringify(queries),index,view,JSON.stringify(nextKeys));
+    $.couch.db(theDB).view("cat/"+view, {
 	success: function(data) {
 	    console.log("SQS");
             console.log('data',JSON.stringify(data));
+	    var res = [];
+	    for(var d in data["rows"])
+		res.push(data["rows"][d])
+	    if(index+1 < queries.length) sendQueryHelper(queries,index+1,res,success);
+	    else success(res)
 	},
+	keys: nextKeys,
 	error: couchError,
 	reduce: false
     });
@@ -118,16 +162,24 @@ TagManager.dualize  = function(s){
 
 TagManager.getQuery = function(s){
     //Returns target of the text
-    var match  = s.match(/([has|is]) ([a-zA-Z0-9_ ]+)(?: of)?: *([a-zA-Z0-9_ ]+)/i);
+    var match = null;
+    var dir = null;
+    if(s.indexOf("has ") == 0){
+	dir = "has";
+	match = s.match(/has ([a-zA-Z0-9_ ]+): *([a-zA-Z0-9_ ]+)/i);
+    }
+    else{
+	dir = "isof";
+	match = s.match(/is ([a-zA-Z0-9_ ]+) of: *([a-zA-Z0-9_ ]+)/i);
+    }
     if(match == null){
 	var dir = null;
 	var edge = null;
 	var node = s;
     }
     else{
-	var dir = match[1] + (match[1] == "is" ? "Of" : "");
-	var edge = match[2];
-	var node = match[3];
+	var edge = match[1];
+	var node = match[2];
     }
     return {"dir":dir,"edge":edge,"node":node};
 }
@@ -208,14 +260,14 @@ function Node(name, timestamp, hasList, isOfList, content){
 	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv).click(function(e){		
 		var dualizedText = TagManager.dualize(s+ ": "+that.nameDiv.text())+ " "+that.nameDiv.text();
 		TagManager.add(dualizedText);
-		sendQuery();
+		//sendQuery();
 	    });
 
 	    console.log('AA',JSON.stringify(edgeList));
 	    for(var node in edgeList[n]){
 		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv).click(function(e) {
 		    TagManager.add($(this).text());
-		    sendQuery();		  
+		    //sendQuery();		  
 		});
 		edgeSource.push(s+": "+edgeList[n][node]);
 	    }
