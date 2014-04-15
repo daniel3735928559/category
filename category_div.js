@@ -191,30 +191,6 @@ TagManager.getQueryList = function(){
     return ans;
 }
 
-TagManager.getQueryFunction = function(){
-    queries = TagManager.getQueryList();
-    return function(doc){
-	for(var q in queries){
-	    var dir = queries["dir"];
-	    var edge = queries["edge"];
-	    var node = queries["node"];
-	    if(dir == null){
-		var relevance = 0;
-		if(doc.name == node) relevance = 688;
-		for(var edge in doc.hasList)
-		    if(doc.hasList[edge].indexOf(node) >= 0) relevance++;
-		for(var edge in doc.isOfList)
-		    if(doc.isOfList[edge].indexOf(node) >= 0) relevance++;
-		if(relevance > 0) emit(relevance, doc);
-	    }
-	    else if(dir == "has")
-		if(doc.hasList[edge].indexOf(node) >= 0) emit(1, doc);
-	    else if(dir == "isOf")
-		if(doc.isOfList[edge].indexOf(node) >= 0) emit(1, doc);
-	}
-    }
-}
-
 TagManager.add = function(s){
     var q_s = TagManager.getQuery(s);
     for(var i=tagBoxList.length-1; i>=0; i--){
