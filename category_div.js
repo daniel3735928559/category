@@ -1,3 +1,4 @@
+var theDB = "test";
 var currentNode = null;
 var tagBoxID = 0;
 var has1 = new Node(1, "has1", 0,[],[]);
@@ -28,12 +29,12 @@ function drawTree(root){
 
 window.onload = function(){
     var mapFunction = function(doc) {
-	emit();
+	emit(doc.name,doc);
     };
     
-    $.couch.db("test").query(mapFunction, "_count", "javascript", {
+    $.couch.db("test").query(mapFunction, null, "javascript", {
 	success: function(data) {
-            console.log('data',data["rows"][0]["id"]);
+            console.log('data',JSON.stringify(data),data["rows"][0]["id"]);
 	    $.couch.db("test").openDoc(data["rows"][0]["id"],{success:populateView, error:couchError});
 	},
 	error: couchError,
@@ -45,16 +46,17 @@ window.onload = function(){
 }
 
 
-function sendQuery(targets, hasList, isOfList){
-
+function sendQuery(){
+    console.log("SQ");
+    $.couch.db(theDB).query(TagManager.getQueryFunction(), null, "javascript", {
+	success: function(data) {
+	    console.log("SQS");
+            console.log('data',JSON.stringify(data));
+	},
+	error: couchError,
+	reduce: false
+    });
 }
-
-function queryUpdated(){
-    // Call this whenever the query has been updated.  THis function
-    // will call sendQuery with inputs constructed from the query
-}
-
-
 
 function TagBox(text){
     this.state = 'input';
@@ -68,14 +70,15 @@ function TagBox(text){
 	if(state == 'input'){
 	    this.tagElement.detach();
 	    this.inputElement.prependTo(this.div);
+	    this.div.css("background-color","#fff");
 	} else if(state == 'tag'){
 	    this.inputElement.detach();
+	    this.div.css("background-color","#9af");
 	    this.tagElement.text(this.inputElement.val());
 	    this.tagElement.prependTo(this.div);
 	}
-
     }
-    
+
     var __construct = function (that) {
 	//Construct Input Element	
 	that.inputElement =  $("<input />",{"type":"text","value":that.text,"class":"tagBoxInput"});
@@ -84,7 +87,7 @@ function TagBox(text){
 	that.inputElement.appendTo(that.div);
 	that.tagElement = $("<div />",{class:'tagBoxTag'});
 	that.tagElement.click(function(e){ that.toggleState('input'); });
-	$("<div />",{class:'tagBoxMinus',text:'X',click:function(e){console.log('removing','#'+that.id);$('#'+that.id).remove();}}).appendTo(that.div);
+	$("<div />",{class:'tagBoxMinus',text:'[x]',click:function(e){console.log('removing','#'+that.id);$('#'+that.id).remove(); var i = tagBoxList.indexOf(that); tagBoxList.splice(i,1);}}).appendTo(that.div);
 	//Add before the plus
 	that.div.insertBefore($("#tagBoxPlus"))
 	tagBoxList.push(that);
@@ -102,60 +105,86 @@ function TagBox(text){
 //Bizarre use of static functions
 function TagManager(){}
 
-    TagManager.dualize  = function(s){
-	if(s.indexOf('has') == 0){
-	    return s.replace(/has ([a-zA-Z0-9]+): ([a-zA-Z0-9]+)/, 'is $1 of:' );
-	}
-	
-	else if(s.indexOf('is') == 0){
+TagManager.dualize  = function(s){
+    if(s.indexOf('has') == 0){
+	return s.replace(/has ([a-zA-Z0-9]+): ([a-zA-Z0-9]+)/, 'is $1 of:' );
+    }
+    
+    else if(s.indexOf('is') == 0){
 	return s.replace(/is ([a-zA-Z0-9]+) of: ([a-zA-Z0-9]+)/, 'has $1:' );
+    }
+    
+}
+
+TagManager.getQuery = function(s){
+    //Returns target of the text
+    var match  = s.match(/([has|is]) ([a-zA-Z0-9_ ]+)(?: of)?: *([a-zA-Z0-9_ ]+)/i);
+    if(match == null){
+	var dir = null;
+	var edge = null;
+	var node = s;
+    }
+    else{
+	var dir = match[1] + (match[1] == "is" ? "Of" : "");
+	var edge = match[2];
+	var node = match[3];
+    }
+    return {"dir":dir,"edge":edge,"node":node};
+}
+
+TagManager.getQueryList = function(){
+    var ans = [];
+    for(var i in tagBoxList)
+	ans.push(TagManager.getQuery(tagBoxList[i].text));
+    return ans;
+}
+
+TagManager.getQueryFunction = function(){
+    queries = TagManager.getQueryList();
+    return function(doc){
+	for(var q in queries){
+	    var dir = queries["dir"];
+	    var edge = queries["edge"];
+	    var node = queries["node"];
+	    if(dir == null){
+		var relevance = 0;
+		if(doc.name == node) relevance = 688;
+		for(var edge in doc.hasList)
+		    if(doc.hasList[edge].indexOf(node) >= 0) relevance++;
+		for(var edge in doc.isOfList)
+		    if(doc.isOfList[edge].indexOf(node) >= 0) relevance++;
+		if(relevance > 0) emit(relevance, doc);
+	    }
+	    else if(dir == "has")
+		if(doc.hasList[edge].indexOf(node) >= 0) emit(1, doc);
+	    else if(dir == "isOf")
+		if(doc.isOfList[edge].indexOf(node) >= 0) emit(1, doc);
 	}
+    }
+}
+
+TagManager.add = function(s){
+    var q_s = TagManager.getQuery(s);
+    for(var i=tagBoxList.length-1; i>=0; i--){
+	var t = tagBoxList[i]; 
 	
+	var q_t = TagManager.getQuery(t.text);
+	//If this is a "pure" node rather than an edge, remove it 
+	console.log(t.text);
+	console.log("q_t " + q_t['node']);
+	console.log("q_s "+ q_s['node']);
+	if(s == t.text){
+	    return;
+	} else if(q_t['node'] == q_s['node'] && q_t['dir'] == null && q_t['edge']==null){
+	    console.log("q_t "+q_t['node']+ " q_s "+q_s['node']);
+	    t.div.remove()
+	    tagBoxList.splice( i, 1 );
+	}	
+	//If we find this node already here, get out of dodge
     }
-
-    
-    TagManager.getQuery = function(s){
-	//Returns target of the text
-	var match  = s.match(/([has|is]) ([a-zA-Z0-9_ ]+)(?: of)?: *([a-zA-Z0-9_ ]+)/i);
-	if(match == null){
-	    var dir = null;
-	    var edge = null;
-	    var node = s;
-	}
-	else{
-	    var dir = match[1] + (match[1] == "is" ? "Of" : "");
-	    var edge = match[2];
-	    var node = match[3];
-	}
-	return {"dir":dir,"edge":edge,"node":node};
-    }
-    
-    
-    TagManager.add = function(s){
-	var q_s = TagManager.getQuery(s);
-	for(var i=tagBoxList.length-1; i>=0; i--){
-	    var t = tagBoxList[i]; 
-	    
-	    var q_t = TagManager.getQuery(t.text);
-	    //If this is a "pure" node rather than an edge, remove it 
-	    console.log(t.text);
-	    console.log("q_t " + q_t['node']);
-	    console.log("q_s "+ q_s['node']);
-	    if(s == t.text){
-		return;
-	    } else if(q_t['node'] == q_s['node'] && q_t['dir'] == null && q_t['edge']==null){
-		console.log("q_t "+q_t['node']+ " q_s "+q_s['node']);
-		t.div.remove()
-		tagBoxList.splice( i, 1 );
-	    }	
-	    //If we find this node already here, get out of dodge
-	}
-	var tagBox = new TagBox(s);
-	tagBox.toggleState('tag');
-    }
-
-
-sss
+    var tagBox = new TagBox(s);
+    tagBox.toggleState('tag');
+}
 
 function Node(name, timestamp, hasList, isOfList, content){
     this.name  = name;
@@ -179,14 +208,14 @@ function Node(name, timestamp, hasList, isOfList, content){
 	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv).click(function(e){		
 		var dualizedText = TagManager.dualize(s+ ": "+that.nameDiv.text())+ " "+that.nameDiv.text();
 		TagManager.add(dualizedText);
-		queryUpdated();
+		sendQuery();
 	    });
 
 	    console.log('AA',JSON.stringify(edgeList));
 	    for(var node in edgeList[n]){
 		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv).click(function(e) {
 		    TagManager.add($(this).text());
-		    queryUpdated();		  
+		    sendQuery();		  
 		});
 		edgeSource.push(s+": "+edgeList[n][node]);
 	    }

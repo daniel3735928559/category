@@ -99,7 +99,6 @@ input.tagBoxInput{
 
 div.tagBoxTag{
     align: left;
-    background-color:#0F7;
     display:inline-block;
 }
 
@@ -109,7 +108,8 @@ div.tagBoxPlus{
 }
 
 div.tagBoxMinus{
-    align: right;
+    padding-left:5px;
+    align:right;
     display:inline-block;
 }
 
