@@ -18,8 +18,13 @@ function populateView(data){
     drawTree(currentNode);
 }
 
+function appendToView(data){
+    console.log('app',JSON.stringify(data));
+    nodeFromDict(data).div.appendTo($("#nodes"));
+}
+
 function nodeFromDict(dict){
-    return new Node(dict["name"],dict["timestamp"],dict["hasList"],dict["isOfList"],dict["content"]);
+    return new Node(dict);
 }
 
 function drawTree(root){
@@ -36,35 +41,62 @@ window.onload = function(){
 	success: function(data) {
             console.log('data',JSON.stringify(data),data["rows"][1]["id"]);
 	    $.couch.db("test").openDoc(data["rows"][1]["id"],{success:populateView, error:couchError});
-	    
 	},
 	error: couchError,
 	reduce: false
     });
-
-    $.couch.db("test").view("cat/round0", {
-	success: function(data) {
-            console.log('data foo: ',JSON.stringify(data));
-	},
-	keys:["Mickies","Madison"],
-	error: couchError,
-	reduce: false
-    });
-
+    //sendQueryHelper([{"dir":"has","edge":"city","node":"Madison"}],0,null,function(data){ console.log("GOT",JSON.stringify(data)); });
 
     console.log("cn",JSON.stringify(currentNode));
-    $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'+',click:function(e){new TagBox('');}}).appendTo("#search");
+    $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'[+]',click:function(e){new TagBox('');}}).appendTo("#search");
+    $("<div />",{id:'tagBoxPlus',style:"display:inline-block",text:'[search]',click:function(e){sendQuery();}}).appendTo("#search");
     new TagBox("Mickey's");
 }
 
+function recvQueryData(data){
+    console.log("res",JSON.stringify(data));
+    uniqIDs = []
+    for(var d in data){
+	if(uniqIDs.indexOf(data[d]["id"]) < 0) uniqIDs.push(data[d]["id"])
+    }
+    for(var i in uniqIDs)
+	$.couch.db("test").openDoc(uniqIDs[i],{success:appendToView, error:couchError});
+}
 
 function sendQuery(){
-    console.log("SQ");
-    $.couch.db(theDB).query(TagManager.getQueryFunction(), null, "javascript", {
+    $("#nodes").children().remove();
+    sendQueryHelper(TagManager.getQueryList(),0,null,recvQueryData);
+}
+
+function sendQueryHelper(queries,index,result,success){
+    console.log("QS",JSON.stringify(queries));
+    if(index == 0){
+	var view = (queries[index]["dir"] == null ? "connB" : "relB");
+	var nextKeys = (queries[index]["dir"] == null ? [queries[index]["node"]] : [queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]]);
+    }
+    else{
+	var view = (queries[index]["dir"] == null ? "AconnB" : "ArelB");
+	var nextKeys = []
+	if(queries[index]["dir"] == null)
+	    for(var r in result)
+		nextKeys.push(result[r]["value"] + " " + queries[index]["node"]);
+	else
+	    for(var r in result)
+		nextKeys.push(result[r]["value"] + " " + queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]);
+
+    }
+    console.log("SQ",JSON.stringify(queries),index,view,JSON.stringify(nextKeys));
+    $.couch.db(theDB).view("cat/"+view, {
 	success: function(data) {
 	    console.log("SQS");
             console.log('data',JSON.stringify(data));
+	    var res = [];
+	    for(var d in data["rows"])
+		res.push(data["rows"][d])
+	    if(index+1 < queries.length) sendQueryHelper(queries,index+1,res,success);
+	    else success(res)
 	},
+	keys: nextKeys,
 	error: couchError,
 	reduce: false
     });
@@ -130,53 +162,45 @@ TagManager.dualize  = function(s){
 
 TagManager.getQuery = function(s){
     //Returns target of the text
-    var match  = s.match(/([has|is]) ([a-zA-Z0-9_ ]+)(?: of)?: *([a-zA-Z0-9_ ]+)/i);
+    var match = null;
+    var dir = null;
+    if(s.indexOf("has ") == 0){
+	dir = "has";
+	match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
+    }
+    else{
+	dir = "isof";
+	match = s.match(/is ([.,-a-zA-Z0-9_ ]+) of: *([.,-a-zA-Z0-9_ ]+)/i);
+    }
     if(match == null){
 	var dir = null;
 	var edge = null;
 	var node = s;
     }
     else{
-	var dir = match[1] + (match[1] == "is" ? "Of" : "");
-	var edge = match[2];
-	var node = match[3];
+	var edge = match[1];
+	var node = match[2];
     }
-    return {"dir":dir,"edge":edge,"node":node};
+    var ans = []
+    var nodes = node.split(",");
+    for(var n in nodes){
+	ans.push({"dir":dir,"edge":edge,"node":nodes[n]});
+    }
+    return ans;
 }
 
 TagManager.getQueryList = function(){
     var ans = [];
-    for(var i in tagBoxList)
-	ans.push(TagManager.getQuery(tagBoxList[i].text));
+    for(var i in tagBoxList){
+	ans = ans.concat(TagManager.getQuery(tagBoxList[i].text));
+	console.log("ttlt",tagBoxList[i].text);
+    }
+    console.log("ASD",JSON.stringify(ans));
     return ans;
 }
 
-TagManager.getQueryFunction = function(){
-    queries = TagManager.getQueryList();
-    return function(doc){
-	for(var q in queries){
-	    var dir = queries["dir"];
-	    var edge = queries["edge"];
-	    var node = queries["node"];
-	    if(dir == null){
-		var relevance = 0;
-		if(doc.name == node) relevance = 688;
-		for(var edge in doc.hasList)
-		    if(doc.hasList[edge].indexOf(node) >= 0) relevance++;
-		for(var edge in doc.isOfList)
-		    if(doc.isOfList[edge].indexOf(node) >= 0) relevance++;
-		if(relevance > 0) emit(relevance, doc);
-	    }
-	    else if(dir == "has")
-		if(doc.hasList[edge].indexOf(node) >= 0) emit(1, doc);
-	    else if(dir == "isOf")
-		if(doc.isOfList[edge].indexOf(node) >= 0) emit(1, doc);
-	}
-    }
-}
-
 TagManager.add = function(s){
-    var q_s = TagManager.getQuery(s);
+    var q_s = TagManager.getQuery(s)[0];
     for(var i=tagBoxList.length-1; i>=0; i--){
 	var t = tagBoxList[i]; 
 	
@@ -198,125 +222,225 @@ TagManager.add = function(s){
     tagBox.toggleState('tag');
 }
 
-function Node(name, timestamp, hasList, isOfList, content){
-    this.name  = name;
-    this.timestamp = timestamp;
-    this.hasList = hasList;
-    this.isOfList = isOfList;
-    var __construct = function (that) {
-	that.div = $("<div />",{id:that.name, class:"node"});
-	that.nameDiv = $("<div />",{id:that.name+"_name", class:"name"}).appendTo(that.div);
-	that.edgesDiv = $("<div />",{id:that.name+"_edges", class:"edges"}).appendTo(that.div);
-	that.contentDiv = $("<div />",{id:that.name+"_content", class:"content",contenteditable:"true",text:content}).appendTo(that.div);
-	// Name div stuff: 
-	that.nameLabel = $("<div />",{id:that.name+"_name_label", class:"nodeBox", text:that.name, click: function(e){ drawTree(that); }}).appendTo(that.nameDiv);
-	// Edges div stuff: 
-	that.edgeSources = [];
-	var buildEdgeDiv = function(that,s,edgeList){
-	    var edgeSource = [];
-	    var edgeDiv = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',that.edgesDiv));
-	    // edgeDisplayDiv stuff: 
-	    var edgeDisplayDiv = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv);
-	    $("<div />",{class:"edgeTitle",text:s}).appendTo(edgeDisplayDiv).click(function(e){		
-		var dualizedText = TagManager.dualize(s+ ": "+that.nameDiv.text())+ " "+that.nameDiv.text();
-		TagManager.add(dualizedText);
-		sendQuery();
-	    });
+/*	
+*/
 
-	    console.log('AA',JSON.stringify(edgeList));
-	    for(var node in edgeList[n]){
-		$("<div />",{id:edgeList[n][node], class:"nodeBox", text:edgeList[n][node]}).appendTo(edgeDisplayDiv).click(function(e) {
-		    TagManager.add($(this).text());
-		    sendQuery();		  
-		});
-		edgeSource.push(s+": "+edgeList[n][node]);
-	    }
-	    // Add edit button for each edge, which replaces that edge
-	    // with a textbox allowing the editing of edgeSource,
-	    // which is then parsed to recreate the edge
-	    var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(edgeDisplayDiv);
+function Node(dict){
+    var _self = this;
+    this.name  = dict["name"];
+    this.timestamp = dict["timestamp"];
+    this.has = dict["has"];
+    this.isof = dict["isof"];
+    this.dict = dict;
+    this.json = {};
+
+    this.frontends = [];
+
+    //Synchronize the JSON object with the UI
+    this.synchronize = function (){
+	this.json = {"has":{},"isof":{},"content":"","name":""};
+	this.json["_id"] = dict["_id"]; this.json["_rev"] = dict["_rev"];
+	//console.log("FFFFFFFFFFFFF",JSON.stringify(this.frontends));
+	for(var f in this.frontends){
+	    //console.log("Fi",_self.frontends[f]);
+	    _self.frontends[f][1](_self.frontends[f][0].content());
+	    //console.log("json", JSON.stringify(_self.json));
+	}
 	
-	    // edgeEditDiv stuff: 
-	    var src = edgeSource.join(", ");
-	    that.edgeSources.push(src);
-	    var edgeEditDiv = $("<div />",{class:"edgeBox"});
-	    var edgeEditInput = $("<input />",{"type":"text","value":src,"class":"edgeInput"}).appendTo(edgeEditDiv);
-	    var parseEdge = function(text){
-		
-		// parse the edge, send the appropriate update to the
-		// db if it was valid, or return an error message to
-		// display if it wasn't
-		return {"success":true};
-	    }
-	    var editDone = function(){
-		var result = parseEdge(edgeEditInput.text())
-		if(result["success"]){
-		    //also refresh edgeDisplayDiv with the content from the result div
-		    edgeEditDiv.detach();
-		    edgeDisplayDiv.prependTo(edgeDiv);
-		    return true;
-		}
-		else{
-		    alert(result);
-		    return false;
-		}
-	    }
-	    edgeEditInput.keyup(function(e){
-		console.log(e.keyCode,'sz',edgeDiv.prev('div.edgeBox').size())
-		if(e.keyCode == 13){
-		    editDone();
-		}
-		//Up
-		else if(e.keyCode == 38){
-		    if(edgeDiv.prev('div.edgeBox').size() > 0 && editDone()){
-			$('div.edgeEdit',edgeDiv.prev()).click();
-			$('input',edgeDiv.prev()).focus();
-			// Also start editing previous edge, if any
-		    }
-		}
-		//Down
-		else if(e.keyCode == 40){
-		    if(edgeDiv.next('div.edgeBox').size() > 0 && editDone()){
-			$('div.edgeEdit',edgeDiv.next()).click();
-			$('input',edgeDiv.next()).focus();
-			// Also start editing next edge, if any, or add new edge if not
-		    }
-		    else if(edgeDiv.next('div.edgeBox').size() == 0 && editDone()){
-			console.log("at end",$('div.edgeAdd',that.edgesDiv).size());
-			$('div.edgeAdd',that.edgesDiv).click();
-		    }
-		}
-		else if(e.keyCode == 8 && e.ctrlKey && e.shiftKey){
-		    if($('input',edgeDiv).val() == "") edgeDiv.remove();
-		}
-		else if(e.keyCode == "?"){
-		    // Initiate a search for the target node or edge word, depending on where we are
-		}
-		else{
-		    // autogenerate suggestions
-		}
-	    });
-
-	    editEdge.click(function(e){
-		edgeDisplayDiv.detach();
-		edgeEditDiv.prependTo(edgeDiv);
-		console.log(edgeEditInput);
-		edgeEditInput.focus();
-	    });
-	    //that.edgeEditDivs.push(edgeEditDiv);
-	}//End of buildEdgeDiv
-
-	$("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(that.edgesDiv).click(function(e) {
-	    buildEdgeDiv(that,"",[]);
-	    $('div.edgeEdit',that.edgesDiv.children('div.edgeBox').last()).click();
-	    $('div.edgeInput',that.edgesDiv.children('div.edgeBox').last()).focus();
+	$.couch.db("test").saveDoc(_self.json, { 
+	    success:function(data) {
+		console.log(data);
+		this.dict = this.json;
+	    },
+	    error: couchError
 	});
+    }
 
-	for(var n in that.hasList) buildEdgeDiv(that,'has ' + n,that.hasList);
-	for(var n in that.isOfList) buildEdgeDiv(that,'is ' + n + ' of',that.isOfList);
-	// Add in + button at end of edges list
-    }(this)
+    this.div = $("<div />",{id:this.name, class:"node"});
+    this.nameDiv = $("<div />",{id:this.name+"_name", class:"name"}).appendTo(this.div);
+    this.edgesDiv = $("<div />",{id:this.name+"_edges", class:"edges"}).appendTo(this.div);
+    this.contentDiv = $("<div />",{id:this.name+"_content", class:"content"}).appendTo(this.div);
+
+    // Name div stuff: 
+    
+    //Add edges button
+    $("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(this.edgesDiv).click(function(e) {
+	this.frontends.push([new EdgeDiv(node,this.edgesDiv,"",""),this.addEdge]);
+	$('div.edgeEdit',this.edgesDiv.children('div.edgeBox').last()).click();
+	$('div.edgeInput',this.edgesDiv.children('div.edgeBox').last()).focus();
+    });
+
+    this.addEdge = function(queries){
+	for(var q in queries){
+	    //console.log("json", JSON.stringify(_self.json));
+	    q = queries[q];
+	    //console.log("Q",JSON.stringify(q),queries,_self);	    
+	    if(q["edge"] in _self.json[q["dir"]])
+		_self.json[q["dir"]][q["edge"]].push(q["node"]);
+	    else
+		_self.json[q["dir"]][q["edge"]] = [q["node"]];
+	}
+    };
+
+    for(var n in this.has)
+	this.frontends.push([new EdgeDiv(this,this.edgesDiv,'has ' + n,this.has[n]),this.addEdge]);
+    console.log("TTTTT",this.frontends);
+    for(var n in this.isof)
+	this.frontends.push([new EdgeDiv(this,this.edgesDiv,'is ' + n + ' of',this.isof[n]),this.addEdge]);
+
+    this.frontends.push([new ContentDiv(this,this.contentDiv,dict["content"]),function(s){ _self.json["content"] = s; }]);
+    this.frontends.push([new NameDiv(this,this.nameDiv,dict["name"]),function(s){ _self.json["name"] = s; }]);
+
+    
+    this.editDone = function (){
+	return true;
+    }
+
 }
+
+function ContentDiv(node,parentDiv,content){
+    this.div = $("<div />",{class:"contentBox",contenteditable:"true", text:content}).appendTo(parentDiv);
+    this.content =  function() {
+	console.log("CONTENT",this.div.text());
+	return this.div.text();
+    }
+}
+
+function NameDiv(node,parentDiv,content){
+    this.div = $("<div />",{id:node.name+"_name_label", class:"nodeBox", text:node.dict["name"], click: function(e){ alert("U FOWND THA SEKRIT"); }}).appendTo(parentDiv);
+    this.content =  function() {
+	return this.div.text();    
+    }
+}
+
+function EdgeDiv(node,parentDiv,edgeName,nodeList){
+    this.div = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',parentDiv));
+    var state = "display";
+
+    var edgeDisplayDiv =  new EdgeDisplayDiv(node,this);
+    var edgeEditDiv = new EdgeEditDiv(node, this);
+
+    //Updates from a given edgeList
+    this.update = function(s, edgeList){
+	edgeDisplayDiv.update(s,edgeList);
+	edgeEditDiv.update(s,edgeList);
+    }
+    
+    this.content = function(){
+	return edgeEditDiv.content()
+    }
+
+    this.swap = function(){
+	if(state == "display"){
+	    state = "input";
+	    edgeDisplayDiv.div.detach();
+	    edgeEditDiv.div.prependTo(this.div);
+	    edgeEditDiv.edgeEditInput.focus();
+	}
+	else if(state=="input"){
+	    state = "display";
+	    edgeEditDiv.div.detach();
+	    var edges = edgeEditDiv.content();
+	    var s = (edges[0]["dir"] == "has") ? "has "+edges[0]["edge"]+":": "is "+edges[0]["edge"]+" of:";
+	    var edgeList = []
+	    for(var edge in edges)
+		edgeList.push(edges[edge]["node"])
+	    edgeDisplayDiv.update(s, edgeList);
+	    edgeDisplayDiv.div.prependTo(this.div);
+	    
+	}
+    }
+    //console.log("ENODELIST",JSON.stringify(nodeList));
+    this.update(edgeName,nodeList);
+}
+
+function EdgeDisplayDiv(node,edgeDiv){
+    
+    this.edgeDiv = edgeDiv;
+    this.node = node;
+    this.div = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv.div);
+
+    this.update = function(s,edgeList){
+	$(this.div).empty();
+
+	var text = this.node.nameDiv.text();
+	$("<div />",{class:"edgeTitle",text:s}).appendTo(this.div).click(function(e){
+	    //What happens when you click on the title
+	    var dualizedText = TagManager.dualize(s+ ": "+text+ " "+text);
+	    TagManager.add(dualizedText);
+	});
+	
+	for(var node in edgeList){
+	    console.log("node: "+s);
+	    $("<div />",{id:edgeList[node], class:"nodeBox", text:edgeList[node]}).appendTo(this.div).click(function(e) {
+		TagManager.add($(this).text());
+	    });
+	}
+
+	var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(this.div).click(function(e){
+	    edgeDiv.swap();
+	});
+    }
+
+}
+
+function EdgeEditDiv(node, edgeDiv) {
+
+    this.edgeDiv = edgeDiv;
+    this.div = $("<div />",{class:"edgeBox"});  
+    this.edgeEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
+	if(e.keyCode == 13){		    
+	    edgeDiv.swap();
+	    node.synchronize();
+	}
+	//Up
+	else if(e.keyCode == 38){
+	    if(edgeDiv.div.prev('div.edgeBox').size() > 0 && node.editDone()){
+		$('div.edgeEdit',edgeDiv.div.prev()).click();
+		$('input',edgeDiv.div.prev()).focus();
+		edgeDiv.swap()
+		// Also start editing previous edge, if any
+	    }
+	}
+	//Down
+	else if(e.keyCode == 40){
+	    if(edgeDiv.div.next('div.edgeBox').size() > 0 && node.editDone()){
+		$('div.edgeEdit',edgeDiv.div.next()).click();
+		$('input',edgeDiv.div.next()).focus();
+		edgeDiv.swap();
+		// Also start editing next edge, if any, or add new edge if not
+	    }
+	    else if(edgeDiv.div.next('div.edgeBox').size() == 0 && node.editDone()){
+		//console.log("at end",$('div.edgeAdd',that.edgesDiv).size());
+		edgeDiv.swap();
+		$('div.edgeAdd',parentDiv).click();
+	    }
+	}
+	else if(e.keyCode == 8 && e.ctrlKey && e.shiftKey){
+	    if($('input',edgeDiv.div).val() == "") edgeDiv.div.remove();
+	}
+	else if(e.keyCode == "?"){
+	    // Initiate a search for the target node or edge word, depending on where we are
+	}
+	else{
+	    // autogenerate suggestions
+	}
+    });
+
+    this.update = function(s, edgeList){
+	var src = s+ ": "+edgeList.join(","); 
+	var edgeEditInput = this.edgeEditInput;
+	$(edgeEditInput).val(src);
+    }
+
+    this.content = function(){
+	return TagManager.getQuery(this.edgeEditInput.val());
+    }
+
+}
+
+	    
+	
 
 // expects: {'ID':nodeID, 'content':content, 'timestamp':timestamp, 'has':hasList, 'isof':isOfList, 'content':content}
 // function AddConn(){

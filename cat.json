@@ -1,0 +1,19 @@
+{
+   "_id": "_design/cat",
+   "_rev": "12-fb14a69d604f0369cf4836d89863fe56",
+   "language": "javascript",
+   "views": {
+       "ArelB": {
+           "map": "function(doc) {\n  for(var edgeName in doc.hasList)\n    for(var node in doc.hasList[edgeName])\n      emit(doc.name + \" has \" + edgeName + \": \" + doc.hasList[edgeName][node], doc.name);\n\n  for(var edgeName in doc.isOfList)\n    for(var node in doc.isOfList[edgeName])\n      emit(doc.name + \" isof \" + edgeName + \": \" + doc.isOfList[edgeName][node], doc.name);\n}"
+       },
+       "connB": {
+           "map": "function(doc) {\n  emit(doc.name,doc.name);\n  for(var edgeName in doc.hasList)\n    for(var node in doc.hasList[edgeName])\n      emit(doc.hasList[edgeName][node], doc.name);\n\n  for(var edgeName in doc.isOfList)\n    for(var node in doc.isOfList[edgeName])\n      emit(doc.isOfList[edgeName][node], doc.name);\n}"
+       },
+       "AconnB": {
+           "map": "function(doc) {\n  emit(doc.name + \" \" + doc.name, doc.name);\n  for(var edgeName in doc.hasList)\n    for(var node in doc.hasList[edgeName])\n      emit(doc.name + \" \" + doc.hasList[edgeName][node], doc.name);\n\n  for(var edgeName in doc.isOfList)\n    for(var node in doc.isOfList[edgeName])\n      emit(doc.name + \" \" + doc.isOfList[edgeName][node], doc.name);\n}"
+       },
+       "relB": {
+           "map": "function(doc) {\n  for(var edgeName in doc.hasList)\n    for(var node in doc.hasList[edgeName])\n      emit(\"has \" + edgeName + \": \" + doc.hasList[edgeName][node], doc.name);\n\n  for(var edgeName in doc.isOfList)\n    for(var node in doc.isOfList[edgeName])\n      emit(\"isof \" + edgeName + \": \" + doc.isOfList[edgeName][node], doc.name);\n}"
+       }
+   }
+}

@@ -34,10 +34,17 @@ div.edges{
 }
 
 div.content{
+    width:40%;
     padding: 15px;
     float:left;
 }
 
+
+div.contentBox{
+    width:100%;
+    min-height:100px;
+    float:left;
+}
 
 
 
