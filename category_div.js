@@ -55,7 +55,7 @@ window.onload = function(){
 
 function recvQueryData(data){
     console.log("res",JSON.stringify(data));
-    uniqIDs = []
+    var uniqIDs = []
     for(var d in data){
 	if(uniqIDs.indexOf(data[d]["id"]) < 0) uniqIDs.push(data[d]["id"])
     }
@@ -120,6 +120,7 @@ function TagBox(text){
 	    this.div.css("background-color","#9af");
 	    this.tagElement.text(this.inputElement.val());
 	    this.tagElement.prependTo(this.div);
+	    sendQuery();
 	}
     }
 
@@ -150,14 +151,12 @@ function TagBox(text){
 function TagManager(){}
 
 TagManager.dualize  = function(s){
-    if(s.indexOf('has') == 0){
+    if(s.indexOf('has') == 0)
 	return s.replace(/has ([a-zA-Z0-9]+): ([a-zA-Z0-9]+)/, 'is $1 of:' );
-    }
-    
-    else if(s.indexOf('is') == 0){
+    else if(s.indexOf('is') == 0)
 	return s.replace(/is ([a-zA-Z0-9]+) of: ([a-zA-Z0-9]+)/, 'has $1:' );
-    }
-    
+    else
+	return s;
 }
 
 TagManager.getQuery = function(s){
@@ -220,6 +219,7 @@ TagManager.add = function(s){
     }
     var tagBox = new TagBox(s);
     tagBox.toggleState('tag');
+    sendQuery();
 }
 
 /*	
@@ -238,22 +238,38 @@ function Node(dict){
 
     //Synchronize the JSON object with the UI
     this.synchronize = function (){
-	this.json = {"has":{},"isof":{},"content":"","name":""};
-	this.json["_id"] = dict["_id"]; this.json["_rev"] = dict["_rev"];
-	//console.log("FFFFFFFFFFFFF",JSON.stringify(this.frontends));
-	for(var f in this.frontends){
-	    //console.log("Fi",_self.frontends[f]);
+	_self.json = {"has":{},"isof":{},"content":"","name":""};
+	_self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
+	for(var f in this.frontends)
 	    _self.frontends[f][1](_self.frontends[f][0].content());
-	    //console.log("json", JSON.stringify(_self.json));
-	}
 	
 	$.couch.db("test").saveDoc(_self.json, { 
 	    success:function(data) {
 		console.log(data);
-		this.dict = this.json;
+		_self.dict = _self.json;
+		_self.consistencyCheck();
 	    },
 	    error: couchError
 	});
+    }
+
+    this.consistencyCheck = function(){
+	$.couch.db(theDB).view("cat/incoming", {
+	success: function(data) {
+	    console.log("CCC",JSON.stringify(data));
+	    for(var r in data["rows"]){
+		var query = data["rows"][r]["value"];
+		var oppdir = query["dir"] == "has" ? "isof" : "has";
+		console.log(JSON.stringify(query),JSON.stringify(_self.dict[oppdir]));
+		if(!(query["edge"] in _self.dict[oppdir] &&  _self.dict[oppdir][query["edge"]].indexOf(query["node"]) >= 0)){
+		    console.log("consistency problem");
+		}
+	    }
+	},
+	key: _self.name,
+	error: couchError,
+	reduce: false
+    });
     }
 
     this.div = $("<div />",{id:this.name, class:"node"});
@@ -288,7 +304,8 @@ function Node(dict){
     for(var n in this.isof)
 	this.frontends.push([new EdgeDiv(this,this.edgesDiv,'is ' + n + ' of',this.isof[n]),this.addEdge]);
 
-    this.frontends.push([new ContentDiv(this,this.contentDiv,dict["content"]),function(s){ _self.json["content"] = s; }]);
+    console.log("dict",JSON.stringify(this.dict));
+    this.frontends.push([new ContentDiv(this,this.contentDiv,this.dict["content"]),function(s){ _self.json["content"] = s; }]);
     this.frontends.push([new NameDiv(this,this.nameDiv,dict["name"]),function(s){ _self.json["name"] = s; }]);
 
     
@@ -363,11 +380,10 @@ function EdgeDisplayDiv(node,edgeDiv){
     this.update = function(s,edgeList){
 	$(this.div).empty();
 
-	var text = this.node.nameDiv.text();
+	var text = this.node.name;
 	$("<div />",{class:"edgeTitle",text:s}).appendTo(this.div).click(function(e){
 	    //What happens when you click on the title
-	    var dualizedText = TagManager.dualize(s+ ": "+text+ " "+text);
-	    TagManager.add(dualizedText);
+	    TagManager.add(TagManager.dualize(s+ ": "+text+ " "+text));
 	});
 	
 	for(var node in edgeList){
