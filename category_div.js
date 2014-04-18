@@ -8,6 +8,16 @@ var nodes = {}
 var tagBoxList = [];
 $.couch.urlPrefix = "http://localhost:11111/db";
 
+function clone(o) {
+    var newObj = (o instanceof Array) ? [] : {};
+    for (var i in o) {
+	//if (i == 'clone') continue;
+	if (o[i] && typeof o[i] == "object") newObj[i] = clone(o[i]);
+	else newObj[i] = o[i]
+    }
+    return newObj;
+};
+
 function couchError(status){
     console.log('error',status);
 }
@@ -240,10 +250,10 @@ function Node(dict){
     this.synchronize = function (){
 	_self.json = {"has":{},"isof":{},"content":"","name":""};
 	_self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
-	for(var f in this.frontends)
+	for(var f in _self.frontends)
 	    _self.frontends[f][1](_self.frontends[f][0].content());
 	
-	$.couch.db("test").saveDoc(_self.json, { 
+	$.couch.db(theDB).saveDoc(_self.json, { 
 	    success:function(data) {
 		console.log(data);
 		_self.dict = _self.json;
@@ -255,21 +265,80 @@ function Node(dict){
 
     this.consistencyCheck = function(){
 	$.couch.db(theDB).view("cat/incoming", {
-	success: function(data) {
-	    console.log("CCC",JSON.stringify(data));
-	    for(var r in data["rows"]){
-		var query = data["rows"][r]["value"];
-		var oppdir = query["dir"] == "has" ? "isof" : "has";
-		console.log(JSON.stringify(query),JSON.stringify(_self.dict[oppdir]));
-		if(!(query["edge"] in _self.dict[oppdir] &&  _self.dict[oppdir][query["edge"]].indexOf(query["node"]) >= 0)){
-		    console.log("consistency problem");
+	    success: function(data) {
+		console.log("CCC",JSON.stringify(data));
+		var edgesClone = {"has":clone(dict.has),"isof":clone(dict.isof)};
+		var toEdit = {}; //{node_name:{"add":{},"del":{}}
+		for(var r in data["rows"]){
+		    var query = data["rows"][r]["value"];
+		    var oppdir = query["dir"] == "has" ? "isof" : "has";
+		    var idx = edgesClone[oppdir][query["edge"]] ? edgesClone[oppdir][query["edge"]].indexOf(query["node"]) : -2;
+		    console.log("CCQ",JSON.stringify(query),JSON.stringify(_self.dict[oppdir]),idx);
+		    if(idx < 0){
+			if(!toEdit[query["node"]]) toEdit[query["node"]] = {"add":[],"del":[]};
+			console.log("consistency problem: incoming edge without corresponding outgoing edge");
+			toEdit[query["node"]]["del"].push({"dir":query["dir"],"edge":query["edge"],"node":_self.dict["name"]});
+		    }
+		    else{
+			console.log("found it");
+			// Remove the outgoing edge in edgesClone for which we did find a corresponding incomoing edge
+			edgesClone[oppdir][query["edge"]].splice(idx,1);
+			if(edgesClone[oppdir][query["edge"]].length == 0) delete edgesClone[oppdir][query["edge"]];
+		    }
 		}
-	    }
-	},
-	key: _self.name,
-	error: couchError,
-	reduce: false
-    });
+		// At this point, anything left in edgesClone is an
+		// outgoing edge without a corresponding incoming edge, so
+		// we can iterate through edgesClone and create these
+		var dirs = ["has","isof"];
+		for(var dir in dirs){
+		    var oppdir = dirs[1-dir];
+		    dir = dirs[dir];
+		    for(var edgeName in edgesClone[dir]){
+			var source = edgesClone[dir][edgeName];
+			var newEdge = {"dir":oppdir,"edge":edgeName,"node":_self.name}
+			if(!toEdit[source]) toEdit[source] = {"add":[],"del":[]};
+			// add newEdge to source.  If source doesn't exist, create it
+			toEdit[source]["add"].push(newEdge);
+		    }
+		}
+		console.log("toEdit",JSON.stringify(toEdit));
+		console.log(JSON.stringify(Object.keys(toEdit)));
+		$.couch.db(theDB).view("cat/incoming", {
+		    success: function(data) {
+			for(var r in data["rows"]){
+			    var node = data["rows"][r];
+			    $.couch.db("test").openDoc(node["id"],{
+				success:function(data){
+				    var newEdges = toEdit[node["key"]];
+				    for(var edge in newEdges["add"]){
+					edge = newEdges["add"][edge];
+					if(!data[edge["dir"]][edge["edge"]]) data[edge["dir"]][edge["edge"]] = [];
+					data[edge["dir"]][edge["edge"]].push(edge["node"]);
+				    }
+				    for(var edge in newEdges["del"]){
+					edge = newEdges["add"][edge];
+					var idx = data[edge["dir"]][edge["edge"]].indexOf(edge["node"]);
+					data[edge["dir"]][edge["edge"]].splice(idx,1);
+					if(data[edge["dir"]][edge["edge"]].length == 0) delete data[edge["dir"]][edge["edge"]];
+				    }
+				    $.couch.db(theDB).saveDoc(data, { 
+					success:function(data) { console.log(data); },
+					error: couchError
+				    });
+				}, 
+				error:couchError});
+			}
+			// also check for and create nodes that don't exist in similar manner to with edgesClone above
+		    },
+		    key: Object.keys(toEdit),
+		    error: couchError,
+		    reduce: false
+		});
+	    },
+	    key: _self.name,
+	    error: couchError,
+	    reduce: false
+	});
     }
 
     this.div = $("<div />",{id:this.name, class:"node"});
