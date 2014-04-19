@@ -1,4 +1,4 @@
-var theDB = "test";
+var theDB = "test1";
 var currentNode = null;
 var tagBoxID = 0;
 var has1 = new Node(1, "has1", 0,[],[]);
@@ -47,10 +47,10 @@ window.onload = function(){
 	emit(doc.name,doc);
     };
     
-    $.couch.db("test").query(mapFunction, null, "javascript", {
+    $.couch.db(theDB).query(mapFunction, null, "javascript", {
 	success: function(data) {
             console.log('data',JSON.stringify(data),data["rows"][1]["id"]);
-	    $.couch.db("test").openDoc(data["rows"][1]["id"],{success:populateView, error:couchError});
+	    $.couch.db(theDB).openDoc(data["rows"][1]["id"],{success:populateView, error:couchError});
 	},
 	error: couchError,
 	reduce: false
@@ -65,12 +65,18 @@ window.onload = function(){
 
 function recvQueryData(data){
     console.log("res",JSON.stringify(data));
-    var uniqIDs = []
-    for(var d in data){
-	if(uniqIDs.indexOf(data[d]["id"]) < 0) uniqIDs.push(data[d]["id"])
-    }
-    for(var i in uniqIDs)
-	$.couch.db("test").openDoc(uniqIDs[i],{success:appendToView, error:couchError});
+    var uniqNames = []
+    for(var d in data) if(uniqNames.indexOf(data[d]["value"]) < 0) uniqNames.push(data[d]["value"]);
+    console.log(JSON.stringify(uniqNames));
+    $.couch.db(theDB).view("cat/NodeNames", {
+	success: function(data) {
+	    console.log("FINAL DATA",JSON.stringify(data));
+	    for(var i in data["rows"]) $.couch.db(theDB).openDoc(data["rows"][i]["id"],{success:appendToView, error:couchError});
+	},
+	keys: uniqNames,
+	error: couchError,
+	reduce: false
+    });
 }
 
 function sendQuery(){
@@ -82,7 +88,9 @@ function sendQueryHelper(queries,index,result,success){
     console.log("QS",JSON.stringify(queries));
     if(index == 0){
 	var view = (queries[index]["dir"] == null ? "connB" : "relB");
-	var nextKeys = (queries[index]["dir"] == null ? [queries[index]["node"]] : [queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]]);
+	var nextKeys = (queries[index]["dir"] == null ? 
+			[queries[index]["node"]] : 
+			[queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]]);
     }
     else{
 	var view = (queries[index]["dir"] == null ? "AconnB" : "ArelB");
@@ -239,108 +247,95 @@ function Node(dict){
     var _self = this;
     this.name  = dict["name"];
     this.timestamp = dict["timestamp"];
-    this.has = dict["has"];
-    this.isof = dict["isof"];
+    this.content = dict["content"]
     this.dict = dict;
+
+    this.dict["has"] = {};
+    this.dict["isof"] = {};
+
+    $.couch.db(theDB).view("cat/SourceOrTarget", {
+	success: function(data) {
+	    console.log("batman", JSON.stringify(data));
+	    for(var d in data["rows"]){
+		var edge = data["rows"][d]["value"];
+		if(!_self.dict[edge["dir"]][edge["name"]]) _self.dict[edge["dir"]][edge["name"]] = [] ;
+		_self.dict[edge["dir"]][edge["name"]].push(edge["target"]);
+	    }
+	    _self.has = _self.dict["has"];
+	    _self.isof = _self.dict["isof"];
+	    console.log("lists:", JSON.stringify(_self.has), JSON.stringify(_self.isof));
+	    _self.update();
+	},
+	key: this.name,
+	error: couchError,
+	reduce: false
+    });
+    
     this.json = {};
-
     this.frontends = [];
-
+    
     //Synchronize the JSON object with the UI
     this.synchronize = function (){
 	_self.json = {"has":{},"isof":{},"content":"","name":""};
 	_self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
+	console.log("FRONTENDS",JSON.stringify(_self.frontends));
 	for(var f in _self.frontends)
 	    _self.frontends[f][1](_self.frontends[f][0].content());
 	
-	$.couch.db(theDB).saveDoc(_self.json, { 
-	    success:function(data) {
-		console.log(data);
-		_self.dict = _self.json;
-		_self.consistencyCheck();
-	    },
-	    error: couchError
-	});
-    }
+	//Remove edges. Fixes synchronization issues.
+	console.log("sinky");
+	var sourceOrTargetCB = function(data,cb){
+	    var ids = [];
+	    console.log("REVREV",JSON.stringify(data));
+	    for(var row in data["rows"])
+		ids.push({"_id":data["rows"][row]["value"]["_id"],"_rev":data["rows"][row]["value"]["_rev"]});
+	    console.log("ids",JSON.stringify(ids));
+	    $.couch.db(theDB).bulkRemove({"docs":ids},{success:function(data){
+		cb();
+	    }});
+	}
+	var addEdges = function(){	    
+	    _self.dict["content"] = _self.json["content"];
+	    _self.dict["name"] = _self.json["name"];
+	    
+	    // Save the node document
+	    $.couch.db(theDB).saveDoc(_self.dict, { 
+		success:function(data) {
+		    console.log("added a node")
+		},
+		error: couchError
+	    });
 
-    this.consistencyCheck = function(){
-	$.couch.db(theDB).view("cat/incoming", {
+	    // Save the new edges
+
+	    var dirs = ["has","isof"];
+	    var edgeDocs = [];
+	    for(var dir in dirs)
+	    {
+		dir = dirs[dir];
+		for(var edge in _self.json[dir])
+		    for( node in _self.json[dir][edge])
+			edgeDocs.push({"source":_self.name,"target":_self.json[dir][edge][node], "name":edge, "dir":dir, "type":"edge"})
+	    }
+	    console.log("ED",JSON.stringify(edgeDocs),JSON.stringify(_self.json));
+	    $.couch.db(theDB).bulkSave({"docs":edgeDocs}, {
+		success:function(data){
+		    console.log("SAVED",JSON.stringify(data));
+		    sendQuery();
+		}
+	    });
+	}
+	
+	$.couch.db(theDB).view("cat/SourceOrTarget", {
 	    success: function(data) {
-		console.log("CCC",JSON.stringify(data));
-		var edgesClone = {"has":clone(dict.has),"isof":clone(dict.isof)};
-		var toEdit = {}; //{node_name:{"add":{},"del":{}}
-		for(var r in data["rows"]){
-		    var query = data["rows"][r]["value"];
-		    var oppdir = query["dir"] == "has" ? "isof" : "has";
-		    var idx = edgesClone[oppdir][query["edge"]] ? edgesClone[oppdir][query["edge"]].indexOf(query["node"]) : -2;
-		    console.log("CCQ",JSON.stringify(query),JSON.stringify(_self.dict[oppdir]),idx);
-		    if(idx < 0){
-			if(!toEdit[query["node"]]) toEdit[query["node"]] = {"add":[],"del":[]};
-			console.log("consistency problem: incoming edge without corresponding outgoing edge");
-			toEdit[query["node"]]["del"].push({"dir":query["dir"],"edge":query["edge"],"node":_self.dict["name"]});
-		    }
-		    else{
-			console.log("found it");
-			// Remove the outgoing edge in edgesClone for which we did find a corresponding incomoing edge
-			edgesClone[oppdir][query["edge"]].splice(idx,1);
-			if(edgesClone[oppdir][query["edge"]].length == 0) delete edgesClone[oppdir][query["edge"]];
-		    }
-		}
-		// At this point, anything left in edgesClone is an
-		// outgoing edge without a corresponding incoming edge, so
-		// we can iterate through edgesClone and create these
-		var dirs = ["has","isof"];
-		for(var dir in dirs){
-		    var oppdir = dirs[1-dir];
-		    dir = dirs[dir];
-		    for(var edgeName in edgesClone[dir]){
-			var source = edgesClone[dir][edgeName];
-			var newEdge = {"dir":oppdir,"edge":edgeName,"node":_self.name}
-			if(!toEdit[source]) toEdit[source] = {"add":[],"del":[]};
-			// add newEdge to source.  If source doesn't exist, create it
-			toEdit[source]["add"].push(newEdge);
-		    }
-		}
-		console.log("toEdit",JSON.stringify(toEdit));
-		console.log(JSON.stringify(Object.keys(toEdit)));
-		$.couch.db(theDB).view("cat/incoming", {
-		    success: function(data) {
-			for(var r in data["rows"]){
-			    var node = data["rows"][r];
-			    $.couch.db("test").openDoc(node["id"],{
-				success:function(data){
-				    var newEdges = toEdit[node["key"]];
-				    for(var edge in newEdges["add"]){
-					edge = newEdges["add"][edge];
-					if(!data[edge["dir"]][edge["edge"]]) data[edge["dir"]][edge["edge"]] = [];
-					data[edge["dir"]][edge["edge"]].push(edge["node"]);
-				    }
-				    for(var edge in newEdges["del"]){
-					edge = newEdges["add"][edge];
-					var idx = data[edge["dir"]][edge["edge"]].indexOf(edge["node"]);
-					data[edge["dir"]][edge["edge"]].splice(idx,1);
-					if(data[edge["dir"]][edge["edge"]].length == 0) delete data[edge["dir"]][edge["edge"]];
-				    }
-				    $.couch.db(theDB).saveDoc(data, { 
-					success:function(data) { console.log(data); },
-					error: couchError
-				    });
-				}, 
-				error:couchError});
-			}
-			// also check for and create nodes that don't exist in similar manner to with edgesClone above
-		    },
-		    key: Object.keys(toEdit),
-		    error: couchError,
-		    reduce: false
-		});
+		sourceOrTargetCB(data,addEdges);
 	    },
-	    key: _self.name,
+	    key: this.name,
 	    error: couchError,
 	    reduce: false
 	});
     }
-
+    
     this.div = $("<div />",{id:this.name, class:"node"});
     this.nameDiv = $("<div />",{id:this.name+"_name", class:"name"}).appendTo(this.div);
     this.edgesDiv = $("<div />",{id:this.name+"_edges", class:"edges"}).appendTo(this.div);
@@ -349,34 +344,36 @@ function Node(dict){
     // Name div stuff: 
     
     //Add edges button
-    $("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(this.edgesDiv).click(function(e) {
-	this.frontends.push([new EdgeDiv(node,this.edgesDiv,"",""),this.addEdge]);
-	$('div.edgeEdit',this.edgesDiv.children('div.edgeBox').last()).click();
-	$('div.edgeInput',this.edgesDiv.children('div.edgeBox').last()).focus();
+    $("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(_self.edgesDiv).click(function(e) {
+	_self.frontends.push([new EdgeDiv(_self,_self.edgesDiv,"",[]),_self.addEdge]);
+	$('div.edgeEdit',_self.edgesDiv.children('div.edgeBox').last()).click();
+	$('div.edgeInput',_self.edgesDiv.children('div.edgeBox').last()).focus();
     });
 
     this.addEdge = function(queries){
 	for(var q in queries){
-	    //console.log("json", JSON.stringify(_self.json));
+	    console.log("json", JSON.stringify(_self.json));
 	    q = queries[q];
-	    //console.log("Q",JSON.stringify(q),queries,_self);	    
+	    console.log("ANE",JSON.stringify(q),queries,_self);	    
 	    if(q["edge"] in _self.json[q["dir"]])
 		_self.json[q["dir"]][q["edge"]].push(q["node"]);
 	    else
 		_self.json[q["dir"]][q["edge"]] = [q["node"]];
 	}
     };
-
-    for(var n in this.has)
-	this.frontends.push([new EdgeDiv(this,this.edgesDiv,'has ' + n,this.has[n]),this.addEdge]);
-    console.log("TTTTT",this.frontends);
-    for(var n in this.isof)
-	this.frontends.push([new EdgeDiv(this,this.edgesDiv,'is ' + n + ' of',this.isof[n]),this.addEdge]);
-
-    console.log("dict",JSON.stringify(this.dict));
-    this.frontends.push([new ContentDiv(this,this.contentDiv,this.dict["content"]),function(s){ _self.json["content"] = s; }]);
-    this.frontends.push([new NameDiv(this,this.nameDiv,dict["name"]),function(s){ _self.json["name"] = s; }]);
-
+    
+    this.update = function( ){
+	for(var n in this.has)
+	    this.frontends.push([new EdgeDiv(this,this.edgesDiv,'has ' + n,this.has[n]),this.addEdge]);
+	console.log("TTTTT",this.frontends);
+	for(var n in this.isof){
+	    console.log("n",n);
+	    this.frontends.push([new EdgeDiv(this,this.edgesDiv,'is ' + n + ' of',this.isof[n]),this.addEdge]);
+	}
+	console.log("dict",JSON.stringify(this.dict));
+	this.frontends.push([new ContentDiv(this,this.contentDiv,this.dict["content"]),function(s){ _self.json["content"] = s; }]);
+	this.frontends.push([new NameDiv(this,this.nameDiv,dict["name"]),function(s){ _self.json["name"] = s; }]);
+    }
     
     this.editDone = function (){
 	return true;
@@ -385,11 +382,30 @@ function Node(dict){
 }
 
 function ContentDiv(node,parentDiv,content){
-    this.div = $("<div />",{class:"contentBox",contenteditable:"true", text:content}).appendTo(parentDiv);
+    var _self = this;
+    this.style = "contentBoxMin";
+    this.div = $("<div />",{class:"contentBoxMin",contenteditable:"true", text:content}).appendTo(parentDiv);
+    this.overlay = $("<div />",{class:"overlay"}).appendTo(document.body);
     this.content =  function() {
 	console.log("CONTENT",this.div.text());
 	return this.div.text();
     }
+    this.div.keyup(function (e) {
+	console.log("key pressed in content area",e.keyCode);
+	if(e.keyCode == 27){
+	    if(_self.style == "contentBoxMax"){ 
+		_self.style = "contentBoxMin"
+		$(_self.overlay).css("display","none");
+	    } else{ 
+		_self.style = "contentBoxMax";
+		$(_self.overlay).css("display","block");
+	    }
+
+	    $(_self.div).attr("class",_self.style);
+	    console.log($(_self.div).attr("class"));
+	}
+ 	
+    });
 }
 
 function NameDiv(node,parentDiv,content){
@@ -428,6 +444,7 @@ function EdgeDiv(node,parentDiv,edgeName,nodeList){
 	    edgeEditDiv.div.detach();
 	    var edges = edgeEditDiv.content();
 	    var s = (edges[0]["dir"] == "has") ? "has "+edges[0]["edge"]+":": "is "+edges[0]["edge"]+" of:";
+	    console.log("CONTENTEEEEE",JSON.stringify(edges),s);
 	    var edgeList = []
 	    for(var edge in edges)
 		edgeList.push(edges[edge]["node"])
@@ -474,7 +491,7 @@ function EdgeEditDiv(node, edgeDiv) {
     this.edgeDiv = edgeDiv;
     this.div = $("<div />",{class:"edgeBox"});  
     this.edgeEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
-	if(e.keyCode == 13){		    
+	if(e.keyCode == 13){	    
 	    edgeDiv.swap();
 	    node.synchronize();
 	}
@@ -513,6 +530,7 @@ function EdgeEditDiv(node, edgeDiv) {
     });
 
     this.update = function(s, edgeList){
+	console.log("EL",edgeList);
 	var src = s+ ": "+edgeList.join(","); 
 	var edgeEditInput = this.edgeEditInput;
 	$(edgeEditInput).val(src);
