@@ -22,24 +22,9 @@ function couchError(status){
     console.log('error',status);
 }
 
-function populateView(data){
-    console.log('pop',JSON.stringify(data));
-    currentNode = nodeFromDict(data);
-    drawTree(currentNode);
-}
-
 function appendToView(data){
     console.log('app',JSON.stringify(data));
-    nodeFromDict(data).div.appendTo($("#nodes"));
-}
-
-function nodeFromDict(dict){
-    return new Node(dict);
-}
-
-function drawTree(root){
-    root.div.appendTo($("#nodes"));
-    //new AddConn();
+    (new Node(data)).div.appendTo($("#nodes"));
 }
 
 window.onload = function(){
@@ -50,7 +35,7 @@ window.onload = function(){
     $.couch.db(theDB).query(mapFunction, null, "javascript", {
 	success: function(data) {
             console.log('data',JSON.stringify(data),data["rows"][1]["id"]);
-	    $.couch.db(theDB).openDoc(data["rows"][1]["id"],{success:populateView, error:couchError});
+	    $.couch.db(theDB).openDoc(data["rows"][1]["id"],{success:appendToView, error:couchError});
 	},
 	error: couchError,
 	reduce: false
@@ -60,7 +45,11 @@ window.onload = function(){
     console.log("cn",JSON.stringify(currentNode));
     $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'[+]',click:function(e){new TagBox('');}}).appendTo("#search");
     $("<div />",{id:'tagBoxPlus',style:"display:inline-block",text:'[search]',click:function(e){sendQuery();}}).appendTo("#search");
-    new TagBox("Mickey's");
+    new TagBox("Mickies");
+    
+    $("#addNode").click(function(e){
+	appendToView({"name":"", "content":"", "type":"node"});
+    });
 }
 
 function recvQueryData(data){
@@ -97,7 +86,7 @@ function sendQueryHelper(queries,index,result,success){
 	var nextKeys = []
 	if(queries[index]["dir"] == null)
 	    for(var r in result)
-		nextKeys.push(result[r]["value"] + " " + queries[index]["node"]);
+		nextKeys.push(result[r]["value"] + ";" + queries[index]["node"]);
 	else
 	    for(var r in result)
 		nextKeys.push(result[r]["value"] + " " + queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]);
@@ -120,6 +109,36 @@ function sendQueryHelper(queries,index,result,success){
     });
 }
 
+
+function autocomplete(req,add){
+    var suggestions = [];
+    //Generate the view and keys
+    var query = TagManager.getQuery(req.term)[0];					    
+    var key = (query["node"][0] == " ")? "":query["node"][0];
+    console.log("qq",JSON.stringify(query))
+    $.couch.db(theDB).view("cat/auto",{
+	success: function(data){
+	    console.log("data",JSON.stringify(data));
+	    var hasData  = (query["dir"]!=null && query["edge"]!=null);
+	    for(row in data["rows"]){
+		console.log("row", data["rows"]["row"])
+		if(hasData){
+		    suggestions.push(
+			(query["dir"] == "has") ? "has "+query["edge"]+":"+ data["rows"][row]["key"] : "is "+query["edge"]+" of: "+data["rows"][row]["key"]);
+		}
+		else{
+		    suggestions.push(data["rows"][row]["key"])
+		}
+	    }
+	    add(suggestions);
+	},						
+	startkey:key,
+	endkey:key+"\ufff0"
+    });
+} 
+			   
+    
+
 function TagBox(text){
     this.state = 'input';
     this.id = 'tagbox'+tagBoxID;
@@ -135,10 +154,11 @@ function TagBox(text){
 	    this.div.css("background-color","#fff");
 	} else if(state == 'tag'){
 	    this.inputElement.detach();
+	    this.inputElement.autocomplete("close");
 	    this.div.css("background-color","#9af");
 	    this.tagElement.text(this.inputElement.val());
 	    this.tagElement.prependTo(this.div);
-	    sendQuery();
+	    //sendQuery();
 	}
     }
 
@@ -146,7 +166,11 @@ function TagBox(text){
 	//Construct Input Element	
 	that.inputElement =  $("<input />",{"type":"text","value":that.text,"class":"tagBoxInput"});
 	that.inputElement.keyup(function(e){ console.log("hi"); if(e.keyCode == 13) that.toggleState('tag'); that.text = that.inputElement.val(); })
-	that.inputElement.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
+	that.inputElement.autocomplete({source:
+					function(req, add){
+					    autocomplete(req,add);
+					}
+				       });
 	that.inputElement.appendTo(that.div);
 	that.tagElement = $("<div />",{class:'tagBoxTag'});
 	that.tagElement.click(function(e){ that.toggleState('input'); });
@@ -276,12 +300,16 @@ function Node(dict){
     
     //Synchronize the JSON object with the UI
     this.synchronize = function (){
-	_self.json = {"has":{},"isof":{},"content":"","name":""};
-	_self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
+	_self.json["has"] = {}; _self.json["isof"] = {};
+	if("_id" in dict && "_rev" in dict){
+	    _self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
+	}
 	console.log("FRONTENDS",JSON.stringify(_self.frontends));
-	for(var f in _self.frontends)
+	for(var f in _self.frontends){
+	    console.log("fe", _self.frontends[f][0].content());
 	    _self.frontends[f][1](_self.frontends[f][0].content());
-	
+	}
+
 	//Remove edges. Fixes synchronization issues.
 	console.log("sinky");
 	var sourceOrTargetCB = function(data,cb){
@@ -294,10 +322,11 @@ function Node(dict){
 		cb();
 	    }});
 	}
+
 	var addEdges = function(){	    
 	    _self.dict["content"] = _self.json["content"];
 	    _self.dict["name"] = _self.json["name"];
-	    
+	    console.log("what's my name", _self.json["name"]);
 	    // Save the node document
 	    $.couch.db(theDB).saveDoc(_self.dict, { 
 		success:function(data) {
@@ -315,7 +344,7 @@ function Node(dict){
 		dir = dirs[dir];
 		for(var edge in _self.json[dir])
 		    for( node in _self.json[dir][edge])
-			edgeDocs.push({"source":_self.name,"target":_self.json[dir][edge][node], "name":edge, "dir":dir, "type":"edge"})
+			edgeDocs.push({"source":_self.json["name"],"target":_self.json[dir][edge][node], "name":edge, "dir":dir, "type":"edge"})
 	    }
 	    console.log("ED",JSON.stringify(edgeDocs),JSON.stringify(_self.json));
 	    $.couch.db(theDB).bulkSave({"docs":edgeDocs}, {
@@ -355,10 +384,9 @@ function Node(dict){
 	    console.log("json", JSON.stringify(_self.json));
 	    q = queries[q];
 	    console.log("ANE",JSON.stringify(q),queries,_self);	    
-	    if(q["edge"] in _self.json[q["dir"]])
+	    if(q["dir"] != null && q["edge"] in _self.json[q["dir"]])
 		_self.json[q["dir"]][q["edge"]].push(q["node"]);
-	    else
-		_self.json[q["dir"]][q["edge"]] = [q["node"]];
+	    else if(q["dir"] != null) _self.json[q["dir"]][q["edge"]] = [q["node"]];
 	}
     };
     
@@ -372,7 +400,7 @@ function Node(dict){
 	}
 	console.log("dict",JSON.stringify(this.dict));
 	this.frontends.push([new ContentDiv(this,this.contentDiv,this.dict["content"]),function(s){ _self.json["content"] = s; }]);
-	this.frontends.push([new NameDiv(this,this.nameDiv,dict["name"]),function(s){ _self.json["name"] = s; }]);
+	this.frontends.push([new NameDiv(this,this.nameDiv,this.dict["name"]),function(s){ _self.json["name"] = s; }]);
     }
     
     this.editDone = function (){
@@ -408,12 +436,77 @@ function ContentDiv(node,parentDiv,content){
     });
 }
 
-function NameDiv(node,parentDiv,content){
-    this.div = $("<div />",{id:node.name+"_name_label", class:"nodeBox", text:node.dict["name"], click: function(e){ alert("U FOWND THA SEKRIT"); }}).appendTo(parentDiv);
+function NameDiv(node,parentDiv,name){
+
+    this.div = $("<div />").appendTo(parentDiv);
+    
     this.content =  function() {
-	return this.div.text();    
+	return nameEditDiv.content();    
     }
+
+    var state = "display";
+    var nameDisplayDiv = new NameDisplayDiv(node, this);
+    var nameEditDiv = new NameEditDiv(node, this);
+    
+    this.update  = function(name){
+	nameDisplayDiv.update(name);
+	nameEditDiv.update(name);
+    }
+
+    this.swap = function(){
+	if(state == "display"){
+	    state = "input";
+	    nameDisplayDiv.div.detach();
+	    nameEditDiv.div.prependTo(this.div);
+	    nameEditDiv.nameEditInput.focus();
+	}
+	else if(state=="input"){
+	    state = "display";
+	    nameEditDiv.div.detach();
+	    var name = nameEditDiv.content();
+	    nameDisplayDiv.update(name);
+	    nameDisplayDiv.div.prependTo(this.div);
+	}
+    }
+
+    console.log("making name div", name);
+    this.update(name);
 }
+
+function NameDisplayDiv(node, nameDiv){
+    this.nameDiv = nameDiv;
+    this.node = node;
+    this.div = $("<div />",{class:"nodeBox"}).appendTo(nameDiv.div).click(function(e) {nameDiv.swap()});
+    
+    this.update = function(name){
+	$(this.div).text(name);
+    }
+    
+}
+
+function NameEditDiv(node, nameDiv){
+    this.nameDiv = nameDiv;
+    this.node = node;
+    this.div = $("<div />");
+    this.nameEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
+	if(e.keyCode == 13){	    
+	    nameDiv.swap();
+	    node.synchronize();
+	}
+    });
+    
+    this.update = function(name){
+	this.nameEditInput.val(name);
+    }
+
+    this.content = function() {
+	console.log("Say my name, say my name", this.nameEditInput.val());
+	return this.nameEditInput.val();
+    }
+												     
+}
+
+
 
 function EdgeDiv(node,parentDiv,edgeName,nodeList){
     this.div = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',parentDiv));
@@ -622,6 +715,32 @@ Editing (frontend done):
 
 Content editing: 
 
-When double-click on content area, put editor into lightbox.  Otherwise, all nodes currently displayed are editable
+DONE: When double-click on content area, put editor into lightbox.  Otherwise, all nodes currently displayed are editable
+
+TODO 2014-04-21:
+- Add node (done)
+- Autocomplete on edges
+- MathJax it
+- has *:A should replace A in search
+- Down on last edge should create a new edge
+- search by content
+- search by timestamp
+- display timestamp of last edit
+- save timestamp of last edit
+- Delete nodes
+- Make adding an edge to a non-existent node create that node
+In the search div: 
+- Control-clicking a node adds the node to the search bar
+- Clicking a node makes that the current node
+- Clicking an edge should bring up all nodes targeted by that erge name, but not modify the search terms
+- Control-clicking an edge should add the dual of the edge to the search bar
+- Double-clicking an edge should edit it
+- Double-clicking the node name should 
+- Clicking the activate button should add to the active node list
+In the active nodes div: 
+- Clicking a node adds to the active-node list
+- Ctrl-clicking a node or edge adds it to the search in the search div as before
+- Clicking "deactivate" removes from the active list
+- Double-clicking anything should cause an edit
 
 */

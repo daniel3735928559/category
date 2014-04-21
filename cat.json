@@ -1,6 +1,6 @@
 {
    "_id": "_design/cat",
-   "_rev": "10-9a9f48eea11c91bb2e11c4d87b49ea29",
+   "_rev": "13-636b681752ab0e4da04d3cff8c9f7d00",
    "language": "javascript",
    "views": {
        "SourceOrTarget": {
@@ -13,13 +13,16 @@
            "map": "function(doc) {\n  if(doc.type == \"edge\"){\n    emit(doc.dir + \" \" + doc.name + \": \" + doc.target,doc.source);\n    emit((doc.dir == \"has\" ? \"isof\" : \"has\") + \" \" + doc.name + \": \" + doc.source,doc.target);\n  }\n}"
        },
        "AconnB": {
-           "map": "function(doc) {\n  if(doc.type == \"edge\"){\n    emit(doc.source + \";\" + doc.target,doc.source);\n    emit(doc.target + \";\" + doc.source,doc.target);\n  }\n}"
+           "map": "function(doc) {\n  if(doc.type == \"edge\"){\n    emit(doc.source + \";\" + doc.target,doc.source);\n    emit(doc.target + \";\" + doc.source,doc.target);\n  }\n  else if(doc.type == \"node\"){\n    emit(doc.name+\";\"+doc.name,doc.name);\n  }\n}"
        },
        "connB": {
            "map": "function(doc) {\n  if(doc.type == \"edge\"){\n    emit(doc.target,doc.source);\n    emit(doc.source,doc.target);\n  }\n  else if(doc.type == \"node\"){\n    emit(doc.name,doc.name);\n  }\n}"
        },
        "NodeNames": {
            "map": "function(doc) {\n  if(doc.type == \"node\"){\n    emit(doc.name);\n  }\n}"
+       },
+       "auto": {
+           "map": "function(doc) {\n\tif(doc.type==\"node\"){\n  \t\temit(doc.name);\n\t}\t\n}"
        }
    }
 }
