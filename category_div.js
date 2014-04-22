@@ -1,4 +1,4 @@
-var theDB = "test";
+var theDB = "test1";
 var currentNode = null;
 var tagBoxID = 0;
 var has1 = new Node(1, "has1", 0,[],[]);
@@ -33,6 +33,11 @@ function couchError(status){
     console.log('error',status);
 }
 
+function appendToActiveView(data){
+    console.log('app',JSON.stringify(data));
+    (new Node(data)).div.appendTo($("#activeNodes"));
+}
+
 function appendToView(data){
     console.log('app',JSON.stringify(data));
     (new Node(data)).div.appendTo($("#nodes"));
@@ -59,8 +64,13 @@ window.onload = function(){
     new TagBox("Mickies");
     
     $("#addNode").click(function(e){
-	appendToView({"name":"", "content":"", "type":"node", "timestamp":timestamp()});
+	appendToActiveView({"name":"", "content":"", "type":"node", "timestamp":timestamp()});
     });
+    $("#activateSearch").click(function(e){
+	console.log($("#searchArea").css("display"));
+	($("#searchArea").css("display")=="block") ? $("#searchArea").css("display","none") : $("#searchArea").css("display","block");
+    });
+
 }
 
 function recvQueryData(data){
@@ -84,25 +94,70 @@ function sendQuery(){
     sendQueryHelper(TagManager.getQueryList(),0,null,recvQueryData);
 }
 
-function sendQueryHelper(queries,index,result,success){
-    console.log("QS",JSON.stringify(queries));
-    if(index == 0){
-	var view = (queries[index]["dir"] == null ? "connB" : "relB");
-	var nextKeys = (queries[index]["dir"] == null ? 
-			[queries[index]["node"]] : 
-			[queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]]);
-    }
-    else{
-	var view = (queries[index]["dir"] == null ? "AconnB" : "ArelB");
-	var nextKeys = []
-	if(queries[index]["dir"] == null)
-	    for(var r in result)
-		nextKeys.push(result[r]["value"] + ";" + queries[index]["node"]);
-	else
-	    for(var r in result)
-		nextKeys.push(result[r]["value"] + " " + queries[index]["dir"] + " " + queries[index]["edge"]+": "+queries[index]["node"]);
+/*
+Query: type = node,content,time,edge
+Notation: 
+node: 
+      name: node_name
+      node: node_name
+content: 
+      content: content string
+      text: content string
+time: 
+      time: time specifier
+      time specifier (ISO)
+edge: 
+      has edgename: target
+      is edgeame of: target
+conn: 
+      conn: target
+      target
+*/
 
+function sendQueryHelper(queries,index,result,success){
+    console.log(JSON.stringify(queries));
+    var q = queries[index];
+    var queryViews = {"edge":{"first":"relB","view":"ArelB","genKeys":function(q,res){
+	var keys = [];
+	if(res)
+	    for(var r in res)
+		keys.push(res[r]["value"] + " " + q["dir"] + " " + q["edge"]+": "+q["node"]);
+	else
+	    keys.push(q["dir"] + " " + q["edge"]+": "+q["node"]);
+	return keys;
     }
+			     },
+		      "node":{"first":"NodeName","view":"NodeName","genKeys":function(q,res){
+			  return [q["name"]]
+		      }
+			     },
+		      "content":{"first":"hasContent","view":"AhasContent","genKeys":function(q,res){
+			  var keys = q["text"].toLowerCase().replace(/[^a-z $]/g,"").split(" ");
+			  if(res){
+			      var ans = []
+			      for(var r in res)
+				  for(var i in keys) ans.push(res[r]["value"] + ";" + keys[i]);
+			      return ans;
+			  }
+			  return keys;
+		      }
+				},
+		      "time":{"first":"time","view":"Atime","genKeys":function(q,res){return [];}},
+		      "conn":{"first":"connB","view":"AconnB","genKeys":function(q,res){
+			  var keys = [];
+			  if(res)
+			      for(var r in result)
+				  keys.push(res[r]["value"] + ";" + q["node"]);
+			  else
+			      keys = [q["node"]]
+			  return keys;
+		      }}}
+
+    console.log("QS",JSON.stringify(queries));
+    var view = "";
+    if(index == 0) view = queryViews[q["type"]]["first"];
+    else view = queryViews[q["type"]]["view"];
+    var nextKeys = queryViews[q["type"]]["genKeys"](q,result);
     console.log("SQ",JSON.stringify(queries),index,view,JSON.stringify(nextKeys));
     $.couch.db(theDB).view("cat/"+view, {
 	success: function(data) {
@@ -122,6 +177,7 @@ function sendQueryHelper(queries,index,result,success){
 
 
 function autocomplete(req,add){
+    return;
     var suggestions = [];
     //Generate the view and keys
     var query = TagManager.getQuery(req.term)[0];					    
@@ -147,8 +203,6 @@ function autocomplete(req,add){
 	endkey:key+"\ufff0"
     });
 } 
-			   
-    
 
 function TagBox(text){
     this.state = 'input';
@@ -214,32 +268,27 @@ TagManager.dualize  = function(s){
 
 TagManager.getQuery = function(s){
     //Returns target of the text
-    var match = null;
-    var dir = null;
     if(s.indexOf("has ") == 0){
-	dir = "has";
-	match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
+	var match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
+	if(match)
+	    return {"type":"edge","dir":"has","edge":match[1],"node":match[2]};
+    }
+    else if(s.indexOf("name:") ==0 || s.indexOf("node: ") ==0){
+	match = s.match(/[^:]*: *([.,-a-zA-Z0-9_ ]+)/i);
+	if(match)
+	    return {"type":"node","name":match[1]};
+    }
+    else if(s.indexOf("content:") == 0|| s.indexOf("contains:") == 0 || s.indexOf("text:") == 0){
+	match = s.match(/[^:]*: *([.,-a-zA-Z0-9_ ]+)/i);
+	if(match)
+	    return {"type":"content","text":match[1]};
     }
     else{
-	dir = "isof";
-	match = s.match(/is ([.,-a-zA-Z0-9_ ]+) of: *([.,-a-zA-Z0-9_ ]+)/i);
+	var match = s.match(/is ([.,-a-zA-Z0-9_ ]+) of: *([.,-a-zA-Z0-9_ ]+)/i);
+	if(match)
+	    return {"type":"edge","dir":"isof","edge":match[1],"node":match[2]};
     }
-    if(match == null){
-	var dir = null;
-	var edge = null;
-	var node = s;
-    }
-    else{
-	var edge = match[1];
-	var node = match[2];
-    }
-    var ans = []
-    var nodes = node.split(",");
-    for(var n in nodes){
-	ans.push({"dir":dir,"edge":edge,"node":nodes[n]});
-    }
-    return ans;
-}
+ }
 
 TagManager.getQueryList = function(){
     var ans = [];
@@ -311,6 +360,24 @@ function Node(dict,active){
     this.json = {};
     this.frontends = [];
     
+
+    this.deleteNode = function() {
+	//Remove edges. Fixes synchronization issues.
+	if(!("_id" in _self.dict)){
+	    _self.div.detach();
+	}
+	
+	/*for(var row in data["rows"])
+	    ids.push({"_id":data["rows"][row]["value"]["_id"],"_rev":data["rows"][row]["value"]["_rev"]});
+	//Remove self
+	ids.push({"_id":_self.dict["_id"],"_rev":_self.dict["_rev"]});
+	console.log("ids",JSON.stringify(ids));
+	$.couch.db(theDB).bulkRemove({"docs":ids},{success:function(data){
+	}});*/
+    }
+    
+
+
     //Synchronize the JSON object with the UI
     this.synchronize = function (){
 	_self.json["has"] = {}; _self.json["isof"] = {};
@@ -427,7 +494,27 @@ function Node(dict,active){
 
     this.activateDiv = $("<div />",{class:"activationButton",text:"[!]",click:function(e){_self.activate();}})
     this.deactivateDiv = $("<div />",{class:"activationButton",text:"[x]",click:function(e){_self.deactivate();}});
+    this.dialog  = $("<div/>").dialog({
+	    autoOpen: false
+	});
 
+    this.DeleteDiv = $("<div />",{class:"activationButton",text:"[D]",click:function(e){	
+	console.log("launched delete dialogue");
+
+	_self.dialog.dialog('option', 'buttons', {
+	    "Confirm": function () {
+		_self.deleteNode();
+		_self.dialog.dialog("close");	
+	    },
+	    "Cancel": function () {
+		_self.dialog.dialog("close");
+	    }
+	});
+	
+	_self.dialog.dialog("open");
+
+    }}).appendTo(this.div);
+    
     if(active)
 	this.deactivateDiv.prependTo(this.nameDiv);
     else
@@ -512,7 +599,7 @@ function ContentDiv(node,parentDiv,content){
 	_self.renderedDiv.prependTo(parentDiv);
 	_self.renderedDiv.focus();
     }
-    this.div.blur(function(e){ _self.LaTeXRender(); });
+    this.div.blur(function(e){ _self.LaTeXRender(); node.synchronize()});
     this.div.keyup(function (e) {
 	console.log("key pressed in content area",e.keyCode);
 	if(e.keyCode == 27)
@@ -718,7 +805,24 @@ function EdgeEditDiv(node, edgeDiv) {
     }
 
     this.content = function(){
-	return TagManager.getQuery(this.edgeEditInput.val());
+	var input = this.edgeEditInput.val();
+	var dir = null; var match = null;
+	if(input.indexOf("has") == 0){
+	    dir = "has";
+	    match  = input.match(/has [a-zA-Z -_]+ *: *[a-zA-Z -_,]+/i)
+	} else{
+	    dir = "isof";
+	    match  = input.match(/is [a-zA-Z -_]+ *of *: *[a-zA-Z -_,]+/i)
+	}
+	if(match == null){
+	    this.edgeInputDiv.css("border","1px red solid");
+	    return;
+	}
+	var ans = []
+	var nodes = match[2].split(",");
+	for(var n in nodes)
+    	    ans.push({"dir":dir,"edge":match[1],"node":nodes[n]});
+	return ans;
     }
 
 }

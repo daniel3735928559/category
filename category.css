@@ -1,3 +1,16 @@
+
+#searchArea{
+    display:none;
+    border: 2px black solid;
+    overflow: auto;
+    position: fixed;
+    top: 10%;
+    left:0%;
+    width: 100%;
+    height: 90%;
+    background: #FFF;
+}
+
 #search{
     height:15%;
     margin: 15px 50px;
