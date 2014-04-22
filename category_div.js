@@ -3,6 +3,7 @@ var currentNode = null;
 var tagBoxID = 0;
 var has1 = new Node(1, "has1", 0,[],[]);
 var root = new Node(0, "root", 0, {'foo':[has1]}, []);
+var currentQuery = null;
 
 var nodes = {}
 var tagBoxList = [];
@@ -60,7 +61,7 @@ window.onload = function(){
 
     console.log("cn",JSON.stringify(currentNode));
     $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'[+]',click:function(e){new TagBox('');}}).appendTo("#search");
-    $("<div />",{id:'tagBoxPlus',style:"display:inline-block",text:'[search]',click:function(e){sendQuery();}}).appendTo("#search");
+    $("<div />",{id:'tagBoxPlus',style:"display:inline-block",text:'[search]',click:function(e){sendSearchQuery();}}).appendTo("#search");
     new TagBox("Mickies");
     
     $("#addNode").click(function(e){
@@ -73,7 +74,7 @@ window.onload = function(){
 
 }
 
-function recvQueryData(data){
+function recvQueryData(data,successFn){
     console.log("res",JSON.stringify(data));
     var uniqNames = []
     for(var d in data) if(uniqNames.indexOf(data[d]["value"]) < 0) uniqNames.push(data[d]["value"]);
@@ -81,7 +82,7 @@ function recvQueryData(data){
     $.couch.db(theDB).view("cat/NodeNames", {
 	success: function(data) {
 	    console.log("FINAL DATA",JSON.stringify(data));
-	    for(var i in data["rows"]) $.couch.db(theDB).openDoc(data["rows"][i]["id"],{success:appendToView, error:couchError});
+	    for(var i in data["rows"]) $.couch.db(theDB).openDoc(data["rows"][i]["id"],{success:successFn, error:couchError});
 	},
 	keys: uniqNames,
 	error: couchError,
@@ -89,9 +90,19 @@ function recvQueryData(data){
     });
 }
 
-function sendQuery(){
+function sendSearchQuery(){
+    console.log(JSON.stringify(TagManager.getQueryList()));
+    sendQuery(TagManager.getQueryList(),appendToView);
+}
+
+function sendCurrentQuery(){
+    console.log(JSON.stringify(TagManager.getQueryList()));
+    sendQuery(currentQuery,appendToView);
+}
+
+function sendQuery(queries,successFn){
     $("#nodes").children().remove();
-    sendQueryHelper(TagManager.getQueryList(),0,null,recvQueryData);
+    sendQueryHelper(queries,0,null,recvQueryData,successFn);
 }
 
 /*
@@ -114,7 +125,7 @@ conn:
       target
 */
 
-function sendQueryHelper(queries,index,result,success){
+function sendQueryHelper(queries,index,result,success,successSuccessFn){
     console.log(JSON.stringify(queries));
     var q = queries[index];
     var queryViews = {"edge":{"first":"relB","view":"ArelB","genKeys":function(q,res){
@@ -127,7 +138,7 @@ function sendQueryHelper(queries,index,result,success){
 	return keys;
     }
 			     },
-		      "node":{"first":"NodeName","view":"NodeName","genKeys":function(q,res){
+		      "node":{"first":"NodeNames","view":"NodeNames","genKeys":function(q,res){
 			  return [q["name"]]
 		      }
 			     },
@@ -153,6 +164,7 @@ function sendQueryHelper(queries,index,result,success){
 			  return keys;
 		      }}}
 
+    console.log("QQQQQQQQQQ",JSON.stringify(q));
     console.log("QS",JSON.stringify(queries));
     var view = "";
     if(index == 0) view = queryViews[q["type"]]["first"];
@@ -167,7 +179,7 @@ function sendQueryHelper(queries,index,result,success){
 	    for(var d in data["rows"])
 		res.push(data["rows"][d])
 	    if(index+1 < queries.length) sendQueryHelper(queries,index+1,res,success);
-	    else success(res)
+	    else success(res,successSuccessFn)
 	},
 	keys: nextKeys,
 	error: couchError,
@@ -268,6 +280,7 @@ TagManager.dualize  = function(s){
 
 TagManager.getQuery = function(s){
     //Returns target of the text
+    console.log("SSSSSSSSSSS",s);
     if(s.indexOf("has ") == 0){
 	var match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
 	if(match)
@@ -283,10 +296,13 @@ TagManager.getQuery = function(s){
 	if(match)
 	    return {"type":"content","text":match[1]};
     }
-    else{
+    else if(s.indexOf("is ") == 0 && s.indexOf("of:") > 0){
 	var match = s.match(/is ([.,-a-zA-Z0-9_ ]+) of: *([.,-a-zA-Z0-9_ ]+)/i);
 	if(match)
 	    return {"type":"edge","dir":"isof","edge":match[1],"node":match[2]};
+    }
+    else{
+	return {"type":"conn","node":s};
     }
  }
 
@@ -301,7 +317,7 @@ TagManager.getQueryList = function(){
 }
 
 TagManager.add = function(s){
-    var q_s = TagManager.getQuery(s)[0];
+    var q_s = s;
     for(var i=tagBoxList.length-1; i>=0; i--){
 	var t = tagBoxList[i]; 
 	
@@ -310,7 +326,7 @@ TagManager.add = function(s){
 	console.log(t.text);
 	console.log("q_t " + q_t['node']);
 	console.log("q_s "+ q_s['node']);
-	if(s == t.text){
+	if(q_s == t.text){
 	    return;
 	} else if(q_t['node'] == q_s['node'] && q_t['dir'] == null && q_t['edge']==null){
 	    console.log("q_t "+q_t['node']+ " q_s "+q_s['node']);
@@ -319,9 +335,18 @@ TagManager.add = function(s){
 	}	
 	//If we find this node already here, get out of dodge
     }
-    var tagBox = new TagBox(s);
+    var tagBox = new TagBox(queryString(q_s));
     tagBox.toggleState('tag');
-    sendQuery();
+}
+
+function queryString(q){
+    if(q["type"] == "edge"){
+	if(q["dir"] == "has") return "has " + q["edge"] + ": " + q["node"];
+	else return "is " + q["edge"] +  " of: " + q["node"];
+    }
+    else if(q["type"] == "content") return "content: " + q["text"]
+    else if(q["type"] == "node") return "node: " + q["name"]
+    else if(q["type"] == "conn") return q["node"]
 }
 
 /*	
@@ -329,8 +354,7 @@ TagManager.add = function(s){
 
 function Node(dict,active){
     var _self = this;
-    this.active = active;
-    if(active) this.active = true
+    (!active) ? this.active = false : this.active = true;
     this.name  = dict["name"];
     this.timestamp = dict["timestamp"];
     this.content = dict["content"]
@@ -363,17 +387,34 @@ function Node(dict,active){
 
     this.deleteNode = function() {
 	//Remove edges. Fixes synchronization issues.
+	_self.div.detach();
 	if(!("_id" in _self.dict)){
-	    _self.div.detach();
+	    return;
 	}
 	
-	/*for(var row in data["rows"])
+	$.couch.db(theDB).view("cat/SourceOrTarget", {
+	    success: function(data) {
+		//Add node to the list of things that should be deleted.
+		data["rows"].push({"value":{"_id":_self.dict["_id"], "_rev":_self.dict["_rev"]}});
+		sourceOrTargetCB(data,function(){return;});
+	    },
+	    key: this.name,
+	    error: couchError,
+	    reduce: false
+	});
+
+	
+    }
+    
+    var sourceOrTargetCB = function(data,cb){
+	var ids = [];
+	console.log("REVREV",JSON.stringify(data));
+	for(var row in data["rows"])
 	    ids.push({"_id":data["rows"][row]["value"]["_id"],"_rev":data["rows"][row]["value"]["_rev"]});
-	//Remove self
-	ids.push({"_id":_self.dict["_id"],"_rev":_self.dict["_rev"]});
 	console.log("ids",JSON.stringify(ids));
-	$.couch.db(theDB).bulkRemove({"docs":ids},{success:function(data){
-	}});*/
+	    $.couch.db(theDB).bulkRemove({"docs":ids},{success:function(data){
+		cb();
+	    }});
     }
     
 
@@ -392,20 +433,11 @@ function Node(dict,active){
 
 	//Remove edges. Fixes synchronization issues.
 	console.log("sinky");
-	var sourceOrTargetCB = function(data,cb){
-	    var ids = [];
-	    console.log("REVREV",JSON.stringify(data));
-	    for(var row in data["rows"])
-		ids.push({"_id":data["rows"][row]["value"]["_id"],"_rev":data["rows"][row]["value"]["_rev"]});
-	    console.log("ids",JSON.stringify(ids));
-	    $.couch.db(theDB).bulkRemove({"docs":ids},{success:function(data){
-		cb();
-	    }});
-	}
 
 	var addEdges = function(){	    
 	    _self.dict["content"] = _self.json["content"];
 	    _self.dict["name"] = _self.json["name"];
+	    _self.dict["timestamp"] = timestamp();
 	    console.log("what's my name", _self.json["name"]);
 	    // Save the node document
 	    $.couch.db(theDB).saveDoc(_self.dict, { 
@@ -444,7 +476,13 @@ function Node(dict,active){
 		    $.couch.db(theDB).bulkSave({"docs":newNodes}, {
 			success:function(data){
 			    console.log("SAVED",JSON.stringify(data));
-			    sendQuery();
+			    console.log("ED",JSON.stringify(edgeDocs),JSON.stringify(_self.json));
+			    $.couch.db(theDB).bulkSave({"docs":edgeDocs}, {
+				success:function(data){
+				    console.log("SAVED",JSON.stringify(data));
+				    sendSearchQuery();
+				}
+			    });
 			}
 		    });
 		    
@@ -452,13 +490,6 @@ function Node(dict,active){
 		keys: targets,
 		error: couchError,
 		reduce: false
-	    });
-	    console.log("ED",JSON.stringify(edgeDocs),JSON.stringify(_self.json));
-	    $.couch.db(theDB).bulkSave({"docs":edgeDocs}, {
-		success:function(data){
-		    console.log("SAVED",JSON.stringify(data));
-		    sendQuery();
-		}
 	    });
 	}
 	
@@ -474,6 +505,7 @@ function Node(dict,active){
 
 
     this.activate = function(){
+	_self.active = true;
 	_self.div.detach();
 	_self.activateDiv.detach();
 	_self.deactivateDiv.prependTo(_self.nameDiv);
@@ -481,6 +513,7 @@ function Node(dict,active){
     }
     
     this.deactivate = function(){
+	_self.active = false;
 	_self.div.detach();
 	_self.deactivateDiv.detach();
 	_self.activateDiv.prependTo(_self.nameDiv);
@@ -726,7 +759,7 @@ function EdgeDiv(node,parentDiv,edgeName,nodeList){
 }
 
 function EdgeDisplayDiv(node,edgeDiv){
-    
+    var _self = this;
     this.edgeDiv = edgeDiv;
     this.node = node;
     this.div = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv.div);
@@ -734,17 +767,58 @@ function EdgeDisplayDiv(node,edgeDiv){
     this.update = function(s,edgeList){
 	$(this.div).empty();
 
-	var text = this.node.name;
+	var text = this.node.dict["name"];
 	$("<div />",{class:"edgeTitle",text:s}).appendTo(this.div).click(function(e){
 	    //What happens when you click on the title
-	    TagManager.add(TagManager.dualize(s+ ": "+text+ " "+text));
+
+	    var edge = _self.edgeDiv.content()[0]
+	    var dual = edge;
+	    dual["dir"] = dual["dir"] == "has" ? "isof" : "has";
+	    console.log(JSON.stringify(node));
+	    dual["node"] = _self.node.dict["name"];
+		
+	    if(e.ctrlKey){
+		console.log("OUTTA CTRL",dual);
+		TagManager.add(dual);
+		sendSearchQuery();
+	    }	
+	    else if(e.altKey){
+		edgeDiv.swap();
+	    }
+	    else{
+		if(_self.node.active){
+		    
+		}
+		else{
+		    console.log("CQCQCQ");
+		    currentQuery = [dual];
+		    sendCurrentQuery();
+		}
+	    }
 	});
 	
 	for(var node in edgeList){
 	    console.log("node: "+s);
-	    $("<div />",{id:edgeList[node], class:"nodeBox", text:edgeList[node]}).appendTo(this.div).click(function(e) {
-		TagManager.add($(this).text());
+	    var nodeBox = $("<div />",{id:edgeList[node], class:"nodeBox", text:edgeList[node]});
+	    nodeBox.appendTo(this.div);
+	    nodeBox.click(function(e) {
+		if(e.ctrlKey)
+		    TagManager.add({"type":"conn","node":$(this).text()});
+		if(e.altKey)
+		    edgeDiv.swap();
+		else{
+		    console.log("AAAAAAAAAAAAAACCCCCCCCVVVVVEE",_self.node.active,_self.node.dict["name"]);
+		    if(_self.node.active){
+			sendQuery([{"type":"node","name":$(this).text()}],appendToActiveView);
+		    }
+		    else{
+			currentQuery = [{"type":"node","name":$(this).text()}];
+			sendCurrentQuery();
+		    }
+		}
 	    });
+	    nodeBox.dblclick(function(e) {edgeDiv.swap();});
+	    
 	}
 
 	var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(this.div).click(function(e){
@@ -759,7 +833,7 @@ function EdgeEditDiv(node, edgeDiv) {
     this.edgeDiv = edgeDiv;
     this.div = $("<div />",{class:"edgeBox"});  
     this.edgeEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
-	if(e.keyCode == 13){	    
+	if(e.keyCode == 13){
 	    edgeDiv.swap();
 	    node.synchronize();
 	}
@@ -806,13 +880,14 @@ function EdgeEditDiv(node, edgeDiv) {
 
     this.content = function(){
 	var input = this.edgeEditInput.val();
+	console.log("INININININ",input);
 	var dir = null; var match = null;
 	if(input.indexOf("has") == 0){
 	    dir = "has";
-	    match  = input.match(/has [a-zA-Z -_]+ *: *[a-zA-Z -_,]+/i)
+	    match  = input.match(/has ([a-zA-Z -_]+) *: *([a-zA-Z -_,]+)/i)
 	} else{
 	    dir = "isof";
-	    match  = input.match(/is [a-zA-Z -_]+ *of *: *[a-zA-Z -_,]+/i)
+	    match  = input.match(/is ([a-zA-Z -_]+) of *: *([a-zA-Z -_,]+)/i)
 	}
 	if(match == null){
 	    this.edgeInputDiv.css("border","1px red solid");
@@ -821,7 +896,8 @@ function EdgeEditDiv(node, edgeDiv) {
 	var ans = []
 	var nodes = match[2].split(",");
 	for(var n in nodes)
-    	    ans.push({"dir":dir,"edge":match[1],"node":nodes[n]});
+    	    ans.push({"type":"edge","dir":dir,"edge":match[1],"node":nodes[n]});
+	console.log("ANS IN MY PANTS",JSON.stringify(ans));
 	return ans;
     }
 
@@ -913,27 +989,28 @@ TODO 2014-04-21:
 - (DONE) Add node
 - Autocomplete on edges
 - (DONE) MathJax it
-- has *:A should replace A in search
+- (DONE) has *:A should replace A in search
 - (DONE) Down on last edge should create a new edge
-- search by content
+- (DONE) search by node name
+- (DONE) search by content
 - search by timestamp
 - (DONE) display timestamp of last edit
 - (DONE) save timestamp of last edit
-- Delete nodes
+- (DONE) Delete nodes
 - (DONE) Make adding an edge to a non-existent node create that node
 - (DONE) Have active nodes and search result nodes
 In the search div: 
-- Control-clicking a node adds the node to the search bar
-- Clicking a node makes that the current node
-- Clicking an edge should bring up all nodes targeted by that erge name, but not modify the search terms
-- Control-clicking an edge should add the dual of the edge to the search bar
-- Double-clicking an edge should edit it
-- Double-clicking the node name should edit it
+- (DONE) Control-clicking a node adds the node to the search bar
+- (DONE) Clicking a node makes that the current node
+- (DONE) Clicking an edge should bring up all nodes targeted by that erge name, but not modify the search terms
+- (DONE) Control-clicking an edge should add the dual of the edge to the search bar
+- (DONE) Alt-clicking an edge should edit it
+- (DONE) Alt-clicking the node name should edit it
 - (DONE) Clicking the activate button should add to the active node list
 In the active nodes div: 
-- Clicking a node adds to the active-node list
-- Ctrl-clicking a node or edge adds it to the search in the search div as before
+- (DONE) Clicking a node adds to the active-node list
+- (DONE) Ctrl-clicking a node or edge adds it to the search in the search div as before
 - (DONE) Clicking "deactivate" removes from the active list
-- Double-clicking anything should cause an edit
+- (DONE) Alt-clicking anything should cause an edit
 
 */
