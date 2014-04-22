@@ -1,4 +1,4 @@
-var theDB = "test1";
+var theDB = "test";
 var currentNode = null;
 var tagBoxID = 0;
 var has1 = new Node(1, "has1", 0,[],[]);
@@ -7,6 +7,17 @@ var root = new Node(0, "root", 0, {'foo':[has1]}, []);
 var nodes = {}
 var tagBoxList = [];
 $.couch.urlPrefix = "http://localhost:11111/db";
+
+function timestamp(){
+    var currentdate = new Date(); 
+    return currentdate.getFullYear() + "-" 
+        + (currentdate.getMonth()+1)  + "-" 
+	+ currentdate.getDate() + " "
+        + currentdate.getHours() + ":"  
+        + currentdate.getMinutes() + ":" 
+        + currentdate.getSeconds();
+    
+}
 
 function clone(o) {
     var newObj = (o instanceof Array) ? [] : {};
@@ -48,7 +59,7 @@ window.onload = function(){
     new TagBox("Mickies");
     
     $("#addNode").click(function(e){
-	appendToView({"name":"", "content":"", "type":"node"});
+	appendToView({"name":"", "content":"", "type":"node", "timestamp":timestamp()});
     });
 }
 
@@ -267,7 +278,7 @@ TagManager.add = function(s){
 /*	
 */
 
-function Node(dict){
+function Node(dict,active){
     var _self = this;
     this.name  = dict["name"];
     this.timestamp = dict["timestamp"];
@@ -304,7 +315,7 @@ function Node(dict){
 	if("_id" in dict && "_rev" in dict){
 	    _self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
 	}
-	console.log("FRONTENDS",JSON.stringify(_self.frontends));
+	//console.log("FRONTENDS",JSON.stringify(_self.frontends));
 	for(var f in _self.frontends){
 	    console.log("fe", _self.frontends[f][0].content());
 	    _self.frontends[f][1](_self.frontends[f][0].content());
@@ -339,13 +350,40 @@ function Node(dict){
 
 	    var dirs = ["has","isof"];
 	    var edgeDocs = [];
+	    var targets = [];
 	    for(var dir in dirs)
 	    {
 		dir = dirs[dir];
 		for(var edge in _self.json[dir])
-		    for( node in _self.json[dir][edge])
+		    for( node in _self.json[dir][edge]){
 			edgeDocs.push({"source":_self.json["name"],"target":_self.json[dir][edge][node], "name":edge, "dir":dir, "type":"edge"})
+			targets.push(_self.json[dir][edge][node]);
+		    }
 	    }
+	    $.couch.db(theDB).view("cat/NodeNames", {
+		success: function(data) {
+		    console.log("FINAL DATA",JSON.stringify(data));
+		    for(var i in data["rows"]){
+			var idx = targets.indexOf(data["rows"][i]["key"]);
+			targets.splice(idx,1);
+		    }
+		    console.log("NEW",JSON.stringify(targets));
+		    var newNodes = [];
+		    for(var i in targets)
+			newNodes.push({"name":targets[i],"timestamp":timestamp(),"type":"node"})
+		    console.log("NEW",JSON.stringify(newNodes));
+		    $.couch.db(theDB).bulkSave({"docs":newNodes}, {
+			success:function(data){
+			    console.log("SAVED",JSON.stringify(data));
+			    sendQuery();
+			}
+		    });
+		    
+		},
+		keys: targets,
+		error: couchError,
+		reduce: false
+	    });
 	    console.log("ED",JSON.stringify(edgeDocs),JSON.stringify(_self.json));
 	    $.couch.db(theDB).bulkSave({"docs":edgeDocs}, {
 		success:function(data){
@@ -364,11 +402,34 @@ function Node(dict){
 	    reduce: false
 	});
     }
+
+
+    this.activate = function(){
+	_self.div.detach();
+	_self.activateDiv.detach();
+	_self.deactivateDiv.prependTo(_self.nameDiv);
+	_self.div.appendTo("#activeNodes");
+    }
+    
+    this.deactivate = function(){
+	_self.div.detach();
+	_self.deactivateDiv.detach();
+	_self.activateDiv.prependTo(_self.nameDiv);
+	_self.div.appendTo("#nodes");
+    }
     
     this.div = $("<div />",{id:this.name, class:"node"});
     this.nameDiv = $("<div />",{id:this.name+"_name", class:"name"}).appendTo(this.div);
     this.edgesDiv = $("<div />",{id:this.name+"_edges", class:"edges"}).appendTo(this.div);
     this.contentDiv = $("<div />",{id:this.name+"_content", class:"content"}).appendTo(this.div);
+
+    this.activateDiv = $("<div />",{class:"activationButton",text:"[!]",click:function(e){_self.activate();}})
+    this.deactivateDiv = $("<div />",{class:"activationButton",text:"[x]",click:function(e){_self.deactivate();}});
+
+    if(active)
+	this.deactivateDiv.prependTo(this.nameDiv);
+    else
+	this.activateDiv.prependTo(this.nameDiv);
 
     // Name div stuff: 
     
@@ -399,7 +460,7 @@ function Node(dict){
 	    this.frontends.push([new EdgeDiv(this,this.edgesDiv,'is ' + n + ' of',this.isof[n]),this.addEdge]);
 	}
 	console.log("dict",JSON.stringify(this.dict));
-	this.frontends.push([new ContentDiv(this,this.contentDiv,this.dict["content"]),function(s){ _self.json["content"] = s; }]);
+	this.frontends.push([new ContentDiv(this,this.contentDiv,this.dict["content"]),function(s){ _self.json["content"] = s; _self.json["timestamp"] = _self.timestamp; }]);
 	this.frontends.push([new NameDiv(this,this.nameDiv,this.dict["name"]),function(s){ _self.json["name"] = s; }]);
     }
     
@@ -411,34 +472,59 @@ function Node(dict){
 
 function ContentDiv(node,parentDiv,content){
     var _self = this;
+    this.node = node;
     this.style = "contentBoxMin";
     this.div = $("<div />",{class:"contentBoxMin",contenteditable:"true", text:content}).appendTo(parentDiv);
+    this.timestamp = $("<div />",{class:"timestamp", text:"Last Edited: " + node.timestamp}).appendTo(parentDiv);
+    this.renderedDiv = $("<div />",{class:"contentBoxMin", text:content});
+    this.renderedDiv.click(function(e){
+	console.log("reattaching div");
+	_self.renderedDiv.detach()
+	_self.div.prependTo(parentDiv);
+    });
     this.overlay = $("<div />",{class:"overlay"}).appendTo(document.body);
     this.content =  function() {
 	console.log("CONTENT",this.div.text());
 	return this.div.text();
     }
+    this.renderedDiv.keyup(function(e){
+	if(e.keyCode == 27){ _self.lightboxToggle(); }
+    });
+    this.lightboxToggle = function(){
+	if(_self.style == "contentBoxMax"){ 
+	    _self.style = "contentBoxMin"
+	    $(_self.overlay).css("display","none");
+	} else{ 
+	    _self.style = "contentBoxMax";
+	    $(_self.overlay).css("display","block");
+	}
+
+	$(_self.div).attr("class",_self.style);
+	$(_self.renderedDiv).attr("class",_self.style);
+	console.log($(_self.div).attr("class"));
+    }
+    this.LaTeXRender = function(){
+	_self.renderedDiv.text(_self.div.text());
+	_self.div.detach();
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub,_self.renderedDiv.get(0)]);
+	_self.renderedDiv.prependTo(parentDiv);
+	_self.renderedDiv.focus();
+    }
+    //this.div.blur(function(e){ _self.LaTeXRender(); });
     this.div.keyup(function (e) {
 	console.log("key pressed in content area",e.keyCode);
-	if(e.keyCode == 27){
-	    if(_self.style == "contentBoxMax"){ 
-		_self.style = "contentBoxMin"
-		$(_self.overlay).css("display","none");
-	    } else{ 
-		_self.style = "contentBoxMax";
-		$(_self.overlay).css("display","block");
-	    }
-
-	    $(_self.div).attr("class",_self.style);
-	    console.log($(_self.div).attr("class"));
-	}
- 	
+	if(e.keyCode == 27)
+	    _self.LaTeXRender();
+	else if(e.keyCode == 13 && e.ctrlKey)
+	    _self.lightboxToggle();
+ 	_self.node.timestamp = timestamp();
+	_self.timestamp.text("Last edited: "+_self.node.timestamp);
     });
 }
 
 function NameDiv(node,parentDiv,name){
 
-    this.div = $("<div />").appendTo(parentDiv);
+    this.div = $("<div />",{class:"nodeNameContainer"}).appendTo(parentDiv);
     
     this.content =  function() {
 	return nameEditDiv.content();    
@@ -511,7 +597,7 @@ function NameEditDiv(node, nameDiv){
 function EdgeDiv(node,parentDiv,edgeName,nodeList){
     this.div = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',parentDiv));
     var state = "display";
-
+    this.parentDiv = parentDiv;
     var edgeDisplayDiv =  new EdgeDisplayDiv(node,this);
     var edgeEditDiv = new EdgeEditDiv(node, this);
 
@@ -580,7 +666,7 @@ function EdgeDisplayDiv(node,edgeDiv){
 }
 
 function EdgeEditDiv(node, edgeDiv) {
-
+    var _self = this;
     this.edgeDiv = edgeDiv;
     this.div = $("<div />",{class:"edgeBox"});  
     this.edgeEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
@@ -608,7 +694,7 @@ function EdgeEditDiv(node, edgeDiv) {
 	    else if(edgeDiv.div.next('div.edgeBox').size() == 0 && node.editDone()){
 		//console.log("at end",$('div.edgeAdd',that.edgesDiv).size());
 		edgeDiv.swap();
-		$('div.edgeAdd',parentDiv).click();
+		$('div.edgeAdd',_self.edgeDiv.parentDiv).click();
 	    }
 	}
 	else if(e.keyCode == 8 && e.ctrlKey && e.shiftKey){
@@ -718,29 +804,30 @@ Content editing:
 DONE: When double-click on content area, put editor into lightbox.  Otherwise, all nodes currently displayed are editable
 
 TODO 2014-04-21:
-- Add node (done)
+- (DONE) Add node
 - Autocomplete on edges
-- MathJax it
+- (DONE) MathJax it
 - has *:A should replace A in search
-- Down on last edge should create a new edge
+- (DONE) Down on last edge should create a new edge
 - search by content
 - search by timestamp
-- display timestamp of last edit
-- save timestamp of last edit
+- (DONE) display timestamp of last edit
+- (DONE) save timestamp of last edit
 - Delete nodes
-- Make adding an edge to a non-existent node create that node
+- (DONE) Make adding an edge to a non-existent node create that node
+- (DONE) Have active nodes and search result nodes
 In the search div: 
 - Control-clicking a node adds the node to the search bar
 - Clicking a node makes that the current node
 - Clicking an edge should bring up all nodes targeted by that erge name, but not modify the search terms
 - Control-clicking an edge should add the dual of the edge to the search bar
 - Double-clicking an edge should edit it
-- Double-clicking the node name should 
-- Clicking the activate button should add to the active node list
+- Double-clicking the node name should edit it
+- (DONE) Clicking the activate button should add to the active node list
 In the active nodes div: 
 - Clicking a node adds to the active-node list
 - Ctrl-clicking a node or edge adds it to the search in the search div as before
-- Clicking "deactivate" removes from the active list
+- (DONE) Clicking "deactivate" removes from the active list
 - Double-clicking anything should cause an edit
 
 */

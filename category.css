@@ -9,6 +9,22 @@
     margin:auto;
 }
 
+#activeNodes{
+    height:80%
+    width:95%;
+    margin:auto;
+}
+
+.activationButton{
+    display:inline-block;
+}
+
+.activationButton:hover{
+    display:inline-block;
+    cursor:pointer;
+    color:#f33;
+}
+
 
 div.node{
     width:100%;
@@ -75,6 +91,13 @@ div.overlay{
     filter: alpha(opacity=80);
 }
 
+div.timestamp{
+    padding-top:10px;
+    float:left;
+    font-size:.75em;
+    color:#777;
+    font-face:Serif;
+}
 
 div.edgeTitle{
     display:inline-block;
@@ -91,6 +114,10 @@ div.nodeBox{
     background-color:#fa3;
     display:inline-block;
     cursor:pointer;
+}
+
+div.nodeNameContainer{
+    display:inline-block;
 }
 
 div.edgeBox{

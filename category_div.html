@@ -3,12 +3,25 @@
   <head>
     <title>IAMB A NANA</title>
     <link rel="stylesheet" type="text/css" href="category.css">
-    <link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.css">
+    <link rel="stylesheet" type="text/css"
+	  href="jquery-ui-1.10.4.css">
+    <script type="text/x-mathjax-config"> 
+      MathJax.Hub.Config({ 
+      extensions: ["tex2jax.js"], 
+      jax: ["input/TeX","output/HTML-CSS"], 
+      tex2jax: {inlineMath: [["$","$"]]},
+      TeX:{
+      extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+      }
+      }); 
+    </script> 
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
   </head>
     <body>     
  
-      <div id="search" ></div>
+      <div id="activeNodes"></div>
       <div id="addNode">[+]</div> 
+      <div id="search" ></div>
       <div id="nodes"></div>
       
       <script type="text/javascript" src="jquery.js"></script>
