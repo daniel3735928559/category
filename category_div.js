@@ -280,6 +280,8 @@ TagManager.add = function(s){
 
 function Node(dict,active){
     var _self = this;
+    this.active = active;
+    if(active) this.active = true
     this.name  = dict["name"];
     this.timestamp = dict["timestamp"];
     this.content = dict["content"]
@@ -510,7 +512,7 @@ function ContentDiv(node,parentDiv,content){
 	_self.renderedDiv.prependTo(parentDiv);
 	_self.renderedDiv.focus();
     }
-    //this.div.blur(function(e){ _self.LaTeXRender(); });
+    this.div.blur(function(e){ _self.LaTeXRender(); });
     this.div.keyup(function (e) {
 	console.log("key pressed in content area",e.keyCode);
 	if(e.keyCode == 27)
