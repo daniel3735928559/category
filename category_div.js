@@ -36,7 +36,7 @@ function couchError(status){
 
 function appendToActiveView(data){
     console.log('app',JSON.stringify(data));
-    (new Node(data)).div.appendTo($("#activeNodes"));
+    (new Node(data, true)).div.appendTo($("#activeNodes"));
 }
 
 function appendToView(data){
@@ -242,7 +242,7 @@ function TagBox(text){
     var __construct = function (that) {
 	//Construct Input Element	
 	that.inputElement =  $("<input />",{"type":"text","value":that.text,"class":"tagBoxInput"});
-	that.inputElement.keyup(function(e){ console.log("hi"); if(e.keyCode == 13) that.toggleState('tag'); that.text = that.inputElement.val(); })
+	that.inputElement.keyup(function(e){ console.log("hi"); if(e.keyCode == 13) {that.toggleState('tag'); sendSearchQuery();} that.text = that.inputElement.val(); })
 	that.inputElement.autocomplete({source:
 					function(req, add){
 					    autocomplete(req,add);
@@ -362,7 +362,7 @@ function Node(dict,active){
 
     this.dict["has"] = {};
     this.dict["isof"] = {};
-
+    this.syncLock = false;
     $.couch.db(theDB).view("cat/SourceOrTarget", {
 	success: function(data) {
 	    console.log("batman", JSON.stringify(data));
@@ -421,6 +421,11 @@ function Node(dict,active){
 
     //Synchronize the JSON object with the UI
     this.synchronize = function (){
+	if(_self.syncLock==true){
+	    
+	    return;
+	}
+	_self.syncLock = true;
 	_self.json["has"] = {}; _self.json["isof"] = {};
 	if("_id" in dict && "_rev" in dict){
 	    _self.json["_id"] = dict["_id"]; _self.json["_rev"] = dict["_rev"];
@@ -457,10 +462,12 @@ function Node(dict,active){
 		dir = dirs[dir];
 		for(var edge in _self.json[dir])
 		    for( node in _self.json[dir][edge]){
+			console.log("edges",JSON.stringify({"source":_self.json["name"],"target":_self.json[dir][edge][node], "name":edge, "dir":dir, "type":"edge"}));
 			edgeDocs.push({"source":_self.json["name"],"target":_self.json[dir][edge][node], "name":edge, "dir":dir, "type":"edge"})
 			targets.push(_self.json[dir][edge][node]);
 		    }
 	    }
+
 	    $.couch.db(theDB).view("cat/NodeNames", {
 		success: function(data) {
 		    console.log("FINAL DATA",JSON.stringify(data));
@@ -480,7 +487,9 @@ function Node(dict,active){
 			    $.couch.db(theDB).bulkSave({"docs":edgeDocs}, {
 				success:function(data){
 				    console.log("SAVED",JSON.stringify(data));
+				    _self.syncLock = false;
 				    sendSearchQuery();
+				    _json = {};
 				}
 			    });
 			}
@@ -497,7 +506,7 @@ function Node(dict,active){
 	    success: function(data) {
 		sourceOrTargetCB(data,addEdges);
 	    },
-	    key: this.name,
+	    key: _self.json["name"],
 	    error: couchError,
 	    reduce: false
 	});
@@ -552,12 +561,10 @@ function Node(dict,active){
 	this.deactivateDiv.prependTo(this.nameDiv);
     else
 	this.activateDiv.prependTo(this.nameDiv);
-
-    // Name div stuff: 
     
     //Add edges button
     $("<div />",{class:"edgeAdd",text:"[+]"}).appendTo(_self.edgesDiv).click(function(e) {
-	_self.frontends.push([new EdgeDiv(_self,_self.edgesDiv,"",[]),_self.addEdge]);
+	_self.frontends.push([new EdgeDiv(_self,_self.edgesDiv,"",null),_self.addEdge]);
 	$('div.edgeEdit',_self.edgesDiv.children('div.edgeBox').last()).click();
 	$('div.edgeInput',_self.edgesDiv.children('div.edgeBox').last()).focus();
     });
@@ -834,6 +841,7 @@ function EdgeEditDiv(node, edgeDiv) {
     this.div = $("<div />",{class:"edgeBox"});  
     this.edgeEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
 	if(e.keyCode == 13){
+	    console.log("synchronize call");
 	    edgeDiv.swap();
 	    node.synchronize();
 	}
@@ -873,6 +881,7 @@ function EdgeEditDiv(node, edgeDiv) {
 
     this.update = function(s, edgeList){
 	console.log("EL",edgeList);
+	if(!edgeList) return;	    
 	var src = s+ ": "+edgeList.join(","); 
 	var edgeEditInput = this.edgeEditInput;
 	$(edgeEditInput).val(src);
@@ -1012,5 +1021,12 @@ In the active nodes div:
 - (DONE) Ctrl-clicking a node or edge adds it to the search in the search div as before
 - (DONE) Clicking "deactivate" removes from the active list
 - (DONE) Alt-clicking anything should cause an edit
+
+BUGS:
+- Say you delete a node in the Search area, but it is still around in the active area. What happens? And vice versa?
+- If you have a node in the active area, and the search area at the same time. You seem to be saving things twice? It's a bit confusing.
+- The last thing happens even when it is not in the Search area??? so weird.
+- When you get a node from the search area, the behavior is fine. However, when you add a new node. This seems to happen.
+- deleting an edge doesn't seem to do anything
 
 */
