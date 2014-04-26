@@ -1037,5 +1037,6 @@ Be able to change colour of a node
 Import export nodes/whole databases
 Make newlines work in editor
 Make timestamps actually ISO-compliant
+Make rendering happen automatically
 
 */

@@ -1,0 +1,101 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>IAMB A NANA</title>
+    <link rel="stylesheet" type="text/css" href="category.css">
+    <!-- <link rel="stylesheet" type="text/css" -->
+	       <!-- 	  href="jquery-ui-1.10.4.css"> -->
+	       <!-- <script type="text/x-mathjax-config">  -->
+	       <!--   MathJax.Hub.Config({  -->
+	       <!--   extensions: ["tex2jax.js"],  -->
+	       <!--   jax: ["input/TeX","output/HTML-CSS"],  -->
+	       <!--   tex2jax: {inlineMath: [["$","$"]]}, -->
+	       <!--   TeX:{ -->
+	       <!--   extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"] -->
+	       <!--   } -->
+	       <!--   });  -->
+	       <!-- </script>  -->
+	       <script src="http://code.angularjs.org/1.2.0-rc.3/angular.min.js"></script>
+	       <script type="text/javascript" src="category.js"></script> 
+	       <script type="text/javascript" src="jquery.js"></script>
+	       <script type="text/javascript" src="jquery.couch.js"></script>
+	       <!-- <script type="text/javascript" src="jquery-ui-1.10.4.js"></script> -->
+	       <!-- <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>  -->
+  </head>
+  <body ng-app="app">
+    <script type="text/ng-template" id="active.html">
+      <div class="name">
+	<div class="activationButton" ng-click="deactivate($index)">[x]</div>
+	<div class="nodeBox" ng-if="node.editing == false">{{node.name}}</div>
+	<input type="input" ng-if="node.editing == true" ng-keyup="name_key($event,node)" ng-model="node.name">
+      </div>
+      <div class="edges">
+	<div class="edge" ng-repeat="edge in edges | source:node.name">
+	  <div class="edgeTitle">{{edge.dir}} {{edge.name}}</div>
+	  <div class="nodeBox">{{edge.target}}</div>
+	</div>
+      </div>
+      <div style="display:inline-block">
+	<div class="content">{{node.content}}</div>
+	<div class="timestamp">{{node.timestamp | date:
+	yyyyMMddTHHmmssZ}}</div>
+      </div>
+      <div class="activationButton">[D]</div>
+    </script>
+
+    <script type="text/ng-template" id="non_active.html">
+      <div class="name">
+	<div class="activationButton" ng-click="activate(node)">[!]</div>
+	<div class="nodeBox" ng-click="set_current(node)">{{node.name}}</div>
+      </div>
+      <div class="edges">
+	<div class="edge" ng-repeat="edge in edges | source:node.name">
+	  <div ng-if="edge.editing != true">
+	    <div class="edgeTitle">{{edge.dir}} {{edge.name}}</div>
+	    <div class="nodeBox" ng-click="set_current_by_name(edge.target)">{{edge.target}}</div>
+	    <div class="activationButton" ng-click="toggle_edge_edit(edge)">[edit]</div>
+	  </div>
+	  <div ng-if="edge.editing == true">
+	    <input type="input" ng-keyup="edge_key($event,edge)" value="{{edge_str(edge)}}">
+	  </div>
+	</div>
+      </div>
+      <div style="display:inline-block">
+	<div class="content">{{node.content}}</div>
+	<div class="timestamp">{{node.timestamp | date:
+	yyyyMMddTHHmmssZ}}</div>
+      </div>
+      <div class="activationButton">[D]</div>
+    </script>
+
+    <script type="text/ng-template" id="search_query.html">
+      <div class="query_box">
+	<div class="query" ng-if="query.editing == false" ng-click="query_edit(query)">{{query.str}}</div>
+	<input type="input" ng-if="query.editing == true" ng-keyup="query_key($event,query)" ng-model="query.str">
+	<div class="activationButton" ng-click="query_remove($index)">[x]</div>
+      </div>
+    </script>
+
+
+    <div id="super" ng-controller="NodesController">
+      <div id="addNode" class="activationButton">[New node]</div>
+      <div class="activationButton" style="display:inline-block" ng-click="toggle_search()" >[Show Search]</div>
+      <div id="activeNodes">
+	<div class="node" ng-repeat="node in active_nodes" ng-include="'active.html'"></div>
+      </div>
+      <div id="searchArea" ng-if="search_display == true">
+	<div id="search">
+	  <div style="display:inline-block" ng-repeat="query in queries" ng-include="'search_query.html'">
+	    
+	  </div>
+	  <div class="activationButton" style="display:inline-block" ng-click="query_add()" >[+]</div>
+	  <div class="activationButton" style="display:inline-block" ng-click="search()" >[search]</div>
+	</div>
+	<div id="nodes">
+	  <div class="node" ng-repeat="node in current_nodes" ng-include="'non_active.html'">
+	  </div>
+	</div>
+      </div>
+    </div>
+  </body>
+</html>

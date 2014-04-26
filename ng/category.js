@@ -1,78 +1,105 @@
-var theDB = "test1";
-var currentNode = null;
-var tagBoxID = 0;
-var has1 = new Node(1, "has1", 0,[],[]);
-var root = new Node(0, "root", 0, {'foo':[has1]}, []);
-var currentQuery = null;
+var app = angular.module('app', []);
 
-var nodes = {}
-var tagBoxList = [];
-$.couch.urlPrefix = "http://localhost:11111/db";
-
-function timestamp(){
-    var currentdate = new Date(); 
-    return currentdate.getFullYear() + "-" 
-        + (currentdate.getMonth()+1)  + "-" 
-	+ currentdate.getDate() + " "
-        + currentdate.getHours() + ":"  
-        + currentdate.getMinutes() + ":" 
-        + currentdate.getSeconds();
-    
-}
-
-function clone(o) {
-    var newObj = (o instanceof Array) ? [] : {};
-    for (var i in o) {
-	//if (i == 'clone') continue;
-	if (o[i] && typeof o[i] == "object") newObj[i] = clone(o[i]);
-	else newObj[i] = o[i]
+app.filter('source', function(){
+    return function(edges, name){
+	var res = [];        
+	for (var i=0; i<edges.length; i++)
+	    if (edges[i].source == name){console.log(name,JSON.stringify(edges[i])); res.push(edges[i]);}
+	return res;
     }
-    return newObj;
-};
+});
+
+app.controller("NodesController", function($scope){
+    $scope.search_display = false;
+    $scope.node_names = ["Penguin","Giraffe"];
+    $scope.nodes = [{"name":"Penguin","content":"So Funny","timestamp":"2013-04-25T13:43:00"},{"name":"Giraffe","content":"blah","timestamp":"2013-04-25 13:43:00 CDT"}];
+    $scope.edges = [{"source":"Penguin","dir":"has","name":"friend","target":"Giraffe",editing:false}];
+    $scope.theDB = "test1";
+    $.couch.urlPrefix = "http://localhost:11111/db";
+    $scope.queries = []
+    
+    $scope.active_nodes = [];
+    $scope.search_nodes = [];
+    $scope.current_nodes = $scope.nodes;
+
+    $scope.toggle_edge_edit = function(edge){ edge.editing = true; $scope.$apply();}
+    $scope.toggle_search = function(){ $scope.search_display = !($scope.search_display); $scope.$apply();}
+    $scope.activate = function(node){ $scope.active_nodes.push(node); $scope.$apply(); }
+    $scope.deactivate = function(idx){ $scope.active_nodes.splice(idx,1); $scope.$apply(); }
+    $scope.set_current = function(node){ $scope.current_nodes = [node]; $scope.$apply(); }
+    $scope.query_edit = function(q){ q.editing = true; $scope.$apply(); }
+    $scope.query_add = function(){ $scope.queries.push({"editing":true,"str":"","obj":{}}); $scope.$apply(); }
+    $scope.query_remove = function(idx){ $scope.queries.splice(idx,1); $scope.$apply(); }
+    $scope.edge_str = function(edge){ return edge.dir == "has" ? 
+				      "has " + edge.name + ": " + edge.target : 
+				    "is " + edge.name + " of: " + edge.target;
+				    }
+    $scope.edge_key = function(e,edge){ 
+	if(e.keyCode == 13){ edge.editing = false; $scope.$apply(); } 
+	
+    }
+    $scope.query_key = function(e,q){ 
+	if(e.keyCode == 13){ q.editing = false; $scope.$apply(); }
+	q.obj = $scope.parse_query(q.str); 
+    }
+    $scope.parse_query = function(s){
+	return {};
+    }
+
+    $scope.set_current_by_name = function(name){
+	console.log(name);
+	var found = false;
+	for(var i in $scope.nodes){
+	    if($scope.nodes[i].name == name){
+		$scope.current_nodes = [$scope.nodes[i]];
+		$scope.$apply();
+		found = true;
+		break;
+	    }
+	}
+	if(!found){
+	    //go to database
+	}
+    }
+
+
+    $scope.refresh = function(){
+	$.couch.db($scope.theDB).view("cat/SourceOrTarget", {
+	    success: function(data) {
+		console.log("batman", JSON.stringify(data));
+		$scope.nodes = [];
+		$scope.edges = [];
+		var sources = [];
+		for(var d in data["rows"]){
+		    var edge = data["rows"][d]["value"];
+		    $scope.edges.push(edge);
+		    if(sources.indexOf(edge["source"]) < 0) sources.push(edge["source"]);
+		}
+		$.couch.db($scope.theDB).view("cat/NodeNames", {
+		    success: function(data){
+			console.log(JSON.stringify(data));
+			for(var i in data["rows"])
+			    $.couch.db($scope.theDB).openDoc(data["rows"][i]["id"],{success:function(data){$scope.nodes.push(data);$scope.$apply();}, error:couchError});
+		    },
+		    keys: sources,
+		    error: couchError,
+		    reduce: false
+		});
+		
+	    },
+	    keys: $scope.node_names,
+	    error: couchError,
+	    reduce: false
+	});
+    }
+    
+});
 
 function couchError(status){
     console.log('error',status);
 }
 
-function appendToActiveView(data){
-    console.log('app',JSON.stringify(data));
-    (new Node(data, true)).div.appendTo($("#activeNodes"));
-}
-
-function appendToView(data){
-    console.log('app',JSON.stringify(data));
-    (new Node(data)).div.appendTo($("#nodes"));
-}
-
-window.onload = function(){
-    var mapFunction = function(doc) {
-	emit(doc.name,doc);
-    };
-    
-    $.couch.db(theDB).query(mapFunction, null, "javascript", {
-	success: function(data) {
-            console.log('data',JSON.stringify(data),data["rows"][1]["id"]);
-	    $.couch.db(theDB).openDoc(data["rows"][1]["id"],{success:appendToView, error:couchError});
-	},
-	error: couchError,
-	reduce: false
-    });
-    //sendQueryHelper([{"dir":"has","edge":"city","node":"Madison"}],0,null,function(data){ console.log("GOT",JSON.stringify(data)); });
-
-    console.log("cn",JSON.stringify(currentNode));
-    $("<div />",{id:'tagBoxPlus',class:'tagBoxPlus',text:'[+]',click:function(e){new TagBox('');}}).appendTo("#search");
-    $("<div />",{id:'tagBoxPlus',style:"display:inline-block",text:'[search]',click:function(e){sendSearchQuery();}}).appendTo("#search");
-    new TagBox("Mickies");
-    
-    $("#addNode").click(function(e){
-	appendToActiveView({"name":"", "content":"", "type":"node", "timestamp":timestamp()});
-    });
-    $("#activateSearch").click(function(e){
-	console.log($("#searchArea").css("display"));
-	($("#searchArea").css("display")=="block") ? $("#searchArea").css("display","none") : $("#searchArea").css("display","block");
-    });
-
-}
+/*
 
 function recvQueryData(data,successFn){
     console.log("res",JSON.stringify(data));
@@ -105,25 +132,25 @@ function sendQuery(queries,successFn){
     sendQueryHelper(queries,0,null,recvQueryData,successFn);
 }
 
-/*
-Query: type = node,content,time,edge
-Notation: 
-node: 
-      name: node_name
-      node: node_name
-content: 
-      content: content string
-      text: content string
-time: 
-      time: time specifier
-      time specifier (ISO)
-edge: 
-      has edgename: target
-      is edgeame of: target
-conn: 
-      conn: target
-      target
-*/
+
+// Query: type = node,content,time,edge
+// Notation: 
+// node: 
+//       name: node_name
+//       node: node_name
+// content: 
+//       content: content string
+//       text: content string
+// time: 
+//       time: time specifier
+//       time specifier (ISO)
+// edge: 
+//       has edgename: target
+//       is edgeame of: target
+// conn: 
+//       conn: target
+//       target
+
 
 function sendQueryHelper(queries,index,result,success,successSuccessFn){
     console.log(JSON.stringify(queries));
@@ -216,68 +243,6 @@ function autocomplete(req,add){
     });
 } 
 
-function TagBox(text){
-    this.state = 'input';
-    this.id = 'tagbox'+tagBoxID;
-    tagBoxID++;
-    this.text = text;    
-    this.div = $("<div />",{id:this.id,class:'tagBox'});
-    
-    this.toggleState = function(state) {
-	console.log(state);
-	if(state == 'input'){
-	    this.tagElement.detach();
-	    this.inputElement.prependTo(this.div);
-	    this.div.css("background-color","#fff");
-	} else if(state == 'tag'){
-	    this.inputElement.detach();
-	    this.inputElement.autocomplete("close");
-	    this.div.css("background-color","#9af");
-	    this.tagElement.text(this.inputElement.val());
-	    this.tagElement.prependTo(this.div);
-	    //sendQuery();
-	}
-    }
-
-    var __construct = function (that) {
-	//Construct Input Element	
-	that.inputElement =  $("<input />",{"type":"text","value":that.text,"class":"tagBoxInput"});
-	that.inputElement.keyup(function(e){ console.log("hi"); if(e.keyCode == 13) {that.toggleState('tag'); sendSearchQuery();} that.text = that.inputElement.val(); })
-	that.inputElement.autocomplete({source:
-					function(req, add){
-					    autocomplete(req,add);
-					}
-				       });
-	that.inputElement.appendTo(that.div);
-	that.tagElement = $("<div />",{class:'tagBoxTag'});
-	that.tagElement.click(function(e){ that.toggleState('input'); });
-	$("<div />",{class:'tagBoxMinus',text:'[x]',click:function(e){console.log('removing','#'+that.id);$('#'+that.id).remove(); var i = tagBoxList.indexOf(that); tagBoxList.splice(i,1);}}).appendTo(that.div);
-	//Add before the plus
-	that.div.insertBefore($("#tagBoxPlus"))
-	tagBoxList.push(that);
-    }(this);
-}
-
-// The point is that now searching will add a bunch of nodes' divs to
-// the #nodes div and as more terms are added this will be narrowed
-// down.  If you want to add an edge "has colour ???" to node "foo"
-// but need to search for the target, type "?" and the search bar will
-// be preceeded with "foo has colour ..." and ultimately selecting a
-// node will not root the tree at that node, but will fill in the
-// edge-to-be with that node
-
-//Bizarre use of static functions
-function TagManager(){}
-
-TagManager.dualize  = function(s){
-    if(s.indexOf('has') == 0)
-	return s.replace(/has ([a-zA-Z0-9]+): ([a-zA-Z0-9]+)/, 'is $1 of:' );
-    else if(s.indexOf('is') == 0)
-	return s.replace(/is ([a-zA-Z0-9]+) of: ([a-zA-Z0-9]+)/, 'has $1:' );
-    else
-	return s;
-}
-
 TagManager.getQuery = function(s){
     //Returns target of the text
     console.log("SSSSSSSSSSS",s);
@@ -316,29 +281,6 @@ TagManager.getQueryList = function(){
     return ans;
 }
 
-TagManager.add = function(s){
-    var q_s = s;
-    for(var i=tagBoxList.length-1; i>=0; i--){
-	var t = tagBoxList[i]; 
-	
-	var q_t = TagManager.getQuery(t.text);
-	//If this is a "pure" node rather than an edge, remove it 
-	console.log(t.text);
-	console.log("q_t " + q_t['node']);
-	console.log("q_s "+ q_s['node']);
-	if(q_s == t.text){
-	    return;
-	} else if(q_t['node'] == q_s['node'] && q_t['dir'] == null && q_t['edge']==null){
-	    console.log("q_t "+q_t['node']+ " q_s "+q_s['node']);
-	    t.div.remove()
-	    tagBoxList.splice( i, 1 );
-	}	
-	//If we find this node already here, get out of dodge
-    }
-    var tagBox = new TagBox(queryString(q_s));
-    tagBox.toggleState('tag');
-}
-
 function queryString(q){
     if(q["type"] == "edge"){
 	if(q["dir"] == "has") return "has " + q["edge"] + ": " + q["node"];
@@ -349,8 +291,6 @@ function queryString(q){
     else if(q["type"] == "conn") return q["node"]
 }
 
-/*	
-*/
 
 function Node(dict,active){
     var _self = this;
@@ -651,348 +591,7 @@ function ContentDiv(node,parentDiv,content){
     });
 }
 
-function NameDiv(node,parentDiv,name){
-
-    this.div = $("<div />",{class:"nodeNameContainer"}).appendTo(parentDiv);
-    
-    this.content =  function() {
-	return nameEditDiv.content();    
-    }
-
-    var state = "display";
-    var nameDisplayDiv = new NameDisplayDiv(node, this);
-    var nameEditDiv = new NameEditDiv(node, this);
-    
-    this.update  = function(name){
-	nameDisplayDiv.update(name);
-	nameEditDiv.update(name);
-    }
-
-    this.swap = function(){
-	if(state == "display"){
-	    state = "input";
-	    nameDisplayDiv.div.detach();
-	    nameEditDiv.div.prependTo(this.div);
-	    nameEditDiv.nameEditInput.focus();
-	}
-	else if(state=="input"){
-	    state = "display";
-	    nameEditDiv.div.detach();
-	    var name = nameEditDiv.content();
-	    nameDisplayDiv.update(name);
-	    nameDisplayDiv.div.prependTo(this.div);
-	}
-    }
-
-    console.log("making name div", name);
-    this.update(name);
-}
-
-function NameDisplayDiv(node, nameDiv){
-    this.nameDiv = nameDiv;
-    this.node = node;
-    this.div = $("<div />",{class:"nodeBox"}).appendTo(nameDiv.div).click(function(e) {nameDiv.swap()});
-    
-    this.update = function(name){
-	$(this.div).text(name);
-    }
-    
-}
-
-function NameEditDiv(node, nameDiv){
-    this.nameDiv = nameDiv;
-    this.node = node;
-    this.div = $("<div />");
-    this.nameEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
-	if(e.keyCode == 13){	    
-	    nameDiv.swap();
-	    node.synchronize();
-	}
-    });
-    
-    this.update = function(name){
-	this.nameEditInput.val(name);
-    }
-
-    this.content = function() {
-	console.log("Say my name, say my name", this.nameEditInput.val());
-	return this.nameEditInput.val();
-    }
-												     
-}
-
-
-
-function EdgeDiv(node,parentDiv,edgeName,nodeList){
-    this.div = $("<div />",{class:"edgeBox"}).insertBefore($('div.edgeAdd',parentDiv));
-    var state = "display";
-    this.parentDiv = parentDiv;
-    var edgeDisplayDiv =  new EdgeDisplayDiv(node,this);
-    var edgeEditDiv = new EdgeEditDiv(node, this);
-
-    //Updates from a given edgeList
-    this.update = function(s, edgeList){
-	edgeDisplayDiv.update(s,edgeList);
-	edgeEditDiv.update(s,edgeList);
-    }
-    
-    this.content = function(){
-	return edgeEditDiv.content()
-    }
-
-    this.swap = function(){
-	if(state == "display"){
-	    state = "input";
-	    edgeDisplayDiv.div.detach();
-	    edgeEditDiv.div.prependTo(this.div);
-	    edgeEditDiv.edgeEditInput.focus();
-	}
-	else if(state=="input"){
-	    state = "display";
-	    edgeEditDiv.div.detach();
-	    var edges = edgeEditDiv.content();
-	    var s = (edges[0]["dir"] == "has") ? "has "+edges[0]["edge"]+":": "is "+edges[0]["edge"]+" of:";
-	    console.log("CONTENTEEEEE",JSON.stringify(edges),s);
-	    var edgeList = []
-	    for(var edge in edges)
-		edgeList.push(edges[edge]["node"])
-	    edgeDisplayDiv.update(s, edgeList);
-	    edgeDisplayDiv.div.prependTo(this.div);
-	    
-	}
-    }
-    //console.log("ENODELIST",JSON.stringify(nodeList));
-    this.update(edgeName,nodeList);
-}
-
-function EdgeDisplayDiv(node,edgeDiv){
-    var _self = this;
-    this.edgeDiv = edgeDiv;
-    this.node = node;
-    this.div = $("<div />",{class:"edgeBox"}).appendTo(edgeDiv.div);
-
-    this.update = function(s,edgeList){
-	$(this.div).empty();
-
-	var text = this.node.dict["name"];
-	$("<div />",{class:"edgeTitle",text:s}).appendTo(this.div).click(function(e){
-	    //What happens when you click on the title
-
-	    var edge = _self.edgeDiv.content()[0]
-	    var dual = edge;
-	    dual["dir"] = dual["dir"] == "has" ? "isof" : "has";
-	    console.log(JSON.stringify(node));
-	    dual["node"] = _self.node.dict["name"];
-		
-	    if(e.ctrlKey){
-		console.log("OUTTA CTRL",dual);
-		TagManager.add(dual);
-		sendSearchQuery();
-	    }	
-	    else if(e.altKey){
-		edgeDiv.swap();
-	    }
-	    else{
-		if(_self.node.active){
-		    
-		}
-		else{
-		    console.log("CQCQCQ");
-		    currentQuery = [dual];
-		    sendCurrentQuery();
-		}
-	    }
-	});
-	
-	for(var node in edgeList){
-	    console.log("node: "+s);
-	    var nodeBox = $("<div />",{id:edgeList[node], class:"nodeBox", text:edgeList[node]});
-	    nodeBox.appendTo(this.div);
-	    nodeBox.click(function(e) {
-		if(e.ctrlKey)
-		    TagManager.add({"type":"conn","node":$(this).text()});
-		if(e.altKey)
-		    edgeDiv.swap();
-		else{
-		    console.log("AAAAAAAAAAAAAACCCCCCCCVVVVVEE",_self.node.active,_self.node.dict["name"]);
-		    if(_self.node.active){
-			sendQuery([{"type":"node","name":$(this).text()}],appendToActiveView);
-		    }
-		    else{
-			currentQuery = [{"type":"node","name":$(this).text()}];
-			sendCurrentQuery();
-		    }
-		}
-	    });
-	    nodeBox.dblclick(function(e) {edgeDiv.swap();});
-	    
-	}
-
-	var editEdge = $("<div />",{class:"edgeEdit",text:"[edit]"}).appendTo(this.div).click(function(e){
-	    edgeDiv.swap();
-	});
-    }
-
-}
-
-function EdgeEditDiv(node, edgeDiv) {
-    var _self = this;
-    this.edgeDiv = edgeDiv;
-    this.div = $("<div />",{class:"edgeBox"});  
-    this.edgeEditInput = $("<input />",{"type":"text","class":"edgeInput"}).appendTo(this.div).keyup(function(e){
-	if(e.keyCode == 13){
-	    console.log("synchronize call");
-	    edgeDiv.swap();
-	    node.synchronize();
-	}
-	//Up
-	else if(e.keyCode == 38){
-	    if(edgeDiv.div.prev('div.edgeBox').size() > 0 && node.editDone()){
-		$('div.edgeEdit',edgeDiv.div.prev()).click();
-		$('input',edgeDiv.div.prev()).focus();
-		edgeDiv.swap()
-		// Also start editing previous edge, if any
-	    }
-	}
-	//Down
-	else if(e.keyCode == 40){
-	    if(edgeDiv.div.next('div.edgeBox').size() > 0 && node.editDone()){
-		$('div.edgeEdit',edgeDiv.div.next()).click();
-		$('input',edgeDiv.div.next()).focus();
-		edgeDiv.swap();
-		// Also start editing next edge, if any, or add new edge if not
-	    }
-	    else if(edgeDiv.div.next('div.edgeBox').size() == 0 && node.editDone()){
-		//console.log("at end",$('div.edgeAdd',that.edgesDiv).size());
-		edgeDiv.swap();
-		$('div.edgeAdd',_self.edgeDiv.parentDiv).click();
-	    }
-	}
-	else if(e.keyCode == 8 && e.ctrlKey && e.shiftKey){
-	    if($('input',edgeDiv.div).val() == "") edgeDiv.div.remove();
-	}
-	else if(e.keyCode == "?"){
-	    // Initiate a search for the target node or edge word, depending on where we are
-	}
-	else{
-	    // autogenerate suggestions
-	}
-    });
-
-    this.update = function(s, edgeList){
-	console.log("EL",edgeList);
-	if(!edgeList) return;	    
-	var src = s+ ": "+edgeList.join(","); 
-	var edgeEditInput = this.edgeEditInput;
-	$(edgeEditInput).val(src);
-    }
-
-    this.content = function(){
-	var input = this.edgeEditInput.val();
-	console.log("INININININ",input);
-	var dir = null; var match = null;
-	if(input.indexOf("has") == 0){
-	    dir = "has";
-	    match  = input.match(/has ([a-zA-Z -_]+) *: *([a-zA-Z -_,]+)/i)
-	} else{
-	    dir = "isof";
-	    match  = input.match(/is ([a-zA-Z -_]+) of *: *([a-zA-Z -_,]+)/i)
-	}
-	if(match == null){
-	    this.edgeInputDiv.css("border","1px red solid");
-	    return;
-	}
-	var ans = []
-	var nodes = match[2].split(",");
-	for(var n in nodes)
-    	    ans.push({"type":"edge","dir":dir,"edge":match[1],"node":nodes[n]});
-	console.log("ANS IN MY PANTS",JSON.stringify(ans));
-	return ans;
-    }
-
-}
-
-	    
-	
-
-// expects: {'ID':nodeID, 'content':content, 'timestamp':timestamp, 'has':hasList, 'isof':isOfList, 'content':content}
-// function AddConn(){
-//     this.div = $("<div />",{id:this.id,class:'addBox'});
-//     this.hasState = "has";
-//     this.escape = function(){ this.div.remove(); }
-//     this.toggleHas = function(state){
-// 	this.hasState = state;
-// 	this.hasToggle.detach();
-// 	if(state == "has") this.hasInput.text("").append(this.hasToggle).append("has ").append(this.wordInput);
-// 	else if(state == "isof") this.hasInput.text("").append(this.hasToggle).append("is ").append(this.wordInput).append(" of");
-//     };
-//     this.confirm = function(){
-// 	alert("done");
-//     };
-//     var __construct = function (that) {
-// 	//Construct Input Element	
-// 	that.hasInput = $("<div />",{text:"has ","class":"addBox"}).appendTo(that.div);
-// 	that.hasToggle = $("<div />",{text:"(s)","class":"addBox"}).prependTo(that.hasInput);
-// 	that.wordInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.hasInput);
-// 	that.nodeInput = $("<input />",{"type":"text","value":"","class":"tagBoxInput"}).appendTo(that.div);
-// 	that.hasToggle.click(function(e){ 
-// 	    that.toggleHas(that.hasState == "has" ? "isof" : "has");
-// 	});
-// 	that.wordInput.keyup(function(e){ 
-// 	    if(e.keyCode == 13){ that.nodeInput.focus(); console.log("ha"); }
-// 	    that.wordInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
-// 	});
-// 	that.nodeInput.keyup(function(e){ 
-// 	    if(e.keyCode == 13) that.confirm(); 
-// 	    that.nodeInput.autocomplete({source:['hello','goodbye','banana','apple', 'strawberry']});
-// 	});
-// 	$("<div />",{class:'tagBoxMinus',text:'X',click:that.escape}).appendTo(that.div);
-// 	that.div.appendTo($("#nodes"))
-//     }(this);
-// }
-
 /*
-
-Searching: 
-
-1. Actions for clicking on an edge
-2. Actions for clicking on a target of an edge
-3. Action when enter is hit on TagBox
-4. Create a sendQuery function - default behavior, 
-
-sendQuery inputs: hasList, isOfList, target
-emit: list of documents 
-
-Search Results Shown:
-
--Search Query is single node: show the node
-
--Search Query is multiple nodes: show all nodes connected to all query nodes, plus the query nodes themselves
-
--Search Query has edge (has *, A, is * of A)+ Nodes B's: show all nodes satisfying  edge conditions and connected to all B's
-
-
-Click behaviour at all times: 
-
--When node is clicked: Put node (without edge specifier) into query
-
--When edge "A has * B" is clicked: If A is in search query without edge specifier, replace in query with "is * of A".  Otherwise, add "is * of A" to query
-
--When enter is pressed in search box: 
-
-
-Editing (frontend done): 
-
-1. Editing an edge
-2. Deleting an edge
-3. Adding an edge
-4. Very basic content editing
-5. ??????????
-6. Profit! 
-
-Content editing: 
-
-DONE: When double-click on content area, put editor into lightbox.  Otherwise, all nodes currently displayed are editable
 
 TODO 2014-04-21:
 - (DONE) Add node
