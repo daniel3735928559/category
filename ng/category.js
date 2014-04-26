@@ -4,7 +4,7 @@ app.filter('source', function(){
     return function(edges, name){
 	var res = [];        
 	for (var i=0; i<edges.length; i++)
-	    if (edges[i].source == name){console.log(name,JSON.stringify(edges[i])); res.push(edges[i]);}
+	    if (edges[i].obj.source == name){console.log(name,JSON.stringify(edges[i])); res.push(edges[i]);}
 	return res;
     }
 });
@@ -12,39 +12,25 @@ app.filter('source', function(){
 app.controller("NodesController", function($scope){
     $scope.search_display = false;
     $scope.node_names = ["Penguin","Giraffe"];
-    $scope.nodes = [{"name":"Penguin","content":"So Funny","timestamp":"2013-04-25T13:43:00"},{"name":"Giraffe","content":"blah","timestamp":"2013-04-25 13:43:00 CDT"}];
-    $scope.edges = [{"source":"Penguin","dir":"has","name":"friend","target":"Giraffe",editing:false}];
+    $scope.nodes = [{"str":"Penguin",editing:false,"obj":{"name":"Penguin","content":"So Funny","timestamp":"2013-04-25T13:43:00"}},{"str":"Giraffe",editing:false,"obj":{"name":"Giraffe","content":"blah","timestamp":"2013-04-25 13:43:00 CDT"}}];
+    $scope.edges = [{"str":"",editing:false,"obj":{"source":"Penguin","dir":"has","name":"friend","target":"Giraffe"}}];
     $scope.theDB = "test1";
     $.couch.urlPrefix = "http://localhost:11111/db";
-    $scope.queries = []
+    $scope.queries = [];
     
     $scope.active_nodes = [];
     $scope.search_nodes = [];
     $scope.current_nodes = $scope.nodes;
 
+    $scope.error_msg = "";
+
+    // Pure display stuff
+
     $scope.toggle_edge_edit = function(edge){ edge.editing = true; $scope.$apply();}
     $scope.toggle_search = function(){ $scope.search_display = !($scope.search_display); $scope.$apply();}
-    $scope.activate = function(node){ $scope.active_nodes.push(node); $scope.$apply(); }
+    $scope.activate = function(node){ console.log("N",JSON.stringify(node)); $scope.active_nodes.push(node); $scope.$apply(); }
     $scope.deactivate = function(idx){ $scope.active_nodes.splice(idx,1); $scope.$apply(); }
     $scope.set_current = function(node){ $scope.current_nodes = [node]; $scope.$apply(); }
-    $scope.query_edit = function(q){ q.editing = true; $scope.$apply(); }
-    $scope.query_add = function(){ $scope.queries.push({"editing":true,"str":"","obj":{}}); $scope.$apply(); }
-    $scope.query_remove = function(idx){ $scope.queries.splice(idx,1); $scope.$apply(); }
-    $scope.edge_str = function(edge){ return edge.dir == "has" ? 
-				      "has " + edge.name + ": " + edge.target : 
-				    "is " + edge.name + " of: " + edge.target;
-				    }
-    $scope.edge_key = function(e,edge){ 
-	if(e.keyCode == 13){ edge.editing = false; $scope.$apply(); } 
-	
-    }
-    $scope.query_key = function(e,q){ 
-	if(e.keyCode == 13){ q.editing = false; $scope.$apply(); }
-	q.obj = $scope.parse_query(q.str); 
-    }
-    $scope.parse_query = function(s){
-	return {};
-    }
 
     $scope.set_current_by_name = function(name){
 	console.log(name);
@@ -62,8 +48,90 @@ app.controller("NodesController", function($scope){
 	}
     }
 
+    // Node stuff
 
-    $scope.refresh = function(){
+    $scope.node_edit = function(node){ node.editing = true; $scope.$apply(); }
+    $scope.node_add = function(node){ $scope.nodes.push({"editing":true,"str":"","obj":{"type":"node","name":"","content":"","timestamp":"20130425T000000 UTC"}}); $scope.$apply(); }
+    $scope.node_key = function(e,node){ 
+	if(e.keyCode == 13){ 
+	    node.obj.name = node.str;
+	    node.editing = false;
+	    $scope.$apply(); 
+	}
+    }
+
+    // Edge stuff
+
+    $scope.edge_add = function(node){ $scope.edges.push({"editing":true,"str":"","obj":{"type":"edge","source":node.obj.name,"dir":"","name":"","target":""}}); $scope.$apply(); }
+    $scope.edge_str = function(edge){ 
+	return edge.obj.dir == "has" ?  "has " + edge.obj.name + ": " + edge.obj.target :  "is " + edge.obj.name + " of: " + edge.obj.target;
+    }
+    $scope.edge_key = function(e,edge){ 
+	console.log(JSON.stringify(edge));
+	if(e.keyCode == 13){ 
+	    console.log("asda");
+	    var obj = $scope.edge_parse(edge);
+	    if(obj.error) $scope.error_msg = obj.error;
+	    else{
+		console.log("obj",obj);
+		edge.obj = obj;
+		edge.editing = false;
+	    }
+	    $scope.$apply(); 
+	} 
+    }
+    $scope.edge_parse = function(edge){
+	var s = edge.str;
+	if(s.indexOf("has ") == 0){
+	    var match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
+	    if(match)
+		return {"type":"edge","source":edge.obj.source,"dir":"has","name":match[1],"target":match[2]};
+	}
+	else if(s.indexOf("is ") == 0 && s.indexOf("of:") > 0){
+	    var match = s.match(/is ([.,-a-zA-Z0-9_ ]+) of: *([.,-a-zA-Z0-9_ ]+)/i);
+	    if(match)
+		return {"type":"edge","source":edge.obj.source,"dir":"isof","name":match[1],"target":match[2]};
+	}
+
+	return {"error":"Badly formatted input"};
+    }
+    
+    // Search stuff
+
+    $scope.query_edit = function(q){ q.editing = true; $scope.$apply(); }
+    $scope.query_add = function(){ $scope.queries.push({"editing":true,"str":"","obj":{}}); $scope.$apply(); }
+    $scope.query_remove = function(idx){ $scope.queries.splice(idx,1); $scope.$apply(); }
+    $scope.query_key = function(e,q){ 
+	if(e.keyCode == 13){ q.editing = false; $scope.$apply(); }
+	q.obj = $scope.query_parse(q.str); 
+    }
+    $scope.query_parse = function(s){
+	if(s.indexOf("has ") == 0){
+	    var match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
+	    if(match)
+		return {"type":"edge","dir":"has","edge":match[1],"node":match[2]};
+	}
+	else if(s.indexOf("name:") ==0 || s.indexOf("node: ") ==0){
+	    match = s.match(/[^:]*: *([.,-a-zA-Z0-9_ ]+)/i);
+	    if(match)
+		return {"type":"node","name":match[1]};
+	}
+	else if(s.indexOf("content:") == 0|| s.indexOf("contains:") == 0 || s.indexOf("text:") == 0){
+	    match = s.match(/[^:]*: *([.,-a-zA-Z0-9_ ]+)/i);
+	    if(match)
+		return {"type":"content","text":match[1]};
+	}
+	else if(s.indexOf("is ") == 0 && s.indexOf("of:") > 0){
+	    var match = s.match(/is ([.,-a-zA-Z0-9_ ]+) of: *([.,-a-zA-Z0-9_ ]+)/i);
+	    if(match)
+		return {"type":"edge","dir":"isof","edge":match[1],"node":match[2]};
+	}
+	else{
+	    return {"type":"conn","node":s};
+	}
+    }
+
+    $scope.query_run = function(){
 	$.couch.db($scope.theDB).view("cat/SourceOrTarget", {
 	    success: function(data) {
 		console.log("batman", JSON.stringify(data));

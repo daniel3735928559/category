@@ -23,47 +23,32 @@
 	       <!-- <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>  -->
   </head>
   <body ng-app="app">
-    <script type="text/ng-template" id="active.html">
+    <script type="text/ng-template" id="node.html">
       <div class="name">
-	<div class="activationButton" ng-click="deactivate($index)">[x]</div>
-	<div class="nodeBox" ng-if="node.editing == false">{{node.name}}</div>
-	<input type="input" ng-if="node.editing == true" ng-keyup="name_key($event,node)" ng-model="node.name">
-      </div>
-      <div class="edges">
-	<div class="edge" ng-repeat="edge in edges | source:node.name">
-	  <div class="edgeTitle">{{edge.dir}} {{edge.name}}</div>
-	  <div class="nodeBox">{{edge.target}}</div>
+	<!-- <div class="activationButton" ng-click="activate($index)">[!]</div> -->
+	<div class="activationButton" ng-if="active == true" ng-click="deactivate($index)">[x]</div>
+	<div class="activationButton" ng-if="active == false" ng-click="activate(node)">[!]</div>
+	<div class="nodeBox" ng-if="node.editing == false" ng-click="node_edit(node)">{{node.obj.name}}</div>
+	<div ng-if="node.editing == true">
+	  <input type="input" ng-keyup="node_key($event,node)" value="{{node.obj.name}}" ng-model="node.str" />
 	</div>
       </div>
-      <div style="display:inline-block">
-	<div class="content">{{node.content}}</div>
-	<div class="timestamp">{{node.timestamp | date:
-	yyyyMMddTHHmmssZ}}</div>
-      </div>
-      <div class="activationButton">[D]</div>
-    </script>
-
-    <script type="text/ng-template" id="non_active.html">
-      <div class="name">
-	<div class="activationButton" ng-click="activate(node)">[!]</div>
-	<div class="nodeBox" ng-click="set_current(node)">{{node.name}}</div>
-      </div>
       <div class="edges">
-	<div class="edge" ng-repeat="edge in edges | source:node.name">
+	<div class="edge" ng-repeat="edge in edges | source:node.obj.name">
 	  <div ng-if="edge.editing != true">
-	    <div class="edgeTitle">{{edge.dir}} {{edge.name}}</div>
-	    <div class="nodeBox" ng-click="set_current_by_name(edge.target)">{{edge.target}}</div>
+	    <div class="edgeTitle">{{edge.obj.dir}} {{edge.obj.name}}</div>
+	    <div class="nodeBox" ng-click="set_current_by_name(edge.obj.target)">{{edge.obj.target}}</div>
 	    <div class="activationButton" ng-click="toggle_edge_edit(edge)">[edit]</div>
 	  </div>
 	  <div ng-if="edge.editing == true">
-	    <input type="input" ng-keyup="edge_key($event,edge)" value="{{edge_str(edge)}}">
+	    <input type="input" ng-keyup="edge_key($event,edge)" value="{{edge_str(edge)}}" ng-model="edge.str" />
 	  </div>
 	</div>
+	<div class="activationButton" ng-click="edge_add(node)">[+]</div>
       </div>
       <div style="display:inline-block">
-	<div class="content">{{node.content}}</div>
-	<div class="timestamp">{{node.timestamp | date:
-	yyyyMMddTHHmmssZ}}</div>
+	<div class="content">{{node.obj.content}}</div>
+	<!-- <div class="timestamp">{{node.obj.timestamp | date:yyyyMMddTHHmmssZ}}</div> -->
       </div>
       <div class="activationButton">[D]</div>
     </script>
@@ -78,10 +63,10 @@
 
 
     <div id="super" ng-controller="NodesController">
-      <div id="addNode" class="activationButton">[New node]</div>
+      <div id="addNode" class="activationButton" ng-click="node_add()">[New node]</div>
       <div class="activationButton" style="display:inline-block" ng-click="toggle_search()" >[Show Search]</div>
       <div id="activeNodes">
-	<div class="node" ng-repeat="node in active_nodes" ng-include="'active.html'"></div>
+	<div class="node" ng-init="active = true" ng-repeat="node in active_nodes" ng-include="'node.html'"></div>
       </div>
       <div id="searchArea" ng-if="search_display == true">
 	<div id="search">
@@ -92,7 +77,7 @@
 	  <div class="activationButton" style="display:inline-block" ng-click="search()" >[search]</div>
 	</div>
 	<div id="nodes">
-	  <div class="node" ng-repeat="node in current_nodes" ng-include="'non_active.html'">
+	  <div class="node" ng-init="active = false" ng-repeat="node in current_nodes" ng-include="'node.html'">
 	  </div>
 	</div>
       </div>
