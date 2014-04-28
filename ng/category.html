@@ -38,7 +38,7 @@
 	  <div ng-if="edge.editing != true">
 	    <div class="edgeTitle">{{edge.obj.dir}} {{edge.obj.name}}</div>
 	    <div class="nodeBox" ng-click="set_current_by_name(edge.obj.target)">{{edge.obj.target}}</div>
-	    <div class="activationButton" ng-click="toggle_edge_edit(edge)">[edit]</div>
+	    <div class="activationButton" ng-click="edge_edit(edge)">[edit]</div>
 	  </div>
 	  <div ng-if="edge.editing == true">
 	    <input type="input" ng-keyup="edge_key($event,edge)" value="{{edge_str(edge)}}" ng-model="edge.str" />

@@ -4,39 +4,54 @@ app.filter('source', function(){
     return function(edges, name){
 	var res = [];        
 	for (var i=0; i<edges.length; i++)
-	    if (edges[i].obj.source == name){console.log(name,JSON.stringify(edges[i])); res.push(edges[i]);}
+	    if (edges[i].obj.source == name){ res.push(edges[i]);}
 	return res;
     }
 });
 
 app.controller("NodesController", function($scope){
     $scope.search_display = false;
-    $scope.node_names = ["Penguin","Giraffe"];
     $scope.nodes = [{"str":"Penguin",editing:false,"obj":{"name":"Penguin","content":"So Funny","timestamp":"2013-04-25T13:43:00"}},{"str":"Giraffe",editing:false,"obj":{"name":"Giraffe","content":"blah","timestamp":"2013-04-25 13:43:00 CDT"}}];
     $scope.edges = [{"str":"",editing:false,"obj":{"source":"Penguin","dir":"has","name":"friend","target":"Giraffe"}}];
+    $scope.stale_edges = [];
     $scope.theDB = "test1";
     $.couch.urlPrefix = "http://localhost:11111/db";
     $scope.queries = [];
     
     $scope.active_nodes = [];
-    $scope.search_nodes = [];
     $scope.current_nodes = $scope.nodes;
 
     $scope.error_msg = "";
 
-    // Pure display stuff
+    // Node stuff
 
-    $scope.toggle_edge_edit = function(edge){ edge.editing = true; $scope.$apply();}
-    $scope.toggle_search = function(){ $scope.search_display = !($scope.search_display); $scope.$apply();}
     $scope.activate = function(node){ console.log("N",JSON.stringify(node)); $scope.active_nodes.push(node); $scope.$apply(); }
     $scope.deactivate = function(idx){ $scope.active_nodes.splice(idx,1); $scope.$apply(); }
+    $scope.node_edit = function(node){ node.editing = true; $scope.$apply(); }
+    $scope.node_add = function(node){ 
+	var new_node = {"editing":true,"str":"","obj":{"type":"node","name":"","content":"","timestamp":"20130425T000000 UTC"}}; 
+	$scope.active_nodes.push(new_node); 
+	$scope.nodes.push(new_node); 
+	$scope.$apply(); 
+    }
+    $scope.node_key = function(e,node){ 
+	if(e.keyCode == 13){ 
+	    for(var e in $scope.edges){
+		e = $scope.edges[e];
+		if(e.source == node.obj.name) e.obj.source = node.str;
+		if(e.target == node.obj.name) e.obj.target = node.str;
+	    }
+	    node.obj.name = node.str;
+	    node.editing = false;
+	    $scope.$apply(); 
+	}
+    }
     $scope.set_current = function(node){ $scope.current_nodes = [node]; $scope.$apply(); }
-
     $scope.set_current_by_name = function(name){
 	console.log(name);
 	var found = false;
 	for(var i in $scope.nodes){
-	    if($scope.nodes[i].name == name){
+	    if($scope.nodes[i].obj.name == name){
 		$scope.current_nodes = [$scope.nodes[i]];
 		$scope.$apply();
 		found = true;
@@ -48,20 +63,9 @@ app.controller("NodesController", function($scope){
 	}
     }
 
-    // Node stuff
-
-    $scope.node_edit = function(node){ node.editing = true; $scope.$apply(); }
-    $scope.node_add = function(node){ $scope.nodes.push({"editing":true,"str":"","obj":{"type":"node","name":"","content":"","timestamp":"20130425T000000 UTC"}}); $scope.$apply(); }
-    $scope.node_key = function(e,node){ 
-	if(e.keyCode == 13){ 
-	    node.obj.name = node.str;
-	    node.editing = false;
-	    $scope.$apply(); 
-	}
-    }
-
     // Edge stuff
 
+    $scope.edge_edit = function(edge){ edge.editing = true; $scope.$apply();}
     $scope.edge_add = function(node){ $scope.edges.push({"editing":true,"str":"","obj":{"type":"edge","source":node.obj.name,"dir":"","name":"","target":""}}); $scope.$apply(); }
     $scope.edge_str = function(edge){ 
 	return edge.obj.dir == "has" ?  "has " + edge.obj.name + ": " + edge.obj.target :  "is " + edge.obj.name + " of: " + edge.obj.target;
@@ -98,6 +102,7 @@ app.controller("NodesController", function($scope){
     
     // Search stuff
 
+    $scope.toggle_search = function(){ $scope.search_display = !($scope.search_display); $scope.$apply();}
     $scope.query_edit = function(q){ q.editing = true; $scope.$apply(); }
     $scope.query_add = function(){ $scope.queries.push({"editing":true,"str":"","obj":{}}); $scope.$apply(); }
     $scope.query_remove = function(idx){ $scope.queries.splice(idx,1); $scope.$apply(); }
@@ -160,7 +165,76 @@ app.controller("NodesController", function($scope){
 	    reduce: false
 	});
     }
-    
+
+    // Server stuff
+
+    $scope.queryViews = {
+	"edge":{"first":"relB","view":"ArelB","genKeys":function(q,res){
+	    var keys = [];
+	    if(res)
+		for(var r in res)
+		    keys.push(res[r]["value"] + " " + q["dir"] + " " + q["edge"]+": "+q["node"]);
+	    else
+		keys.push(q["dir"] + " " + q["edge"]+": "+q["node"]);
+	    return keys;
+	}},
+	"node":{"first":"NodeNames","view":"NodeNames","genKeys":function(q,res){
+	    return [q["name"]]
+	}},
+	"content":{"first":"hasContent","view":"AhasContent","genKeys":function(q,res){
+	    var keys = q["text"].toLowerCase().replace(/[^a-z $]/g,"").split(" ");
+	    if(res){
+		var ans = []
+		for(var r in res)
+		    for(var i in keys) ans.push(res[r]["value"] + ";" + keys[i]);
+		return ans;
+	    }
+	    return keys;
+	}},
+	"time":{"first":"time","view":"Atime","genKeys":function(q,res){
+	    return [];
+	}},
+	"conn":{"first":"connB","view":"AconnB","genKeys":function(q,res){
+	    var keys = [];
+	    if(res)
+		for(var r in result)
+		    keys.push(res[r]["value"] + ";" + q["node"]);
+	    else
+		keys = [q["node"]];
+	    return keys;
+	}}
+    };
+
+    $scope.send_query = function(queries,success,index,result){
+	if(index == null){
+	    index = 0;
+	    result = {}
+	}
+	var q = queries[index];
+	var view = "";
+	if(index == 0) view = queryViews[q["type"]]["first"];
+	else view = queryViews[q["type"]]["view"];
+	var nextKeys = queryViews[q["type"]]["genKeys"](q,result);
+	console.log("SEND_QUERY",JSON.stringify(queries),index,view,JSON.stringify(nextKeys));
+	$.couch.db(theDB).view("cat/"+view, {
+	    success: function(data) {
+		console.log('SQ_got_data',JSON.stringify(data));
+		var res = [];
+		for(var d in data["rows"])
+		    res.push(data["rows"][d])
+		if(index+1 < queries.length) sendQueryHelper(queries,index+1,res,success);
+		else success(res)
+	    },
+	    keys: nextKeys,
+	    error: couchError,
+	    reduce: false
+	});
+    }
+
+    $scope.update_edges = function(){
+	// Delete all stale edges
+	
+    }
 });
 
 function couchError(status){
@@ -220,44 +294,9 @@ function sendQuery(queries,successFn){
 //       target
 
 
-function sendQueryHelper(queries,index,result,success,successSuccessFn){
+function sendQueryHelper(queries,index,result,success){
     console.log(JSON.stringify(queries));
     var q = queries[index];
-    var queryViews = {"edge":{"first":"relB","view":"ArelB","genKeys":function(q,res){
-	var keys = [];
-	if(res)
-	    for(var r in res)
-		keys.push(res[r]["value"] + " " + q["dir"] + " " + q["edge"]+": "+q["node"]);
-	else
-	    keys.push(q["dir"] + " " + q["edge"]+": "+q["node"]);
-	return keys;
-    }
-			     },
-		      "node":{"first":"NodeNames","view":"NodeNames","genKeys":function(q,res){
-			  return [q["name"]]
-		      }
-			     },
-		      "content":{"first":"hasContent","view":"AhasContent","genKeys":function(q,res){
-			  var keys = q["text"].toLowerCase().replace(/[^a-z $]/g,"").split(" ");
-			  if(res){
-			      var ans = []
-			      for(var r in res)
-				  for(var i in keys) ans.push(res[r]["value"] + ";" + keys[i]);
-			      return ans;
-			  }
-			  return keys;
-		      }
-				},
-		      "time":{"first":"time","view":"Atime","genKeys":function(q,res){return [];}},
-		      "conn":{"first":"connB","view":"AconnB","genKeys":function(q,res){
-			  var keys = [];
-			  if(res)
-			      for(var r in result)
-				  keys.push(res[r]["value"] + ";" + q["node"]);
-			  else
-			      keys = [q["node"]]
-			  return keys;
-		      }}}
 
     console.log("QQQQQQQQQQ",JSON.stringify(q));
     console.log("QS",JSON.stringify(queries));
@@ -274,7 +313,7 @@ function sendQueryHelper(queries,index,result,success,successSuccessFn){
 	    for(var d in data["rows"])
 		res.push(data["rows"][d])
 	    if(index+1 < queries.length) sendQueryHelper(queries,index+1,res,success);
-	    else success(res,successSuccessFn)
+	    else success(res)
 	},
 	keys: nextKeys,
 	error: couchError,
@@ -520,30 +559,6 @@ function Node(dict,active){
 	});
     }
 
-
-    this.activate = function(){
-	_self.active = true;
-	_self.div.detach();
-	_self.activateDiv.detach();
-	_self.deactivateDiv.prependTo(_self.nameDiv);
-	_self.div.appendTo("#activeNodes");
-    }
-    
-    this.deactivate = function(){
-	_self.active = false;
-	_self.div.detach();
-	_self.deactivateDiv.detach();
-	_self.activateDiv.prependTo(_self.nameDiv);
-	_self.div.appendTo("#nodes");
-    }
-    
-    this.div = $("<div />",{id:this.name, class:"node"});
-    this.nameDiv = $("<div />",{id:this.name+"_name", class:"name"}).appendTo(this.div);
-    this.edgesDiv = $("<div />",{id:this.name+"_edges", class:"edges"}).appendTo(this.div);
-    this.contentDiv = $("<div />",{id:this.name+"_content", class:"content"}).appendTo(this.div);
-
-    this.activateDiv = $("<div />",{class:"activationButton",text:"[!]",click:function(e){_self.activate();}})
-    this.deactivateDiv = $("<div />",{class:"activationButton",text:"[x]",click:function(e){_self.deactivate();}});
     this.dialog  = $("<div/>").dialog({
 	    autoOpen: false
 	});
