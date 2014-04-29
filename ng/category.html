@@ -28,20 +28,21 @@
 	<!-- <div class="activationButton" ng-click="activate($index)">[!]</div> -->
 	<div class="activationButton" ng-if="active == true" ng-click="deactivate($index)">[x]</div>
 	<div class="activationButton" ng-if="active == false" ng-click="activate(node)">[!]</div>
-	<div class="nodeBox" ng-if="node.editing == false" ng-click="node_edit(node)">{{node.obj.name}}</div>
-	<div ng-if="node.editing == true">
-	  <input type="input" ng-keyup="node_key($event,node)" value="{{node.obj.name}}" ng-model="node.str" />
+	<div class="nodeBox" ng-if="node.editing_name == false" ng-click="node_name_edit(node)">{{node.obj.name}}</div>
+	<div ng-if="node.editing_name == true">
+	  <input type="input" ng-keyup="node_name_key($event,node)" value="{{node.obj.name}}" ng-model="node.str" />
 	</div>
       </div>
       <div class="edges">
-	<div class="edge" ng-repeat="edge in edges | source:node.obj.name">
+	
+	<div class="edge" ng-repeat="edge in filtered= (edges | source:node.obj.name)">
 	  <div ng-if="edge.editing != true">
-	    <div class="edgeTitle">{{edge.obj.dir}} {{edge.obj.name}}</div>
+	    <div class="edgeTitle">{{edge_title(edge)}}</div>
 	    <div class="nodeBox" ng-click="set_current_by_name(edge.obj.target)">{{edge.obj.target}}</div>
 	    <div class="activationButton" ng-click="edge_edit(edge)">[edit]</div>
 	  </div>
 	  <div ng-if="edge.editing == true">
-	    <input type="input" ng-keyup="edge_key($event,edge)" value="{{edge_str(edge)}}" ng-model="edge.str" />
+	    <input type="input" ng-keyup="edge_key($event,edge,node)" value="{{edge_str(edge)}}" ng-model="edge.str" />
 	  </div>
 	</div>
 	<div class="activationButton" ng-click="edge_add(node)">[+]</div>
@@ -50,7 +51,7 @@
 	<div class="content">{{node.obj.content}}</div>
 	<!-- <div class="timestamp">{{node.obj.timestamp | date:yyyyMMddTHHmmssZ}}</div> -->
       </div>
-      <div class="activationButton">[D]</div>
+      <div class="activationButton" ng-click="node_delete(node)">[D]</div>
     </script>
 
     <script type="text/ng-template" id="search_query.html">

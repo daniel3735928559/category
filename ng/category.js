@@ -11,8 +11,8 @@ app.filter('source', function(){
 
 app.controller("NodesController", function($scope){
     $scope.search_display = false;
-    $scope.nodes = [{"str":"Penguin",editing:false,"obj":{"name":"Penguin","content":"So Funny","timestamp":"2013-04-25T13:43:00"}},{"str":"Giraffe",editing:false,"obj":{"name":"Giraffe","content":"blah","timestamp":"2013-04-25 13:43:00 CDT"}}];
-    $scope.edges = [{"str":"",editing:false,"obj":{"source":"Penguin","dir":"has","name":"friend","target":"Giraffe"}}];
+    $scope.nodes = [{"str":"Penguin",editing_content:false,"content_zoom":false,editing_name:false,"obj":{"name":"Penguin","content":"So Funny","timestamp":"2013-04-25T13:43:00"}},{"str":"Giraffe",editing_content:false,"content_zoom":false,editing_name:false,"obj":{"name":"Giraffe","content":"blah","timestamp":"2013-04-25 13:43:00 CDT"}}];
+    $scope.edges = [{"str":"",editing:false,"obj":{"source":"Penguin","dir":"has","name":"friend","target":"Giraffe"}},{"str":"",editing:false,"obj":{"source":"Giraffe","dir":"isof","name":"friend","target":"Penguin"}}];
     $scope.stale_edges = [];
     $scope.theDB = "test1";
     $.couch.urlPrefix = "http://localhost:11111/db";
@@ -27,39 +27,46 @@ app.controller("NodesController", function($scope){
 
     $scope.activate = function(node){ console.log("N",JSON.stringify(node)); $scope.active_nodes.push(node); $scope.$apply(); }
     $scope.deactivate = function(idx){ $scope.active_nodes.splice(idx,1); $scope.$apply(); }
+
     $scope.node_add = function(node){
 	var new_node = {"editing":true,"str":"","obj":{"type":"node","name":"","content":"","timestamp":"20130425T000000 UTC"}};
 	$scope.active_nodes.push(new_node); 
 	$scope.nodes.push(new_node); 
 	$scope.$apply(); 
     }
+
     $scope.node_name_key = function(e,node){ 
 	if(e.keyCode == 13){ 
-	    var old_nane = node.obj.name;
+	    var old_name = node.obj.name;
 	    for(var e in $scope.edges){
 		e = $scope.edges[e];
-		if(e.source == old_name) e.obj.source = node.str;
-		if(e.target == old_name) e.obj.target = node.str;
+		if(e.obj.source == old_name) e.obj.source = node.str;
+		if(e.obj.target == old_name) e.obj.target = node.str;
 	    }
 	    node.obj.name = node.str;
-	    node.editing = false;
+	    node.editing_name = false;
 	    $scope.$apply();
 	    $scope.node_update(node,old_name);
 	}
     }
-    $scope.node_name_edit = function(node){ node.editing = true; $scope.$apply(); }
+
+    $scope.node_name_edit = function(node){ console.log("ASD"); node.editing_name = true; $scope.$apply(); }
+    
     $scope.node_content_key = function(e,node){ 
 	if(e.keyCode == 27){ 
 	    for(var e in $scope.edges){
 		e = $scope.edges[e];
 	    }
 	    node.obj.name = node.str;
-	    node.editing = false;
+	    node.editing_content = false;
 	    $scope.$apply(); 
 	}
     }
-    $scope.node_content_edit = function(node){ node.editing = true; $scope.$apply(); }
+    
+    $scope.node_content_edit = function(node){ node.editing_content = true; $scope.$apply(); }
+    
     $scope.set_current = function(node){ $scope.current_nodes = [node]; $scope.$apply(); }
+
     $scope.set_current_by_name = function(name){
 	console.log(name);
 	var found = false;
@@ -75,47 +82,83 @@ app.controller("NodesController", function($scope){
 	    //go to database
 	}
     }
-    $scope.node_update(node,old_name){
+
+    $scope.node_update = function(node,old_name){
 	// Push the node object and all "has" edge objects related to
 	// this node object to the database after deleting all edges
 	// referencing the node (possibly by its old_name)
-
 	var edge_list = [];
-	for(var e in edges){
-	    e = edges[e].obj;
-	    if(e.dir == "has" && (e.source == node.obj.name || e.target == node.obj.name))
+	console.log("NU",JSON.stringify(node));
+	for(var e in $scope.edges){
+	    e = $scope.edges[e].obj;
+	    if(e.source == node.obj.name){
+		console.log("FOUND_EDGE_TO_ADD",JSON.stringify(e));
+		delete e._id;
+		delete e._rev;
 		edge_list.push(e);
+	    }
 	}
-
+	console.log("EDGESTOPUSH",JSON.stringify(edge_list));
 	$scope.next_cb({},[
-	    function(data,cb_list){ $scope.cb_edges_by_node_name(data,cb_list,old_name); },
+	    function(data,cb_list){ $scope.cb_edges_by_node_name(old_name,cb_list); },
 	    $scope.cb_delete_data_docs,
-	    function(data,cb_list){ $scope.cb_save_doc(data,cb_list,node.obj); },
-	    function(data,cb_list){ $scope.cb_save_docs(data,cb_list,edge_list); },
+	    function(data,cb_list){ $scope.cb_save_doc(node.obj,cb_list); },
+	    function(data,cb_list){ $scope.cb_save_docs(edge_list,cb_list); },
 	]);
     }
 
+    $scope.node_delete = function(node) {
+	$scope.next_cb({},[
+	    function(data,cb_list){ $scope.cb_edges_by_node_name(node.obj.name,cb_list); },
+	    $scope.cb_delete_data_docs,
+	    function(data,cb_list){ $scope.cb_delete_data_doc(node.obj,cb_list); },
+	]);	
+    }
+
+    
     // Edge stuff
 
     $scope.edge_edit = function(edge){ edge.editing = true; $scope.$apply();}
+
     $scope.edge_add = function(node){ $scope.edges.push({"editing":true,"str":"","obj":{"type":"edge","source":node.obj.name,"dir":"","name":"","target":""}}); $scope.$apply(); }
+
     $scope.edge_str = function(edge){ 
 	return edge.obj.dir == "has" ?  "has " + edge.obj.name + ": " + edge.obj.target :  "is " + edge.obj.name + " of: " + edge.obj.target;
     }
-    $scope.edge_key = function(e,edge){ 
+    $scope.edge_title = function(edge){ 
+	return edge.obj.dir == "has" ?  "has " + edge.obj.name :  "is " + edge.obj.name + " of";
+    }
+
+    $scope.edge_dualise = function(edge){ return {"type":"edge","source":edge.target,"dir":edge.dir == "has" ? "isof":"has","name":edge.name,"target":edge.source}; }
+
+    $scope.edge_key = function(e,edge,node){ 
 	console.log(JSON.stringify(edge));
 	if(e.keyCode == 13){ 
 	    console.log("asda");
 	    var obj = $scope.edge_parse(edge);
 	    if(obj.error) $scope.error_msg = obj.error;
 	    else{
-		console.log("obj",obj);
+		console.log("obj",obj,JSON.stringify(edge));
+		var dual = $scope.edge_dualise(edge.obj);
+		console.log("DUEL",JSON.stringify(dual));
+		for(var e in $scope.edges){
+		    e = $scope.edges[e];
+		    console.log("DUEL?",JSON.stringify(e));
+		    if(e.obj.dir == dual.dir && e.obj.source == dual.source && e.obj.target == dual.target && e.obj.name == dual.name){
+			console.log("FOUND E",JSON.stringify(e));
+			e.obj = $scope.edge_dualise(obj);
+			break;
+		    }
+		}
 		edge.obj = obj;
 		edge.editing = false;
+		console.log("obj",obj,JSON.stringify(edge));
+		$scope.node_update(node,node.str);
 	    }
 	    $scope.$apply(); 
 	} 
     }
+
     $scope.edge_parse = function(edge){
 	var s = edge.str;
 	if(s.indexOf("has ") == 0){
@@ -134,14 +177,27 @@ app.controller("NodesController", function($scope){
     
     // Search stuff
 
+    $scope.search = function(){
+	$scope.current_query = [];
+	console.log("QS",JSON.stringify($scope.queries));
+	for(var q in $scope.queries)
+	    $scope.current_query.push($scope.queries[q].obj);
+	$scope.query_run();
+    }
+
     $scope.toggle_search = function(){ $scope.search_display = !($scope.search_display); $scope.$apply();}
+    
     $scope.query_edit = function(q){ q.editing = true; $scope.$apply(); }
+    
     $scope.query_add = function(){ $scope.queries.push({"editing":true,"str":"","obj":{}}); $scope.$apply(); }
+    
     $scope.query_remove = function(idx){ $scope.queries.splice(idx,1); $scope.$apply(); }
+    
     $scope.query_key = function(e,q){ 
 	if(e.keyCode == 13){ q.editing = false; $scope.$apply(); }
 	q.obj = $scope.query_parse(q.str); 
     }
+    
     $scope.query_parse = function(s){
 	if(s.indexOf("has ") == 0){
 	    var match = s.match(/has ([.,-a-zA-Z0-9_ ]+): *([.,-a-zA-Z0-9_ ]+)/i);
@@ -174,12 +230,14 @@ app.controller("NodesController", function($scope){
 	var active_query = [];
 	for(var n in $scope.active_nodes)
 	    active_query.push({"type":"node","name":$scope.active_nodes[n].obj.name});
+	$scope.active_nodes = [];
+	$scope.current_nodes = [];
 	$scope.nodes = [];
 	$scope.edges = [];
 	var recv_cb = function(res,arr){
 	    for(var n in res.nodes){
 		n = res.nodes[n];
-		var new_node = {"content_zoom":false,"content_editing":false,"editing":false,str:n.name,obj:n};
+		var new_node = {"content_zoom":false,"editing_content":false,"editing_name":false,str:n.name,obj:n};
 		$scope.nodes.push(new_node);
 		arr.push(new_node);
 	    }
@@ -187,38 +245,44 @@ app.controller("NodesController", function($scope){
 		var new_edge = {"str":"","editing":false,"obj":res.edges[e]};
 		new_edge.str = $scope.edge_str(new_edge);
 		$scope.edges.push(new_edge);
+		new_edge = {"str":"","editing":false,"obj":$scope.edge_dualise(res.edges[e])};
+		new_edge.str = $scope.edge_str(new_edge);
+		$scope.edges.push(new_edge);
 	    }
+	    $scope.$apply();
 	}
-	$scope.or_query(active_query,function(res){ recv_cb(res,$scope.active_nodes}); );
-	$scope.and_query(current_query,function(res){ recv_cb(res,$scope.current_nodes}); );
 
-	$.couch.db($scope.theDB).view("cat/SourceOrTarget", {
-	    success: function(data) {
-		console.log("batman", JSON.stringify(data));
-		$scope.nodes = [];
-		$scope.edges = [];
-		var sources = [];
-		for(var d in data["rows"]){
-		    var edge = data["rows"][d]["value"];
-		    $scope.edges.push(edge);
-		    if(sources.indexOf(edge["source"]) < 0) sources.push(edge["source"]);
-		}
-		$.couch.db($scope.theDB).view("cat/NodeNames", {
-		    success: function(data){
-			console.log(JSON.stringify(data));
-			for(var i in data["rows"])
-			    $.couch.db($scope.theDB).openDoc(data["rows"][i]["id"],{success:function(data){$scope.nodes.push(data);$scope.$apply();}, error:couch_error});
-		    },
-		    keys: sources,
-		    error: couch_error,
-		    reduce: false
-		});
+	//$scope.or_query(active_query,function(res){ recv_cb(res,$scope.active_nodes);});
+	console.log("CQ",JSON.stringify($scope.current_query));
+	$scope.and_query($scope.current_query,function(res){ recv_cb(res,$scope.current_nodes);});
+
+	// $.couch.db($scope.theDB).view("cat/SourceOrTarget", {
+	//     success: function(data) {
+	// 	console.log("batman", JSON.stringify(data));
+	// 	$scope.nodes = [];
+	// 	$scope.edges = [];
+	// 	var sources = [];
+	// 	for(var d in data["rows"]){
+	// 	    var edge = data["rows"][d]["value"];
+	// 	    $scope.edges.push(edge);
+	// 	    if(sources.indexOf(edge["source"]) < 0) sources.push(edge["source"]);
+	// 	}
+	// 	$.couch.db($scope.theDB).view("cat/NodeNames", {
+	// 	    success: function(data){
+	// 		console.log(JSON.stringify(data));
+	// 		for(var i in data["rows"])
+	// 		    $.couch.db($scope.theDB).openDoc(data["rows"][i]["id"],{success:function(data){$scope.nodes.push(data);$scope.$apply();}, error:couch_error});
+	// 	    },
+	// 	    keys: sources,
+	// 	    error: couch_error,
+	// 	    reduce: false
+	// 	});
 		
-	    },
-	    keys: $scope.node_names,
-	    error: couch_error,
-	    reduce: false
-	});
+	//     },
+	//     keys: $scope.node_names,
+	//     error: couch_error,
+	//     reduce: false
+	// });
     }
 
     // Server stuff
@@ -260,30 +324,30 @@ app.controller("NodesController", function($scope){
 	}}
     };
 
-    $scope.or_query = function(queries,success,index,result){
-	// This needs to send to success a dictionary like: 
-	// {"nodes":[node1,node2,...],"edges":[edge1,edge2,...]}
-	// It doesn't do this now.  What even does it do?
-	if(index == null)
-	    index = 0;
-	var q = queries[index];
-	var view = queryViews[q["type"]]["first"];
-	var next_keys = queryViews[q["type"]]["genKeys"](q);
-	console.log("SEND_OR_QUERY",JSON.stringify(queries),index,view,JSON.stringify(next_keys));
-	$.couch.db($scope.theDB).view("cat/"+view, {
-	    success: function(data) {
-		console.log('SQ_got_data',JSON.stringify(data));
-		var res = result;
-		for(var d in data["rows"])
-		    res.push(data["rows"][d])
-		if(index+1 < queries.length) $scope.send_query(queries,success,index+1,res);
-		else success(res)
-	    },
-	    keys: next_keys,
-	    error: couch_error,
-	    reduce: false
-	});
-    }
+    // $scope.or_query = function(queries,success,index,result){
+    // 	// This needs to send to success a dictionary like: 
+    // 	// {"nodes":[node1,node2,...],"edges":[edge1,edge2,...]}
+    // 	// It doesn't do this now.  What even does it do?
+    // 	if(index == null)
+    // 	    index = 0;
+    // 	var q = queries[index];
+    // 	var view = queryViews[q["type"]]["first"];
+    // 	var next_keys = queryViews[q["type"]]["genKeys"](q);
+    // 	console.log("SEND_OR_QUERY",JSON.stringify(queries),index,view,JSON.stringify(next_keys));
+    // 	$.couch.db($scope.theDB).view("cat/"+view, {
+    // 	    success: function(data) {
+    // 		console.log('SQ_got_data',JSON.stringify(data));
+    // 		var res = result;
+    // 		for(var d in data["rows"])
+    // 		    res.push(data["rows"][d])
+    // 		if(index+1 < queries.length) $scope.send_query(queries,success,index+1,res);
+    // 		else success(res)
+    // 	    },
+    // 	    keys: next_keys,
+    // 	    error: couch_error,
+    // 	    reduce: false
+    // 	});
+    // }
 
     $scope.and_query = function(queries,success,index,result){
 	// This needs to send to success a dictionary like: 
@@ -295,9 +359,9 @@ app.controller("NodesController", function($scope){
 	}
 	var q = queries[index];
 	var view = "";
-	if(index == 0) view = queryViews[q["type"]]["first"];
-	else view = queryViews[q["type"]]["view"];
-	var next_keys = queryViews[q["type"]]["genKeys"](q,result);
+	if(index == 0) view = $scope.query_views[q["type"]]["first"];
+	else view = $scope.query_views[q["type"]]["view"];
+	var next_keys = $scope.query_views[q["type"]]["genKeys"](q,result);
 	console.log("SEND_AND_QUERY",JSON.stringify(queries),index,view,JSON.stringify(next_keys));
 	$.couch.db($scope.theDB).view("cat/"+view, {
 	    success: function(data) {
@@ -306,7 +370,40 @@ app.controller("NodesController", function($scope){
 		for(var d in data["rows"])
 		    res.push(data["rows"][d])
 		if(index+1 < queries.length) $scope.send_query(queries,success,index+1,res);
-		else success(res)
+		else{
+		    var final_ans = {"nodes":[],"edges":[]};
+		    var uniq_names = []
+		    for(var d in data["rows"]) if(uniq_names.indexOf(data["rows"][d]["value"]) < 0) uniq_names.push(data["rows"][d]["value"]);
+		    console.log("UNUN",JSON.stringify(uniq_names));
+		    $.couch.db($scope.theDB).view("cat/NodeNames", {
+			success: function(data) {
+			    console.log("FINAL NODES",JSON.stringify(data));
+			    for(var i in data["rows"]) final_ans.nodes.push(data["rows"][i]["doc"]);
+			    $.couch.db($scope.theDB).view("cat/SourceOrTarget", {
+				success: function(data) {
+				    console.log("FINAL EDGES",JSON.stringify(data));
+				    var edge_ids = [];
+				    for(var i in data["rows"]){
+					if(edge_ids.indexOf(data["rows"][i]["id"]) < 0){
+					    edge_ids.push(data["rows"][i]["id"]);
+					    final_ans.edges.push(data["rows"][i]["doc"]);
+					}
+				    }
+				    console.log("FINAL ANS",JSON.stringify(final_ans));
+				    success(final_ans);
+				},
+				keys: uniq_names,
+				include_docs: true,
+				error: couch_error,
+				reduce: false
+			    });
+			},
+			keys: uniq_names,
+			include_docs: true,
+			error: couch_error,
+			reduce: false
+		    });
+		}
 	    },
 	    keys: next_keys,
 	    error: couch_error,
@@ -314,42 +411,51 @@ app.controller("NodesController", function($scope){
 	});
     }
     
-    $scope.next_cb(data,cb_list){
+    $scope.next_cb = function(data,cb_list,end){
 	if(cb_list.length > 0){
 	    var cb = cb_list.splice(0,1);
-	    cb(data,cb_list);
+	    cb[0](data,cb_list);
 	}
+	else end();
     }
 
-    $scope.cb_edges_by_node_name = function(data,cb_list,args){
-	$.couch.db(theDB).view("cat/SourceOrTarget", {
+    $scope.cb_edges_by_node_name = function(data,cb_list){
+	$.couch.db($scope.theDB).view("cat/SourceOrTarget", {
 	    success: function(data) { $scope.next_cb(data,cb_list); },
-	    key: args,
+	    key: data,
 	    error: couch_error,
 	    reduce: false
 	});
     }
 
-    $scope.cb_delete_data_docs = function(data,cb_list,args){
+    $scope.cb_delete_data_docs = function(data,cb_list){
 	var ids = [];
 	for(var row in data["rows"])
 	    ids.push({"_id":data["rows"][row]["value"]["_id"],"_rev":data["rows"][row]["value"]["_rev"]});
 	console.log("ids",JSON.stringify(data),JSON.stringify(ids));
-	$.couch.db(theDB).bulkRemove({"docs":ids},{
+	$.couch.db($scope.theDB).bulkRemove({"docs":ids},{
 	    success:function(data){ $scope.next_cb(data,cb_list); }, 
 	    error: couch_error
 	});
     }
 
-    $scope.cb_save_doc = function(data,cb_list,args){
-	$.couch.db(theDB).saveDoc(args, { 
+    $scope.cb_delete_data_doc = function(data,cb_list){
+	console.log("ids",JSON.stringify(data));
+	$.couch.db($scope.theDB).removeDoc(data,{
+	    success:function(data){ $scope.next_cb(data,cb_list); }, 
+	    error: couch_error
+	});
+    }
+
+    $scope.cb_save_doc = function(data,cb_list){
+	$.couch.db($scope.theDB).saveDoc(data, { 
 	    success:function(data) { $scope.next_cb(data,cb_list); },
 	    error: couch_error
 	});
     }
 
-    $scope.cb_save_docs = function(data,cb_list,args){
-	$.couch.db(theDB).bulkSave({"docs":args}, {
+    $scope.cb_save_docs = function(data,cb_list){
+	$.couch.db($scope.theDB).bulkSave({"docs":data}, {
 	    success:function(data) { $scope.next_cb(data,cb_list); },
 	    error: couch_error
 	});
