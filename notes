@@ -1,0 +1,98 @@
+Example db in one possible schema
+
+Nodes:
+{"name": "Penguin", "text":"Penguin is a very confused ostrich"}
+{"name": "Giraffe", "text":"Giraffe is a ranger in Kenya"}
+{"name": "Mickies", "text":"Yummy"}
+{"name": "That one conversation", "text":"Lalit and Daniel discussed category over milkshakes and realised it might not suck"}
+{"name":"Lalit Jain", "text":"This fellow"}
+{"name":"Daniel Ross", "text":"That chap"}
+{"name":"Madison, Wisconsin", "text":"The place"}
+{"name":"Butterscotch Milkshake", "text":"So good"}
+{"name":"Category", "text":"this"}
+
+Edges: 
+{"has":"friend","who":"Giraffe","what":"Penguin"}
+{"has":"location","who":"That one conversation","what":"Mickies"}
+{"has":"location","who":"Mickeys","what":"Madison"}
+{"has":"participant","who":"That one conversation","what":"Lalit Jain"}
+{"has":"participant","who":"That one conversation","what":"Daniel Ross"}
+{"has":"time","who":"That one conversation","what":"Morning"}
+{"has":"food","who":"Mickies","what":"Butterscotch Milkshake"}
+{"has":"topic","who":"That one conversation","what":"Category"}
+
+Possible syntax choices for 
+
+( ( content: 27 lines ) and ( is theorem ) / is topic of ) and has author David Brown
+
+has topic (27 lines and is theorem) and has author David Brown
+
+A possible grammar for this second one: 
+
+"has" return 'HAS'
+
+"has" HAS
+"is" IS
+"of" OF
+"\"" QUOTE
+"and" AND
+"or" OR
+"(" LPAREN
+")" RPAREN
+"=" EQ
+
+
+q:       HAS CONTEXT q
+       | HAS CONTEXT
+       | CONTEXT OF q
+       | IS CONTEXT
+       | NODENAME
+       | QUOTE CONTENT QUOTE
+       | q AND q
+       | q OR q
+       | LPAREN q RPAREN
+
+
+
+Types of queries and corresponding mongo queries: 
+
+Find something that has location madison:
+
+db.edges.find({"has":"location","what":"Madison, Wisconsin"}) then get the whos
+
+
+Find things that are foods of Mickies:
+
+db.edges.find({"has":"food","who":"Mickies"}) then get the whats
+
+
+Find something that has location Mickies and participant Lalit Jain:
+
+db.edges.find({"has":"location","what":"Mickies"}) list whos
+db.edges.find({"has":"participant","what":"Lalit Jain"}) list whos
+db.nodes.find({$or: ["name":who for who in intersection]}) 
+
+Find things that are food of X where X has location "Madison, Wisconsin":
+
+db.edges.find({"has":"food"}) list whos
+db.edges.find({"has":"location","what":"Madison, Wisconsin"}) list whos
+db.nodes.find({$or: ["name":who for who in intersection of lists]}) 
+
+in Madison and has food / food
+
+Find things that either have food "Butterscotch Milkshake" or have food "Pizza": 
+
+db.edges.find({"has":"food","what":"Butterscotch Milkshake"}) list whos
+db.edges.find({"has":"food","what":"Pizza"}) list whos
+db.nodes.find({$or: ["name":who for who in union of lists]}) 
+
+
+Types of updates and corresponding mongo queries: 
+
+Delete a node
+Rename a node
+Create edge where an endpoint doesn't exist
+Delete an edge
+Create node
+Create edge between existing nodes
+
