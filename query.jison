@@ -38,24 +38,24 @@ qs
     : q
         { $$ = $1; }
     | q ',' andq
-        {$$ = {"and":[$1].concat($3)};}
+        {$$ = ["and",[$1].concat($3)];}
     | q '/' orq
-        {$$ = {"or":[$1].concat($3)};}
+        {$$ = ["or",[$1].concat($3)];}
     ;
 
 
 q
     : name
-        {$$ = $1;}
+        {$$ = ["name",$1];}
     | HAS name
-        {$$ = {"edge":$2,"dir":"has"};}
+        {$$ = ["edge",{"name":$2,"dir":"has"}];}
     | IS name
-        {$$ = {"edge":$2,"dir":"is"};}
+        {$$ = ["edge",{"name":$2,"dir":"is"}];}
     | HAS name ':' q
-        {$$ = {"edge":$2,"dir":"has","query":$4};}
+        {$$ = ["edge",{"name":$2,"dir":"has","query":$4}];}
     | name OF ':' q
-        {$$ = {"edge":$1,"dir":"is","query":$4};}
-    | '(' q ')'
+        {$$ = ["edge",{"name":$1,"dir":"is","query":$4}];}
+    | '(' qs ')'
         {$$ = $2;}
     ;
 
@@ -75,9 +75,9 @@ orq
 
 name
     : words
-        {$$ = {"name":$1};}
+        {$$ = $1;}
     | '*'
-        {$$ = {"any":"*"};}
+        {$$ = "*";}
     ;
 
 words
