@@ -20,8 +20,9 @@ var Category = function(){
     "topic":{
 	"paper1":["There are exactly 27 lines in every cubic surface"]}
     };
-    this.nodes = this.extract_nodes(this.has_edges);
     this.is_edges = this.dualize_edges(this.has_edges);
+    this.nodes = this.extract_nodes(this.has_edges,{});
+    this.nodes = this.extract_nodes(this.is_edges,this.nodes);
     console.log(this.is_edges);
 }
 
@@ -141,8 +142,8 @@ Category.prototype.extract_objects = function(text){
     return [];
 }
     
-Category.prototype.extract_nodes = function(edges){
-    var nodes = {};
+Category.prototype.extract_nodes = function(edges, n){
+    var nodes = n;
     for(var e in edges){
 	for(var n in edges[e]){
 	    if(!(n in nodes)){
@@ -150,6 +151,7 @@ Category.prototype.extract_nodes = function(edges){
 	    }
 	}
     }
+    return nodes;
 }
 
 Category.prototype.dualize_edges = function(edges){
@@ -259,9 +261,16 @@ Category.prototype.search_obj = function(q){
 
 var c = new Category();
 
-console.log("ANSWER",JSON.stringify(c.search_string("has location: (has food: Butterscotch milkshake / has food: Pizza)")));
+//console.log("ANSWER",JSON.stringify(c.search_string("has location: (has food: Butterscotch milkshake / has food: Pizza)")));
 
-console.log("ANSWER",JSON.stringify(c.search_string("is food")));
+//console.log("ANSWER",JSON.stringify(c.search_string("is food")));
+console.log("N",c.nodes);
+console.log("I",c.is_edges);
+console.log("H",c.has_edges);
 
 console.log("ANSWER",JSON.stringify(c.search_string("is location")));
-console.log("ANSWER",JSON.stringify(c.search_string("topic of: has author: David Brown")));
+//console.log("ANSWER",JSON.stringify(c.search_string("topic of: has author: David Brown")));
+
+if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
+    exports.category = c;
+}

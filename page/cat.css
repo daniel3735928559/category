@@ -1,0 +1,27 @@
+div.super{
+
+}
+
+div.search{
+    width:45%;
+    float:left;
+    padding:20px;
+}
+
+div.main{
+    width:45%;
+    float:left;
+    padding:20px;
+}
+
+div.search_box{
+    height:100px;
+    background-color:#999;
+    padding:10px;
+}
+
+div.search_results{
+    height:300px;
+    background-color:#ccc;
+    padding:10px;
+}
