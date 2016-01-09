@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Kit</title>
+    <!-- <link rel="stylesheet" type="text/css" href="kit.css"> -->
+    <link rel="stylesheet" href="lib/katex/katex-modified.min.css">
+    <script src="lib/katex/katex-modified.min.js"></script>
+    <link rel="stylesheet" href="/lib/codemirror/codemirror.css">
+    <link rel="stylesheet" href="/lib/codemirror/addon/fold/foldgutter.css">
+    <script src="/lib/codemirror/codemirror.js"></script>
+    <script src="/lib/codemirror/modes/xml.js"></script>
+    <script src="/lib/codemirror/addon/fold/foldcode.js"></script>
+    <script src="/lib/codemirror/addon/fold/foldgutter.js"></script>
+    <script src="/lib/codemirror/addon/fold/xml-fold.js"></script>
+    <script type="text/javascript" src="plugins/argument/plugin.js"></script>
+    <script type="text/javascript" src="plugins/checklist/plugin.js"></script>
+    <script type="text/javascript" src="plugins/category/plugin.js"></script>
+    <script type="text/javascript" src="plugins/draw/plugin.js"></script>
+    <script type="text/javascript" src="plugins/code/plugin.js"></script>
+    <script type="text/javascript" src="plugins/guppy/guppy.js"></script>
+    <script type="text/javascript" src="plugins/guppy/plugin.js"></script>
+    <script type="text/javascript" src="plugins/av/plugin.js"></script>
+    <script type="text/javascript" src="kit.js"></script>
+  </head>
+  <body>
+    <div id="in">
+      <textarea style="display:inline-block;" id="area"></textarea>
+    </div>
+    <div style="display:inline-block;border:1px solid black;" id="out"></div>
+    <script type="text/javascript">
+      Guppy.guppy_init("plugins/guppy/transform.xsl","plugins/guppy/symbols.json");
+var k = new Kit(
+{'input':document.getElementById("area"),
+'container':document.getElementById("in"),
+     'edit':function(){
+         document.getElementById("out").style.display = "none";
+         document.getElementById("in").style.display = "inline-block";
+     },
+     'output':function(doc){
+         document.getElementById("in").style.display = "none";
+         document.getElementById("out").style.display = "inline-block";
+         document.getElementById("out").innerHTML = "";
+         document.getElementById("out").appendChild(doc);
+     }
+    });
+
+    </script>
+  </body>
+</html>

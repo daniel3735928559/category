@@ -21,9 +21,25 @@ var Category = function(){
 	"paper1":["There are exactly 27 lines in every cubic surface"]}
     };
     this.is_edges = this.dualize_edges(this.has_edges);
-    this.nodes = this.extract_nodes(this.has_edges,{});
-    this.nodes = this.extract_nodes(this.is_edges,this.nodes);
+    this.nodes = {"Mickies":{"data":"Mickies Dairy Bar is a place"},
+		  "Ians":{"data":""},
+		  "Fresh Madison Market":{"data":""},
+		  "Conversation zero":{"data":""},
+		  "David Brown":{"data":""},
+		  "paper1":{"data":""},
+		  "Butterscotch milkshake":{"data":""},
+		  "Sweet potato fries":{"data":""},
+		  "Pizza":{"data":""},
+		  "Butterscotch peanut butter":{"data":""},
+		  "Madison":{"data":""},
+		  "restaurant":{"data":""},
+		  "store":{"data":""},
+		  "person":{"data":""},
+		  "There are exactly 27 lines in every cubic surface":{"data":""}}
+    // this.nodes = this.extract_nodes(this.has_edges,{});
+    // this.nodes = this.extract_nodes(this.is_edges,this.nodes);
     console.log(this.is_edges);
+    console.log("NN",JSON.stringify(this.nodes));
 }
 
 Category.EMPTY = {};
@@ -104,7 +120,7 @@ Category.prototype.rename_node_in_collection = function(name, new_name, edges){
 
 Category.prototype.node_add = function(name,text){
     if(!(name in this.nodes)){
-	this.nodes[name] = text;
+	this.nodes[name] = {"data":text};
 	return true;
     }
     return false;
@@ -127,6 +143,8 @@ Category.prototype.node_rename = function(name,new_name){
     }
     this.rename_node_in_collection(name, new_name, this.has_edges);
     this.rename_node_in_collection(name, new_name, this.is_edges);
+    this.nodes[new_name] = this.nodes[name];
+    delete this.nodes[name];
     return true;
 }
 

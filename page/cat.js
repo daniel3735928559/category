@@ -1,22 +1,8 @@
 var app = angular.module('app',[]);
 
 app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$location', '$anchorScroll', function($scope, $http, $window, $timeout, $location, $anchorScroll){
-
-    
-    $scope.display_login = false;
-    $scope.display_index = false;
-    
-    $scope.toggles = {};
-
-    
-    $scope.timestamp = "AAAA";
-    $scope.login_message = "";
-
-    $scope.show_ch4_answer = function(){ $scope.ch4_rep_answer = true; $scope.$apply();}
-    $scope.hide_ch4_answer = function(){ $scope.ch4_rep_answer = false; $scope.$apply();}
-
-
     $scope.nodes = {};
+    $scope.active_nodes = {};    
     $scope.search_nodes = {};
     $scope.query = "";
 
@@ -37,6 +23,23 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 		}
 	    );
     }
+
+    $scope.get_node = function(node_id){
+	var s = JSON.stringify({"id":node_id});
+	console.log(s);
+	$http.post("/get_node", s)
+	    .success(
+		function(data, status, headers, config) {
+		    console.log(data);
+		    $scope.active_nodes[node_id] = data;
+		})
+	    .error(
+		function(data, status, headers, config) {
+		    $scope.raise_error("Error: " + data);
+		}
+	    );
+    }
+    
     
     $scope.goto_loc = function(loc){
 	console.log(loc);

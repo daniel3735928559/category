@@ -26,6 +26,12 @@ app.post('/search', function(req, res){
     res.send(result);
 });
 
+app.post('/get_node', function(req, res){
+    console.log("NR",req.body.id);
+    result = cat.nodes[req.body.id];
+    res.send(result);
+});
+
 
 var get_ip = function(req){
     return req.header('x-forwarded-for') || req.connection.remoteAddress;

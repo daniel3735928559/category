@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <title>Category, the banana</title>
-    <link rel="stylesheet" type="text/css" href="cat.css" />
-    <link rel="stylesheet" href="/lib/katex/katex-modified.min.css">
+    <title>ng-Kit</title>
+    <!-- <link rel="stylesheet" type="text/css" href="kit.css"> -->
+    <link rel="stylesheet" href="lib/katex/katex-modified.min.css">
     <link rel="stylesheet" href="/lib/codemirror/codemirror.css">
     <link rel="stylesheet" href="/lib/codemirror/addon/fold/foldgutter.css">
     <script type="text/javascript" src="https://code.angularjs.org/1.4.0-rc.2/angular.min.js"></script>
-    <script type="text/javascript" src="cat.js"></script>
-    <script type="text/javascript" src="/lib/katex/katex-modified.min.js"></script>
+    <script type="text/javascript" src="lib/katex/katex-modified.min.js"></script>
     <script type="text/javascript" src="/lib/codemirror/codemirror.js"></script>
     <script type="text/javascript" src="/lib/codemirror/modes/xml.js"></script>
     <script type="text/javascript" src="/lib/codemirror/addon/fold/foldcode.js"></script>
@@ -27,34 +26,11 @@
     <script type="text/javascript">
       Guppy.guppy_init("/lib/guppy/transform.xsl","/lib/guppy/symbols.json");
     </script>
-
   </head>
-  <body ng-app="app">
-    <div id="super" ng-controller="CatCommander">
-      <div class="super">
-	<div class="main">
-	  <div ng-repeat="(nodeid,node) in active_nodes">
-	    <div ng-controller="KitController">
-	      <kit data="{{node.data}}" />
-	      <p>{{nodeid}}: {{node.data}}</p>
-	    </div>
-	  </div>
-	</div>
-	<div class="search">
-	  <div class="search_box">
-	    <form>
-	      <input type="text" ng-model="query"></input>
-	      <button type="submit" ng-click="search()">Search</button>
-	    </form>
-	  </div>
-	  <div class="search_results">
-	    <div ng-repeat="n in search_nodes">
-	      <a href="#" ng-click="get_node(n)">{{n}}</a><br />
-	    </div>
-	  </div>
-	</div>
-      </div>
+  <body>
+    <div id="super" ng-app="app" ng-controller="KitController">
+      {{test}}
+      <kit data="bah" />
     </div>
   </body>
 </html>
-</xsl:template>
