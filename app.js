@@ -4,10 +4,10 @@ var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var filesystem = require('fs');
 var cat = require('./category').category;
-
 var args = process.argv.slice(2);
 
 var accessLogStream = filesystem.createWriteStream(__dirname + '/logs/access.log', {flags: 'a'})
+    
 
 var app = express();
 
@@ -29,6 +29,7 @@ app.post('/search', function(req, res){
 app.post('/get_node', function(req, res){
     console.log("NR",req.body.id);
     result = cat.nodes[req.body.id];
+    result.edges = cat.get_edges(req.body.id);
     res.send(result);
 });
 

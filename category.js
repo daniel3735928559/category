@@ -59,6 +59,26 @@ Category.prototype.edge_rename = function(source, dir, name, target, new_name){
     this.edge_add(source, dir, new_name, target);
 }
 
+Category.prototype.get_edges = function(source){
+    var result = [];
+    for(var name in this.has_edges){
+	if(source in this.has_edges[name]){
+	    for(var i=0;i<this.has_edges[name][source].length;i++){
+		result.push({source:source, name: name, dir:"has", target:this.has_edges[name][source][i]});
+	    }
+	}
+    }
+
+    for(var name in this.is_edges){
+	if(source in this.is_edges[name]){
+	    for(var i=0;i<this.is_edges[name][source].length;i++)
+		result.push({source:source, name: name, dir:"is", target:this.is_edges[name][source][i]});
+	}
+    }
+    return result;
+}
+
+
 Category.prototype.add_edge_to_collection = function(source, name, target, edges){
     if(!(name in edges))
 	edges[name] = {};

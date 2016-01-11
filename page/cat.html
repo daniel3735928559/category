@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/lib/codemirror/addon/fold/foldgutter.css">
     <script type="text/javascript" src="https://code.angularjs.org/1.4.0-rc.2/angular.min.js"></script>
     <script type="text/javascript" src="cat.js"></script>
+    <script type="text/javascript" src="edges.js"></script>
     <script type="text/javascript" src="/lib/katex/katex-modified.min.js"></script>
     <script type="text/javascript" src="/lib/codemirror/codemirror.js"></script>
     <script type="text/javascript" src="/lib/codemirror/modes/xml.js"></script>
@@ -37,6 +38,9 @@
 	    <div ng-controller="KitController">
 	      <kit data="{{node.data}}" />
 	      <p>{{nodeid}}: {{node.data}}</p>
+	    </div>
+	    <div ng-controller="EdgeDisplayController">
+	      <edges data="{{node.edges}}" />
 	    </div>
 	  </div>
 	</div>
