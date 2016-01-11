@@ -32,6 +32,8 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 		function(data, status, headers, config) {
 		    console.log("post edges",data.edges);
 		    console.log(data);
+		    data['editing'] = false;
+		    data['name'] = node_id;
 		    $scope.active_nodes[node_id] = data;
 		})
 	    .error(
@@ -39,6 +41,29 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 		    $scope.raise_error("Error: " + data);
 		}
 	    );
+    }
+
+    $scope.delete_node = function(node_id){
+	return;
+    }
+
+    $scope.deactivate_node = function(node_id){
+	if($scope.active_nodes[node_id]){
+	    delete $scope.active_nodes[node_id];
+	}
+    }
+
+    $scope.edit_node = function(node_id){
+	$scope.active_nodes[node_id].editing = true;
+    }
+    
+    $scope.cancel_node = function(node_id, data){
+	$scope.active_nodes[node_id].editing = false;
+    }
+    
+    $scope.save_node = function(node_id, data){
+	$scope.active_nodes[node_id].editing = false;
+	$scope.active_nodes[node_id].data = data;
     }
 
 }]);

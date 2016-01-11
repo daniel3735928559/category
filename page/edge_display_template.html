@@ -1,6 +1,12 @@
-<div class="edge_display">
+<div class="edge_display" ng-if="!editing">
   <div ng-repeat="edge in edges track by $index">
-    {{edge.source}} {{edge.dir}} {{edge.name}} {{edge.target}}<br>
+    {{edge.dir}} {{edge.name}} {{edge.dir == "is" ? "of" : ""}} <a ng-click="get_node(edge.target)" href="#">{{edge.target}}</a><br />
+  </div>
+</div>
+
+<div class="edge_display" ng-if="editing">
+  <div ng-repeat="edge in edges track by $index">
+    Edit: ... {{edge.source}} {{edge.dir}} {{edge.name}} {{edge.target}}<br>
   </div>
 </div>
 

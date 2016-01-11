@@ -25,3 +25,27 @@ div.search_results{
     background-color:#ccc;
     padding:10px;
 }
+
+div.cat_button{
+    display:inline-block;
+    float:right;
+    border-radius:2px;
+    background-color:#ccf;
+    text-align:center;
+    cursor:pointer;
+    border:1px solid black;
+    margin:2px;
+    padding:2px 5px;
+}
+
+div.node_name{
+    display:inline-block;
+    font-size:18pt;
+    font-family:sans serif;
+}
+
+div.node_container{
+    padding-bottom:10px;
+    border-bottom:1px solid #ccf;
+    margin-bottom:10px;
+}
