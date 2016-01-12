@@ -62,8 +62,20 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
     }
     
     $scope.save_node = function(node_id, data){
+	console.log("ASDAS",$scope.active_nodes[node_id].data);
 	$scope.active_nodes[node_id].editing = false;
 	$scope.active_nodes[node_id].data = data;
+	console.log("DDD",data);
+	$http.post("/save_node", {"id":node_id,"data":$scope.active_nodes[node_id].data,"edges":$scope.active_nodes[node_id].edges})
+	    .success(
+		function(data, status, headers, config) {
+		    console.log(data);
+		})
+	    .error(
+		function(data, status, headers, config) {
+		    $scope.raise_error("Error: " + data);
+		}
+	    );
     }
 
 }]);

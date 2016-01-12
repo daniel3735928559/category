@@ -33,6 +33,14 @@ app.post('/get_node', function(req, res){
     res.send(result);
 });
 
+app.post('/save_node', function(req, res){
+    console.log("NR",req.body.id);
+    cat.nodes[req.body.id] = {"data":req.body.data};
+    console.log("RB",req.body)
+    var result = cat.set_edges(req.body.id, req.body.edges);
+    res.send(result);
+});
+
 
 var get_ip = function(req){
     return req.header('x-forwarded-for') || req.connection.remoteAddress;

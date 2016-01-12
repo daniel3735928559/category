@@ -21,21 +21,21 @@ var Category = function(){
 	"paper1":["There are exactly 27 lines in every cubic surface"]}
     };
     this.is_edges = this.dualize_edges(this.has_edges);
-    this.nodes = {"Mickies":{"data":"Mickies Dairy Bar is a place"},
-		  "Ians":{"data":""},
-		  "Fresh Madison Market":{"data":""},
-		  "Conversation zero":{"data":""},
-		  "David Brown":{"data":""},
-		  "paper1":{"data":""},
-		  "Butterscotch milkshake":{"data":""},
-		  "Sweet potato fries":{"data":""},
-		  "Pizza":{"data":""},
-		  "Butterscotch peanut butter":{"data":""},
-		  "Madison":{"data":""},
-		  "restaurant":{"data":""},
-		  "store":{"data":""},
-		  "person":{"data":""},
-		  "There are exactly 27 lines in every cubic surface":{"data":""}}
+    this.nodes = {"Mickies":{"data":"<node>Mickies Dairy Bar is a place</node>"},
+		  "Ians":{"data":"<node/>"},
+		  "Fresh Madison Market":{"data":"<node/>"},
+		  "Conversation zero":{"data":"<node/>"},
+		  "David Brown":{"data":"<node/>"},
+		  "paper1":{"data":"<node/>"},
+		  "Butterscotch milkshake":{"data":"<node/>"},
+		  "Sweet potato fries":{"data":"<node/>"},
+		  "Pizza":{"data":"<node/>"},
+		  "Butterscotch peanut butter":{"data":"<node/>"},
+		  "Madison":{"data":"<node/>"},
+		  "restaurant":{"data":"<node/>"},
+		  "store":{"data":"<node/>"},
+		  "person":{"data":"<node/>"},
+		  "There are exactly 27 lines in every cubic surface":{"data":"<node/>"}}
     // this.nodes = this.extract_nodes(this.has_edges,{});
     // this.nodes = this.extract_nodes(this.is_edges,this.nodes);
     console.log(this.is_edges);
@@ -76,6 +76,28 @@ Category.prototype.get_edges = function(source){
 	}
     }
     return result;
+}
+
+Category.prototype.set_edges = function(id, edges){
+    var e = this.get_edges(id);
+    console.log("EE",id,e,edges);
+    for(var i = 0; i < e.length; i++)
+	this.del_edge_from_collection(e[i].source, e[i].name, e[i].target, e[i].dir == "has" ? this.has_edges : this.is_edges);
+    for(var i = 0; i < edges.length; i++){
+	this.add_edge_to_collection(edges[i].source, edges[i].name, edges[i].target, edges[i].dir == "has" ? this.has_edges : this.is_edges);
+	if(!(edges[i].source in this.nodes)){
+	    console.log(edges[i].source);
+	    this.nodes[edges[i].source] = "<node />";
+	}
+	if(!(edges[i].target in this.nodes)){
+	    console.log(edges[i].target);
+	    this.nodes[edges[i].target] = "<node />";
+	}
+    }
+    
+    console.log("H",this.has_edges)
+    console.log("I",this.is_edges)
+    console.log("N",this.nodes)
 }
 
 
