@@ -13,7 +13,7 @@ app.controller("EdgeDisplayController", ['$scope', function($scope){    //setTim
     }
     
     $scope.add_edge = function(edge){
-	$scope.edges.push({"source":"","dir":"has","name":"","target":""})
+	$scope.edges.push({"source":$scope.nodeid,"dir":"has","name":"","target":""})
     }
 }])
     .directive('edges', function(){
@@ -21,6 +21,7 @@ app.controller("EdgeDisplayController", ['$scope', function($scope){    //setTim
 	    restrict: 'E',
 	    scope:{
 		edges: '=data',
+		nodeid: '=nodeid',
 		editing: '=editing'
 	    },
 	    templateUrl:"/page/edge_display_template.html",

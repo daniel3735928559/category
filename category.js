@@ -82,9 +82,9 @@ Category.prototype.set_edges = function(id, edges){
     var e = this.get_edges(id);
     console.log("EE",id,e,edges);
     for(var i = 0; i < e.length; i++)
-	this.del_edge_from_collection(e[i].source, e[i].name, e[i].target, e[i].dir == "has" ? this.has_edges : this.is_edges);
+	this.del_edge_from_collection(e[i].source, e[i].dir, e[i].name, e[i].target);
     for(var i = 0; i < edges.length; i++){
-	this.add_edge_to_collection(edges[i].source, edges[i].name, edges[i].target, edges[i].dir == "has" ? this.has_edges : this.is_edges);
+	this.add_edge(edges[i].source, edges[i].dir, edges[i].name, edges[i].target);
 	if(!(edges[i].source in this.nodes)){
 	    console.log(edges[i].source);
 	    this.nodes[edges[i].source] = "<node />";
@@ -100,6 +100,16 @@ Category.prototype.set_edges = function(id, edges){
     console.log("N",this.nodes)
 }
 
+Category.prototype.add_edge = function(source, dir, name, target){
+    console.log("Adding",source, dir, name, target);
+    this.add_edge_to_collection(source, name, target, dir == "has" ? this.has_edges : this.is_edges);
+    this.add_edge_to_collection(target, name, source, dir == "is" ? this.has_edges : this.is_edges);
+}
+
+Category.prototype.del_edge = function(source, dir, name, target){
+    this.del_edge_from_collection(source, name, target, dir == "has" ? this.has_edges : this.is_edges);
+    this.del_edge_from_collection(target, name, source, dir == "is" ? this.has_edges : this.is_edges);
+}
 
 Category.prototype.add_edge_to_collection = function(source, name, target, edges){
     if(!(name in edges))
