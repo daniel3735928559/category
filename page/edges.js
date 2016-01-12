@@ -2,12 +2,25 @@ app = app || angular.module('app', []);
 
 app.controller("EdgeDisplayController", ['$scope', function($scope){    //setTimeout($scope.initialize, 0);
     $scope.get_node = $scope.$parent.get_node;
+
+    $scope.toggle_dir = function(edge){
+	console.log(edge.dir)
+	edge.dir = edge.dir == "is" ? "has" : "is";
+    }
+    
+    $scope.del_edge = function(idx){
+	$scope.edges.splice(idx,idx+1);
+    }
+    
+    $scope.add_edge = function(edge){
+	$scope.edges.push({"source":"","dir":"has","name":"","target":""})
+    }
 }])
     .directive('edges', function(){
 	return {
 	    restrict: 'E',
 	    scope:{
-		data: '@data',
+		edges: '=data',
 		editing: '=editing'
 	    },
 	    templateUrl:"/page/edge_display_template.html",
@@ -15,10 +28,6 @@ app.controller("EdgeDisplayController", ['$scope', function($scope){    //setTim
 	    // 	return attrs.template;
 	    // },
 	    controller: 'EdgeDisplayController',
-	    link: function(scope, element, attrs){
-		scope.edges = JSON.parse(scope.data)
-		console.log('edges', scope.edges, typeof(scope.edges))
-	    }
 	}
     });
 

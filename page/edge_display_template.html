@@ -5,8 +5,9 @@
 </div>
 
 <div class="edge_display" ng-if="editing">
-  <div ng-repeat="edge in edges track by $index">
-    Edit: ... {{edge.source}} {{edge.dir}} {{edge.name}} {{edge.target}}<br>
+  <div ng-repeat="edge in edges track by $index" class="edge_input">
+    <a href="#" ng-click="toggle_dir(edge)">{{edge.dir}}</a> <input ng-model="edge.name" /> {{edge.dir == "is" ? "of" : ""}} <input ng-model="edge.target" /> <div class="cat_button" ng-click="del_edge($index)">x</div><br>
   </div>
+  <div class="cat_button" ng-click="add_edge()">add</div>
 </div>
 

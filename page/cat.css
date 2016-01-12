@@ -50,3 +50,12 @@ div.node_container{
     margin-bottom:10px;
     width:100%;
 }
+
+div.edge_input{
+    padding:10px 0;
+}
+
+div.edge_input input{
+    padding:5px;
+    width:100px;
+}
