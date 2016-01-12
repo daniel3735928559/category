@@ -81,6 +81,7 @@ Category.prototype.get_edges = function(source){
 Category.prototype.set_edges = function(id, edges){
     var e = this.get_edges(id);
     console.log("EE",id,e,edges);
+    if(!edges) return;
     for(var i = 0; i < e.length; i++)
 	this.del_edge(e[i].source, e[i].dir, e[i].name, e[i].target);
     for(var i = 0; i < edges.length; i++){
