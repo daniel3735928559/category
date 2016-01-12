@@ -9,11 +9,11 @@ TODOs:
 * XPath searching
 * Add/delete node
 * Rename node
-* Edges
+* Deal with edges made to non-existent nodes (possibly disallow)
 * File upload
 * kit AV plugin
 * kit file plugin
 * kit query plugin
-* Fix kit guppy, draw plugins
+* Fix kit guppy, draw plugins (make them store data in text)
 * Make ctrl-enter work in edge editing fields
 * Save nodes to disk
