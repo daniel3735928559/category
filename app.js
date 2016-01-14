@@ -1,19 +1,12 @@
 var express = require('express');
 var http = require('http');
 var bodyParser = require('body-parser');
-var morgan = require('morgan');
 var filesystem = require('fs');
 var cat = require('./category').category;
 var args = process.argv.slice(2);
 
-var accessLogStream = filesystem.createWriteStream(__dirname + '/logs/access.log', {flags: 'a'})
-    
-
 var app = express();
 
-morgan.token('remote-addr',function(req,res){ return get_ip(req); });
-morgan.token('remote-user',function(req,res){ return req.headers['proxy-user']; });
-app.use(morgan('combined', {stream: accessLogStream}));
 app.use(express.static(__dirname + '/'));
 app.use(bodyParser.json());
 
