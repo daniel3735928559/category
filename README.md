@@ -3,16 +3,16 @@
 TODOs (provisional assignments):
 
 * daniel3735928559:
-  * File upload
-  * kit AV plugin
-  * kit file plugin
-  * kit query plugin
-  * Fix kit guppy, draw plugins (make them store data in text)
+  * Give order to active nodes (newest on top)
+  * Kit AV plugin
+  * Kit file plugin (and file upload)
+  * Kit query plugin
+  * [DONE checklist] Fix checklist, arg, code plugins to conform to new architecture 
+  * [DONE guppy] Fix kit guppy, draw plugins (make them store data in text)
   * Make ctrl-enter work in edge editing fields
   * XPath searching  
   * Deal with edges made to non-existent nodes (possibly disallow)
-
-
+  * Fix undo with widgets (at minimum: clear undo history after deserializing plugin data)
 
 * lalitkumarj:
   * Add/delete node
@@ -23,6 +23,9 @@ TODOs (provisional assignments):
   * Save nodes to disk
   * Save edges to disk
 
+Other tasks:
+
+* Fix CSS
 
 ### Kit plugin structure
 
