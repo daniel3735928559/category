@@ -22,6 +22,8 @@ TODOs (provisional assignments):
   * Autocomplete on edge names
   * Save nodes to disk
   * Save edges to disk
+  * Bower components
+  * Node proper package.json
 
 Other tasks:
 
