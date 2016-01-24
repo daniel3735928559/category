@@ -15,13 +15,18 @@ TODOs (provisional assignments):
   * Fix undo with widgets (at minimum: clear undo history after deserializing plugin data)
 
 * lalitkumarj:
-  * Add/delete node
+  * Add Node
+  * Delete node
   * Rename node
+  * toastr
   * Autocomplete on searches
   * Autocomplete on edge targets
   * Autocomplete on edge names
   * Save nodes to disk
   * Save edges to disk
+  * Bower components
+  * Node proper package.json
+  * Reorder ui-sortable
 
 Other tasks:
 
