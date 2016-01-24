@@ -26,6 +26,7 @@ TODOs (provisional assignments):
   * Save edges to disk
   * Bower components
   * Node proper package.json
+  * Reorder ui-sortable
 
 Other tasks:
 
