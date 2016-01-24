@@ -29,11 +29,20 @@ app.post('/get_node', function(req, res){
 app.post('/save_node', function(req, res){
     console.log("NR",req.body.id);
     cat.nodes[req.body.id] = {"data":req.body.data};
-    console.log("RB",req.body)
+    console.log("RB",req.body);
     var result = cat.set_edges(req.body.id, req.body.edges);
     res.send(result);
+    //filesystem.write_file()
 });
 
+app.post('/get_all_node_names', function(req, res){
+    var names = [];
+    for(var node in cat.nodes){
+	names.push(node);
+    }
+    console.log("names", names, cat.nodes);
+    res.send(names);
+});
 
 var get_ip = function(req){
     return req.header('x-forwarded-for') || req.connection.remoteAddress;

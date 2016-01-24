@@ -4,10 +4,10 @@
   "description": "Server for Discovering CS",
   "main": "app.js",
   "dependencies": {
-    "body-parser":"^1.13.3",
-    "express": "^4.12.3",
-    "morgan": "^1.6.1",
-    "http": "^0.0.0"
+    "body-parser": "^1.14.2",
+    "express": "^4.13.4",
+    "http": "^0.0.0",
+    "morgan": "^1.6.1"
   },
   "devDependencies": {},
   "scripts": {

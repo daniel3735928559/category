@@ -88,11 +88,13 @@ Category.prototype.set_edges = function(id, edges){
 	this.add_edge(edges[i].source, edges[i].dir, edges[i].name, edges[i].target);
 	if(!(edges[i].source in this.nodes)){
 	    console.log(edges[i].source);
-	    this.nodes[edges[i].source] = "<node />";
+	    this.nodes[edges[i].source] = {data: "<node />"};
+	    this.edge_add(edges[i].source, edges[i].dir, edges[i].name, edges[i].target)
 	}
 	if(!(edges[i].target in this.nodes)){
 	    console.log(edges[i].target);
-	    this.nodes[edges[i].target] = "<node />";
+	    this.nodes[edges[i].target] = {data: "<node />"};
+	    this.edge_add(edges[i].source, edges[i].dir, edges[i].name, edges[i].target)
 	}
     }
     
@@ -199,14 +201,6 @@ Category.prototype.node_rename = function(name,new_name){
     this.nodes[new_name] = this.nodes[name];
     delete this.nodes[name];
     return true;
-}
-
-Category.prototype.save_node = function(name){
-    return;
-}
-
-Category.prototype.save_edges = function(){
-    return;
 }
 
 Category.prototype.extract_objects = function(text){

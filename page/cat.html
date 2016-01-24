@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="/lib/codemirror/codemirror.css">
     <link rel="stylesheet" href="/lib/codemirror/addon/fold/foldgutter.css">
     <link rel="stylesheet" href="/lib/kit/kit.css">
+    <link rel="stylesheet" href="https://npmcdn.com/angular-toastr/dist/angular-toastr.css" />
     <script type="text/javascript" src="/lib/angular/angular.min.js"></script>
+    <script src="https://npmcdn.com/angular-toastr/dist/angular-toastr.tpls.js"></script>
     <script type="text/javascript" src="cat.js"></script>
     <script type="text/javascript" src="edges.js"></script>
     <script type="text/javascript" src="/lib/katex/katex-modified.min.js"></script>
@@ -36,21 +38,21 @@
     <div id="super" ng-controller="CatCommander">
       <div class="super">
 	<div class="main">
-	  <div ng-repeat="(nodeid,node) in active_nodes" class="node_container">
-	    <div class="cat_button" ng-if="!(node.editing)" ng-click="delete_node(nodeid)">delete</div>
-	    <div class="cat_button" ng-if="!(node.editing)" ng-click="deactivate_node(nodeid)">done</div>
-	    <div class="cat_button" ng-if="!(node.editing)" ng-click="edit_node(nodeid)">edit</div>
-	    <div class="cat_button" ng-if="node.editing" ng-click="save_node(nodeid)">save</div>
-	    <div class="cat_button" ng-if="node.editing" ng-click="cancel_node(nodeid)">cancel</div>
+	  <div class="cat_button" ng-click="add_node()">Add Node</div><br><br>
+	  <div ng-repeat="node in active_nodes" class="node_container">
+	    <div class="cat_button" ng-if="!(node.editing)" ng-click="delete_node(node)">delete</div>
+	    <div class="cat_button" ng-if="!(node.editing)" ng-click="deactivate_node(node)">done</div>
+	    <div class="cat_button" ng-if="!(node.editing)" ng-click="edit_node(node)">edit</div>
+	    <div class="cat_button" ng-if="node.editing" ng-click="save_node(node)">save</div>
+	    <div class="cat_button" ng-if="node.editing" ng-click="cancel_node(node)">cancel</div>
 	    <br />
 	    <div class="node_name" ng-if="!(node.editing)">{{node.name}}</div>
 	    <input class="node_input" ng-if="node.editing" ng-model="node.name"></input>
 	    <div ng-controller="KitController">
 	      <kit data="node.data" editing="node.editing" nodeid="nodeid" finish="save_node" change="change" />
-	      <p>{{nodeid}}: {{node.data}}</p>
 	    </div>
 	    <div ng-controller="EdgeDisplayController">
-	      <edges data="node.edges" nodeid="nodeid" editing="node.editing" />
+	      <edges data="node.edges" node="node" editing="node.editing" />
 	    </div>
 	  </div>
 	</div>
