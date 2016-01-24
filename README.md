@@ -17,6 +17,7 @@ TODOs (provisional assignments):
 * lalitkumarj:
   * Add/delete node
   * Rename node
+  * toastr
   * Autocomplete on searches
   * Autocomplete on edge targets
   * Autocomplete on edge names
