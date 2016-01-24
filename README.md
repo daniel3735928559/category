@@ -15,7 +15,8 @@ TODOs (provisional assignments):
   * Fix undo with widgets (at minimum: clear undo history after deserializing plugin data)
 
 * lalitkumarj:
-  * Add/delete node
+  * Add Node
+  * Delete node
   * Rename node
   * toastr
   * Autocomplete on searches
