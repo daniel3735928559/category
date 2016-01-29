@@ -82,11 +82,25 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 	node.editing = false;
     }
     
-    $scope.save_node = function(node){
+    $scope.done_node = function(node){
+	node.editing = false;
+    }
+    
+    $scope.save_node = function(nodeid, text){
+	var node;
+	for(var i = 0; i < $scope.active_nodes.length; i++){
+	    if($scope.active_nodes[i].name == nodeid) {
+		node = $scope.active_nodes[i];
+		break;
+	    }
+	}
+	console.log("NN",nodeid,node);
+	if(!node) return;
 	if(node.name == ''){
 	    toastr.error('You can not use an empty name.');
 	    return;
 	}
+	node.data = text;
 	console.log("ASDAS", node.data);
 	$http.post('/get_all_node_names').success(
 	    function(data, status, headers, config){
@@ -103,7 +117,6 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 		    .success(
 			function(data, status, headers, config) {
 			    console.log(data);
-			    node.editing = false;
 			})
 		    .error(
 			function(data, status, headers, config) {

@@ -49,7 +49,7 @@
 	    <div class="node_name" ng-if="!(node.editing)">{{node.name}}</div>
 	    <input class="node_input" ng-if="node.editing" ng-model="node.name"></input>
 	    <div ng-controller="KitController">
-	      <kit data="node.data" editing="node.editing" nodeid="nodeid" finish="save_node" change="change" />
+	      <kit data="node.data" editing="node.editing" nodeid="node.name" finish="save_node" change="change" />
 	    </div>
 	    <div ng-controller="EdgeDisplayController">
 	      <edges data="node.edges" node="node" editing="node.editing" />
