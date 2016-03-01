@@ -23,6 +23,7 @@ app.post('/get_node', function(req, res){
     console.log("NR",req.body.id);
     result = cat.nodes[req.body.id];
     result.edges = cat.get_edges(req.body.id);
+    console.log("result",result);
     res.send(result);
 });
 

@@ -116,7 +116,8 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 		$http.post("/save_node", {"id":node.name,"data":node.data,"edges":node.edges})
 		    .success(
 			function(data, status, headers, config) {
-			    console.log(data);
+			    console.log("BACK",data);
+			    node.editing = false;
 			})
 		    .error(
 			function(data, status, headers, config) {
