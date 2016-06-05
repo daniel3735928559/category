@@ -1,26 +1,38 @@
 query_parser = require('./query').parser;
 
 var Category = function(){
+
+    // Both has_edges and is_edges take the format:
+    // { "<edge label>":
+    //   {
+    //       "<source node 1>": ["<target node 1>", "<target node 2>", ...],
+    //       "<source node 2>": ["<target node 1>", "<target node 2>", ...],
+    //       ...
+    //   }
+    // }
+    // The only has_edges is the dual of is_edges.
     this.has_edges = {
-    "food":{
-	"Mickies":["Butterscotch milkshake", "Sweet potato fries"],
-	"Ians":["Pizza"],
-	"Fresh Madison Market":["Butterscotch peanut butter"]},
-    "location":{
-	"Mickies":["Madison"],
-	"Ians":["Madison"],
-	"Conversation zero":["Mickies"]},
-    "essence":{
-	"Ians":["restaurant"],
-	"Mickies":["restaurant"],
-	"Fresh Madison Market":["store"],
-	"David Brown":["person"]},
-    "author":{
-	"paper1":["David Brown"]},
-    "topic":{
-	"paper1":["There are exactly 27 lines in every cubic surface"]}
+        "food":{
+	    "Mickies":["Butterscotch milkshake", "Sweet potato fries"],
+	    "Ians":["Pizza"],
+	    "Fresh Madison Market":["Butterscotch peanut butter"]},
+        "location":{
+	    "Mickies":["Madison"],
+	    "Ians":["Madison"],
+	    "Conversation zero":["Mickies"]},
+        "essence":{
+	    "Ians":["restaurant"],
+	    "Mickies":["restaurant"],
+	    "Fresh Madison Market":["store"],
+	    "David Brown":["person"]},
+        "author":{
+	    "paper1":["David Brown"]},
+        "topic":{
+	    "paper1":["There are exactly 27 lines in every cubic surface"]}
     };
     this.is_edges = this.dualize_edges(this.has_edges);
+
+    // List of all nodes in the graph.
     this.nodes = {"Mickies":{"data":"<node>Mickies Dairy Bar is a place</node>"},
 		  "Ians":{"data":"<node/>"},
 		  "Fresh Madison Market":{"data":"<node/>"},
@@ -173,6 +185,45 @@ Category.prototype.rename_node_in_collection = function(name, new_name, edges){
     }
 }
 
+// Private method to remove all edges associated with given node
+// "name" (a string). If any array or object within edge_collection
+// becomes empty after removing name node, it is also removed. The
+// edge_collection is an object in the format of either has_edges or
+// is_edges.
+Category.prototype.delete_node_from_collection(name, edge_collection)
+{
+    // Loop on all edges labels
+    for(var edge in edge_collection) {
+
+        // Loop on all keys
+        for (var node_key in edge_collection[edge]) {
+            
+            // If key matches name, remove and continue
+            if (node_key === name)
+            {
+                delete edge[node_key];
+                continue;
+            }
+
+            // Filter out nodes matching name
+            edge[node_key] = edge[node_key].filter(function(x){x !== name;})
+            
+            // if value array is empty after filtering, remove key
+            if (!edge[node_key].length)
+            {
+                delete edge[node_key];
+            }
+        }
+        
+        // if edge dict is empty at this point, remove edge label from
+        // edge_collection entirely
+        if (!Object.keys(edge_collection[edge]).length)
+        {
+            delete edge_collection[edge];
+        }
+    }
+}
+
 Category.prototype.node_add = function(name,text){
     if(!(name in this.nodes)){
 	this.nodes[name] = {"data":text};
@@ -180,7 +231,7 @@ Category.prototype.node_add = function(name,text){
     }
     return false;
 }
-    
+
 Category.prototype.node_del = function(name){
     if(name in this.nodes){
 	delete this.nodes[name];
@@ -189,7 +240,6 @@ Category.prototype.node_del = function(name){
 	return true;
     }
     return false;
-    
 }
 
 Category.prototype.node_rename = function(name,new_name){
@@ -206,7 +256,7 @@ Category.prototype.node_rename = function(name,new_name){
 Category.prototype.extract_objects = function(text){
     return [];
 }
-    
+
 Category.prototype.extract_nodes = function(edges, n){
     var nodes = n;
     for(var e in edges){
