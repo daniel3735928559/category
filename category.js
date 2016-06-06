@@ -190,7 +190,7 @@ Category.prototype.rename_node_in_collection = function(name, new_name, edges){
 // becomes empty after removing name node, it is also removed. The
 // edge_collection is an object in the format of either has_edges or
 // is_edges.
-Category.prototype.delete_node_from_collection(name, edge_collection)
+Category.prototype.delete_node_from_collection = function(name, edge_collection)
 {
     // Loop on all edges labels
     for(var edge in edge_collection) {
@@ -201,23 +201,23 @@ Category.prototype.delete_node_from_collection(name, edge_collection)
             // If key matches name, remove and continue
             if (node_key === name)
             {
-                delete edge[node_key];
+                delete edge_collection[edge][node_key];
                 continue;
             }
 
             // Filter out nodes matching name
-            edge[node_key] = edge[node_key].filter(function(x){x !== name;})
+            edge_collection[edge][node_key] = edge_collection[edge][node_key].filter(function(x){return x !== name;})
             
             // if value array is empty after filtering, remove key
-            if (!edge[node_key].length)
+            if (!edge_collection[edge][node_key].length)
             {
-                delete edge[node_key];
+                delete edge_collection[edge][node_key];
             }
         }
         
         // if edge dict is empty at this point, remove edge label from
         // edge_collection entirely
-        if (!Object.keys(edge_collection[edge]).length)
+        if (Object.keys(edge_collection[edge]).length === 0)
         {
             delete edge_collection[edge];
         }
@@ -389,3 +389,5 @@ console.log("ANSWER",JSON.stringify(c.search_string("is location")));
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
     exports.category = c;
 }
+
+module.exports = Category;
