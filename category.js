@@ -68,8 +68,7 @@ Category.prototype.edge_del = function(source, dir, name, target){
 
 Category.prototype.edge_rename = function(source, dir, name, target, new_name){
     this.edge_del(source, dir, name, target);
-    this.edge_add(source, dir, new_name, target);
-}
+    this.edge_add(source, dir, new_name, target);}
 
 Category.prototype.get_edges = function(source){
     var result = [];
@@ -373,21 +372,21 @@ Category.prototype.search_obj = function(q){
 	return [];
     }
 }
-
-var c = new Category();
-
-//console.log("ANSWER",JSON.stringify(c.search_string("has location: (has food: Butterscotch milkshake / has food: Pizza)")));
-
-//console.log("ANSWER",JSON.stringify(c.search_string("is food")));
-console.log("N",c.nodes);
-console.log("I",c.is_edges);
-console.log("H",c.has_edges);
-
-console.log("ANSWER",JSON.stringify(c.search_string("is location")));
-//console.log("ANSWER",JSON.stringify(c.search_string("topic of: has author: David Brown")));
-
-if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
-    exports.category = c;
-}
-
 module.exports = Category;
+
+// var c = new Category();
+
+
+// //console.log("ANSWER",JSON.stringify(c.search_string("has location: (has food: Butterscotch milkshake / has food: Pizza)")));
+
+// //console.log("ANSWER",JSON.stringify(c.search_string("is food")));
+// console.log("N",c.nodes);
+// console.log("I",c.is_edges);
+// console.log("H",c.has_edges);
+
+// console.log("ANSWER",JSON.stringify(c.search_string("is location")));
+// //console.log("ANSWER",JSON.stringify(c.search_string("topic of: has author: David Brown")));
+
+// if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
+//     exports.category = c;
+// }

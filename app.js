@@ -2,7 +2,8 @@ var express = require('express');
 var http = require('http');
 var bodyParser = require('body-parser');
 var filesystem = require('fs');
-var cat = require('./category').category;
+var Category = require('./category');
+var cat = new Category();
 var args = process.argv.slice(2);
 
 var app = express();
@@ -15,6 +16,8 @@ app.get('/', function(req, res){
 });
 
 app.post('/search', function(req, res){
+    console.log("what is it here??!?!?!");
+    console.log(cat);
     result = cat.search_string(req.body.query);
     res.send(result);
 });
@@ -32,6 +35,14 @@ app.post('/save_node', function(req, res){
     cat.nodes[req.body.id] = {"data":req.body.data};
     console.log("RB",req.body);
     var result = cat.set_edges(req.body.id, req.body.edges);
+    res.send(result);
+    //filesystem.write_file()
+});
+
+app.post('/delete_node', function(req, res){
+    console.log("NR",req.body.id);
+    var result = cat.node_del(req.body.id);
+    console.log("RB",req.body);
     res.send(result);
     //filesystem.write_file()
 });

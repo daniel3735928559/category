@@ -64,7 +64,29 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
     }
     
     $scope.delete_node = function(node_id){
-	return;
+
+        // First remove node from active immediatly before server
+        // request, but but save a copy incase something goes wrong
+        var saved_active_nodes = $scope.active_nodes.map(function(x){return;});
+        $scope.active_nodes =
+            $scope.active_nodes.filter(function(x) {return x !== node_id;});
+
+        // Next remove node in database:
+        $http.post("/delete_node", JSON.stringify({"id":node_id}))
+            .success(
+        	function(data, status, headers, config) {
+                    // yay!
+        	})
+            .error(
+        	function(data, status, headers, config) {
+                    // If deletion fails, put the client back to its
+                    // state before the call to delete_node. 
+                    $scope.raise_error("Error: " + data);
+                    $scope.active_nodes = saved_active_nodes;
+        	}
+            );
+
+        return;
     }
 
     $scope.deactivate_node = function(node){
