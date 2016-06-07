@@ -35,6 +35,7 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 		    data['editing'] = false;
 		    data['name'] = node_id;
 		    data['server_name'] = node_id;
+		    data['old_data'] = data['data'];
 		    $scope.active_nodes.push(data);
 		})
 	    .error(
@@ -79,14 +80,18 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
     }
     
     $scope.cancel_node = function(node){
+	console.log("CANCEL",JSON.stringify(node));
+	node.change = false;
+	node.data = node.old_data;
 	node.editing = false;
     }
     
     $scope.done_node = function(node){
+	node.change = true;
 	node.editing = false;
     }
     
-    $scope.save_node = function(nodeid, text){
+    $scope.save_node = function(nodeid){
 	var node;
 	for(var i = 0; i < $scope.active_nodes.length; i++){
 	    if($scope.active_nodes[i].name == nodeid) {
@@ -100,8 +105,8 @@ app.controller("CatCommander", ['$scope','$http', '$window', '$timeout', '$locat
 	    toastr.error('You can not use an empty name.');
 	    return;
 	}
-	node.data = text;
 	console.log("ASDAS", node.data);
+	node.old_data = node.data;
 	$http.post('/get_all_node_names').success(
 	    function(data, status, headers, config){
 		console.log("data from server", data)
