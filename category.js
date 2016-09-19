@@ -365,7 +365,7 @@ Category.prototype.search_obj = function(q){
 	
     }
     else if(q[0] == "name"){
-	return [q[1]];
+	//return [q[1]];
 	for(var n in this.nodes){
 	    if(n == q[1]) return [n];
 	}
