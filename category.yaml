@@ -1,0 +1,33 @@
+get_node:
+  args:
+    id:
+      type: string
+  rets:
+    success:
+      type: bool
+
+set_node:
+  args:
+    id:
+      type: string
+    edges:
+      type: any
+    data:
+      type: any
+  rets:
+    success:
+      type: bool
+
+del_node:
+  args:
+    id:
+      type: string
+  rets:
+    success:
+      type: bool
+
+search:
+  args:
+    query:
+      type: string
+
