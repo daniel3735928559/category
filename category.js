@@ -1,7 +1,9 @@
 query_parser = require('./query').parser;
+fs = require('fs');
 
 var Category = function(){
-
+    var self = this;
+    
     // Both has_edges and is_edges take the format:
     // { "<edge label>":
     //   {
@@ -11,46 +13,16 @@ var Category = function(){
     //   }
     // }
     // The only has_edges is the dual of is_edges.
-    this.has_edges = {
-        "food":{
-	    "Mickies":["Butterscotch milkshake", "Sweet potato fries"],
-	    "Ians":["Pizza"],
-	    "Fresh Madison Market":["Butterscotch peanut butter"]},
-        "location":{
-	    "Mickies":["Madison"],
-	    "Ians":["Madison"],
-	    "Conversation zero":["Mickies"]},
-        "essence":{
-	    "Ians":["restaurant"],
-	    "Mickies":["restaurant"],
-	    "Fresh Madison Market":["store"],
-	    "David Brown":["person"]},
-        "author":{
-	    "paper1":["David Brown"]},
-        "topic":{
-	    "paper1":["There are exactly 27 lines in every cubic surface"]}
-    };
+    this.has_edges = JSON.parse(fs.readFileSync('data/edges.json','utf-8'));
     this.is_edges = this.dualize_edges(this.has_edges);
 
-    // List of all nodes in the graph.
-    this.nodes = {"Mickies":{"data":"<node>Mickies Dairy Bar is a place</node>"},
-		  "Ians":{"data":"<node/>"},
-		  "Fresh Madison Market":{"data":"<node/>"},
-		  "Conversation zero":{"data":"<node/>"},
-		  "David Brown":{"data":"<node/>"},
-		  "paper1":{"data":"<node/>"},
-		  "Butterscotch milkshake":{"data":"<node/>"},
-		  "Sweet potato fries":{"data":"<node/>"},
-		  "Pizza":{"data":"<node/>"},
-		  "Butterscotch peanut butter":{"data":"<node/>"},
-		  "Madison":{"data":"<node/>"},
-		  "restaurant":{"data":"<node/>"},
-		  "store":{"data":"<node/>"},
-		  "person":{"data":"<node/>"},
-		  "There are exactly 27 lines in every cubic surface":{"data":"<node/>"}}
-    // this.nodes = this.extract_nodes(this.has_edges,{});
-    // this.nodes = this.extract_nodes(this.is_edges,this.nodes);
-    console.log(this.is_edges);
+    this.nodes = {};
+    var node_files = fs.readdirSync('data/nodes/');
+    for(var i = 0; i < node_files.length; i++){
+	this.nodes[node_files[i].substring(0,node_files[i].lastIndexOf("."))] = {'data':fs.readFileSync('data/nodes/'+node_files[i],'utf-8')};
+    }
+    this.nodes = this.extract_nodes(this.has_edges,this.nodes);
+    console.log("EE",JSON.stringify(this.has_edges));
     console.log("NN",JSON.stringify(this.nodes));
 }
 
@@ -261,7 +233,7 @@ Category.prototype.extract_nodes = function(edges, n){
     for(var e in edges){
 	for(var n in edges[e]){
 	    if(!(n in nodes)){
-		nodes[n] = Category.EMPTY;
+		nodes[n] = {'data':''};
 	    }
 	}
     }
@@ -373,20 +345,3 @@ Category.prototype.search_obj = function(q){
     }
 }
 module.exports = Category;
-
-// var c = new Category();
-
-
-// //console.log("ANSWER",JSON.stringify(c.search_string("has location: (has food: Butterscotch milkshake / has food: Pizza)")));
-
-// //console.log("ANSWER",JSON.stringify(c.search_string("is food")));
-// console.log("N",c.nodes);
-// console.log("I",c.is_edges);
-// console.log("H",c.has_edges);
-
-// console.log("ANSWER",JSON.stringify(c.search_string("is location")));
-// //console.log("ANSWER",JSON.stringify(c.search_string("topic of: has author: David Brown")));
-
-// if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
-//     exports.category = c;
-// }
