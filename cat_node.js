@@ -7,7 +7,7 @@ function CategoryNode(){
     //process.env['MANGO_ID'] = 'cat';
     //process.env['MC_ADDR'] = 'tcp://localhost:61453';
     this.node = new MNode();
-    this.node.iface.add_interface('/home/zoom/suit/mango/nodes/category/category.yaml',
+    this.node.iface.add_interface('./category.yaml',
 				  {'search':self.excite,
 				   'get_node':self.get_node,
 				   'set_node':self.set_node,
