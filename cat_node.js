@@ -1,5 +1,5 @@
 var Category = require('./category');
-var MNode = require(process.env['LIBMANGOJS']+'/libmango');
+var MNode = require('libmango');
 var cat = new Category();
 
 function CategoryNode(){
@@ -8,11 +8,11 @@ function CategoryNode(){
     //process.env['MC_ADDR'] = 'tcp://localhost:61453';
     this.node = new MNode();
     this.node.iface.add_interface('./category.yaml',
-				  {'search':self.excite,
+				  {'search':self.search,
 				   'get_node':self.get_node,
 				   'set_node':self.set_node,
 				   'del_node':self.del_node,});
-    this.node.ready();
+    this.node.run();
 }
 
 CategoryNode.prototype.search = function(header,args){
