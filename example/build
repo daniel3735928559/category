@@ -1,7 +1,0 @@
-#!/usr/bin/bash
-rm metadata.yaml
-for x in src/*; do 
-    node_id=$(pandoc -t json "$x" | python ../metadata_filter.py)
-    pandoc --filter ../filter.py "$x" > dist/${node_id}.html
-done
-mv metadata.yaml dist 

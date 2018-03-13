@@ -34,14 +34,16 @@
 	      <div v-for="node in working_set">
 		<a :name="node"></a>
 		<div class="snippet">
+		  <!-- header -->
 		  <div class="snippet_header">
 		    <span class="snippet_title">{{nodes[node].name}}</span>
 		    <span v-on:click="close_snippet(node)" class="close_x">X</span>
 		    <span v-on:click="view_doc(node)" class="close_x">+</span>
 		    <span v-on:click="minimise_snippet(node)" class="close_x">-</span>
 		  </div>
-		  
-		  <div v-if="'data' in nodes[node]" class="snippet_content" v-html="node_data[node] || 'Loading...'"></div>
+
+		  <!-- data -->
+		  <div v-if="node_data[node] && node_data[node].length > 0" class="snippet_content" v-html="node_data[node] || 'Loading...'"></div>
 		  <edge-display v-on:click="open_snippet" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
 		</div>
 	      </div>

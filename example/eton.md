@@ -33,7 +33,7 @@ has influence: Horace
       Say, Father Thames, for thou hast seen
             Full many a sprightly race
       Disporting on thy margin green
-            The paths of pleasure trace—
+            The paths of pleasure trace--
       Who foremost now delight to cleave
       With pliant arm, thy glassy wave?
             The captive linnet which enthral?
@@ -108,13 +108,13 @@ has influence: Horace
             And slow-consuming Age.
 
       To each his sufferings: all are men,
-            Condemn'd alike to groan—
+            Condemn'd alike to groan--
       The tender for another's pain,
             Th' unfeeling for his own.
       Yet, ah! why should they know their fate,
       Since sorrow never comes too late,
             And happiness too swiftly flies?
       Thought would destroy their Paradise.
-      No more;—where ignorance is bliss,
+      No more;--where ignorance is bliss,
             'Tis folly to be wise.
 ```

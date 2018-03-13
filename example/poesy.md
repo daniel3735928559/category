@@ -144,7 +144,7 @@ Hark, his hands the lyre explore!
 Bright-eyed Fancy hovering o'er
 Scatters from her pictured urn
 Thoughts that breathe, and words that burn.
-But ah! 'tis heard no more—
+But ah! 'tis heard no more--
 Oh! lyre divine, what daring spirit
 Wakes thee now? Though he inherit
 Nor the pride, nor ample pinion,
@@ -156,5 +156,5 @@ Such forms, as glitter in the Muse's ray
 With orient hues, unborrowed of the sun:
 Yet shall he mount, and keep his distant way
 Beyond the limits of a vulgar fate,
-Beneath the Good how far— but far above the Great.
+Beneath the Good how far-- but far above the Great.
 ```
