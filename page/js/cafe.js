@@ -55,6 +55,7 @@ window.onload = function(){
 	    search: function(event){
 		try{
 		    var q = query.parse(this.query);
+		    this.error = '';
 		}
 		catch(e){
 		    this.error = e.toString();
