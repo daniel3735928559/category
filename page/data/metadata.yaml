@@ -1,0 +1,51 @@
+84243e15b2f7b0a36681bfd369e6208a69a8b7b71e32527ac362f53e8006d94e:
+  edges:
+    has:
+      author: [Thomas Gray]
+      influence: [Pindar]
+    is: {}
+  name: The Bard
+f13bd3d0f28223da08112ea53ffa30f9a857d3809ea313732e4583a61c7d8c3c:
+  edges:
+    has:
+      author: [Rudyard Kipling]
+    is: {}
+  name: The Death-Bed
+5dc2d66ff8584da97cb844679911fb0484cbe70b4cdd0ace6bc7a9a5b8f2f67d:
+  edges:
+    has:
+      author: [Thomas Gray]
+    is: {}
+  name: Elegy Written in a Country Churchyard
+065e0e20004e81c1c73aadd61a5cd32f4a001e0e5ced10b7473f507304b493c2:
+  edges:
+    has:
+      author: [Thomas Gray]
+      influence: [Horace]
+    is: {}
+  name: Ode on a Distant Prospect of Eton College
+42f1fe4972f0e8ce0cca8a603fb3ef89cc30ca8ea2ab2cb70f69094b68daafd6:
+  edges:
+    has:
+      author: [Rudyard Kipling]
+    is: {}
+  name: If--
+3c35042ade5dfb1150ba76632a52c6045afa7ab4b14e9fd08c751bb527b37de4:
+  edges:
+    has:
+      author: [Rudyard Kipling]
+    is: {}
+  name: Modern Machinery
+990c41080210926cb0a3891b26b374438f8c4e1835adcede16da96e13ac6dc79:
+  edges:
+    has:
+      author: [Thomas Gray]
+      influence: [Pindar]
+    is: {}
+  name: The Progress of Poesy
+bb957d1c7e2ee65671afa1bfef1e5eaef318c7fa92219d94c84a300e515284d2:
+  edges:
+    has:
+      author: [Rudyard Kipling]
+    is: {}
+  name: Recessional

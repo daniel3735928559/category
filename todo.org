@@ -1,1 +1,0 @@
-* TODO XPATH query syntax and subobject addressing (e.g. ID.name)

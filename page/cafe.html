@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <title>CAFE</title>
+    <link rel="stylesheet" href="css/cafe.css">
+    <link rel="stylesheet" href="css/cafe-light.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/vis/dist/vis-network.min.css">
+    <script type="text/javascript" src="node_modules/vue/dist/vue.js"></script>
+    <script type="text/javascript" src="node_modules/sortablejs/Sortable.min.js"></script>
+    <script type="text/javascript" src="node_modules/vuedraggable/dist/vuedraggable.js"></script>
+    <script type="text/javascript" src="node_modules/vis/dist/vis.js"></script>
+    <script type="text/javascript" src="js/query.js"></script>
+    <script type="text/javascript" src="js/search.js"></script>
+    <script type="text/javascript" src="js/cafe.js"></script>
+  </head>
+  <body>
+    <div id="app" class="container-full-width">
+      <div id="main" class="row">
+	<div class="col-md-2 offset-md-1">
+	  <div id="working_set">
+	    <h4 v-if="working_set.length != 0">Working set</h4>
+	    <ul>
+	      <li v-for="node in working_set">
+		<a href="#" v-on:click="close_snippet(node)">[x]</a> <a href="#" v-on:click="goto_snippet(node)">{{nodes[node].name}}</a>
+	      </li>
+	    </ul>
+	  </div>
+	</div>
+	<div class="col-md-6">
+	  <div id="main_col">
+	  <!-- list -->
+	  <div v-if="mode == 'list'" id="list">
+	    <draggable v-model="working_set">
+	      <div v-for="node in working_set">
+		<a :name="node"></a>
+		<div class="snippet">
+		  <div class="snippet_header">
+		    <span class="snippet_title">{{nodes[node].name}}</span>
+		    <span v-on:click="close_snippet(node)" class="close_x">X</span>
+		    <span v-on:click="view_doc(node)" class="close_x">+</span>
+		    <span v-on:click="minimise_snippet(node)" class="close_x">-</span>
+		  </div>
+		  
+		  <div v-if="'data' in nodes[node]" class="snippet_content" v-html="node_data[node] || 'Loading...'"></div>
+		  <edge-display v-on:click="open_snippet" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
+		</div>
+	      </div>
+	    </draggable>
+	  </div>
+	  
+	  <!-- graph -->
+	  <div id="graph" v-if="mode == 'graph'">
+	  </div>
+
+	  <!-- doc -->
+	  <div v-if="mode == 'doc'" id="node">
+	    <div class="snippet_header">
+	      <span class="snippet_title">{{nodes[main_doc].name}}</span>
+	      <span v-on:click="set_mode('list')" class="close_x">&lt;</span>
+	    </div>
+	    <div v-html="node_data[main_doc]"></div>
+	    <edge-display v-on:click="open_snippet" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
+	  </div>
+	  </div>
+	</div>
+	
+	<!-- sidebar -->
+	<div class="col-md-2">
+	  <div id="sidebar">
+	  <div id="modes">
+	    <span v-bind:class="{active: mode=='list'}" v-on:click="set_mode('list')">List</span>
+	    <span v-bind:class="{active: mode=='graph'}" v-on:click="set_mode('graph')">Graph</span>
+	    <span v-bind:class="{active: mode=='doc'}" v-on:click="set_mode('doc')">Doc</span>
+	  </div>
+	  <div id="query">
+	    <input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" />
+	    <div id="query_results">
+	      <span class="error">{{error}}</span>
+	      <ul v-if="error.length == 0">
+	      <li v-for="node in query_results">
+		<node-link v-on:click="open_snippet" :name="nodes[node].name" :node="node"></node-link>
+	      </li>
+	      </ul>
+	    </div>
+	  </div>
+	  </div>
+	</div>
+      </div>
+    </div>
+  </body>
+</html>    
