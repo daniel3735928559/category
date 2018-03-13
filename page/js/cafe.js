@@ -69,7 +69,7 @@ window.onload = function(){
 		if(node in self.node_data) return;
 		fetch('data/'+node+'.html').then(function(response){
 		    response.text().then(function(data){
-			self.node_data[node] = data;
+			self.node_data[node] = response.status == 200 ? data : '';
 			self.$forceUpdate();
 		    });
 		});
