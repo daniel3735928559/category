@@ -18,14 +18,27 @@ def gen_html(filename):
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     metadata = {}
+    try:
+        with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"r") as f:
+            metadata = json.loads(f.read())
+    except:
+        print("No existing metadata found--assuming empty")
     files = [f for f in listdir(args['<input_dir>']) if isfile(join(args['<input_dir>'], f))]
     for f in files:
         f = join(args['<input_dir>'],f)
-        tree = etree.parse(f)
+        try:
+            tree = etree.parse(f)
+        except:
+            print("WARNING: Invalid XML: {} -- skipping".format(f))
+            continue
         title = tree.xpath("/node/@title")[0]
         ID = get_id(title)
         date = tree.xpath("/node/@date")[0]
         tags = tree.xpath("/node/edge")
+        
+        if ID in metadata and metadata[ID]['name'] != node['name']:
+            print("WARNING: Duplicate node ID: {} -- skipping".format(node['name']))
+            continue
         metadata[ID] = {'name':str(title), 'date':str(date), 'edges': {'has' : {}, 'is': {}}}
         edges = metadata[ID]['edges']
         for t in tags:

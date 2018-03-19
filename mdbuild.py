@@ -19,7 +19,7 @@ def extract_metadata(elem, doc):
                 m = re.match(r"^\s*has\s+([^:]*):\s*(.*)\s*$", line)
                 et = 'has'
                 if not m:
-                    m = re.match(r"^\s*is\s+([^:]*) of:\s*(.*)\s*$", line)
+                    m = re.match(r"^\s*is\s+([^:]*)\s+of:\s*(.*)\s*$", line)
                     et = 'is'
                     if not m:
                         sys.stderr.write("WARNING: Line not a valid edge: {}\n".format(line))
@@ -41,6 +41,11 @@ def extract_metadata(elem, doc):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
+    try:
+        with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"r") as f:
+            metadata = json.loads(f.read())
+    except:
+        print("No existing metadata found--assuming empty")
     files = [join(args['<input_dir>'], f) for f in listdir(args['<input_dir>']) if isfile(join(args['<input_dir>'], f))]
     for fn in files:
         print(fn)
@@ -49,13 +54,12 @@ if __name__ == "__main__":
             doc = pf.convert_text(f.read().decode(),standalone=True)
         doc = doc.walk(extract_metadata)
         ID = get_id(node['name'])
-        if ID in metadata:
-            print("WARNING: Duplicate node: {}".format(node['name']))
+        if ID in metadata and metadata[ID]['name'] != node['name']:
+            print("WARNING: Duplicate node ID: {} -- skipping".format(node['name']))
+            continue
         metadata[ID] = node
         with open(join(args['<output_dir>'],'{}.html'.format(ID)),"w") as f:
             f.write(pf.convert_text(doc, input_format='panflute',output_format='html'))
-    print("MD",yaml.dump(metadata))
     metadata = complete(metadata)
-    print("MDC",yaml.dump(metadata))
     with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"w") as f:
         f.write(json.dumps(metadata))
