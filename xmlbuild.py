@@ -19,7 +19,7 @@ if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     metadata = {}
     try:
-        with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"r") as f:
+        with open(join(args['<output_dir>'],'metadata.json'),"r") as f:
             metadata = json.loads(f.read())
     except:
         print("No existing metadata found--assuming empty")

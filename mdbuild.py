@@ -4,7 +4,7 @@ from io import StringIO
 from os import listdir
 from os.path import isfile, join
 import panflute as pf
-import yaml, sys, re, hashlib, json, docopt
+import yaml, sys, re, hashlib, json, docopt, os, traceback
 from util import *
 
 node = {}
@@ -42,20 +42,26 @@ def extract_metadata(elem, doc):
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     try:
-        with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"r") as f:
+        with open(join(args['<output_dir>'],'metadata.json'),"r") as f:
             metadata = json.loads(f.read())
     except:
         print("No existing metadata found--assuming empty")
-    files = [join(args['<input_dir>'], f) for f in listdir(args['<input_dir>']) if isfile(join(args['<input_dir>'], f))]
+        traceback.print_exc()
+    files = [join(args['<input_dir>'], join(dirpath,f)) for dirpath,dirnam,filenames in os.walk(args['<input_dir>']) for f in filenames]
     for fn in files:
         print(fn)
         node = {}
-        with open(fn,"rb") as f:
-            doc = pf.convert_text(f.read().decode(),standalone=True)
-        doc = doc.walk(extract_metadata)
-        ID = get_id(node['name'])
-        if ID in metadata and metadata[ID]['name'] != node['name']:
-            print("WARNING: Duplicate node ID: {} -- skipping".format(node['name']))
+        try:
+            with open(fn,"rb") as f:
+                doc = pf.convert_text(f.read().decode(),standalone=True)
+            doc = doc.walk(extract_metadata)
+            ID = get_id(node['name'])
+            if ID in metadata and metadata[ID]['name'] != node['name']:
+                print("WARNING: Duplicate node ID: {} -- skipping".format(node['name']))
+                continue
+        except Exception as e:
+            print("WARNING: Invalid input file: {} -- skipping".format(fn))
+            traceback.print_exc()
             continue
         metadata[ID] = node
         with open(join(args['<output_dir>'],'{}.html'.format(ID)),"w") as f:
