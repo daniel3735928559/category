@@ -1,14 +1,16 @@
-import hashlib, json
+import hashlib, json, traceback
 
 def get_id(node):
     return hashlib.sha256(node.encode()).hexdigest()
 
 def import_metadata(fn):
     duals = {'has':'is','is':'has'}
+    print("LOADING: {}".format(fn))
     try:
         with open(fn,"r") as f:
             data = json.loads(f.read())
     except:
+        traceback.print_exc()
         return {}
     metadata = {}
     for node_id in data:

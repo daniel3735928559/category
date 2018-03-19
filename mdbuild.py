@@ -41,7 +41,9 @@ def extract_metadata(elem, doc):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    metadata = import_metadata(join(args['<input_dir>'],'metadata.json'))
+    metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
+    if len(metadata) == 0:
+        print("WARNING: no existing metadata found -- assuming empty")
     files = [join(dirpath,f) for dirpath,dirnames,filenames in os.walk(args['<input_dir>']) for f in filenames]
     for fn in files:
         print(fn)
