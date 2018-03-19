@@ -36,7 +36,7 @@ if __name__ == "__main__":
         date = tree.xpath("/node/@date")[0]
         tags = tree.xpath("/node/edge")
         
-        if ID in metadata and metadata[ID]['name'] != node['name']:
+        if ID in metadata and metadata[ID]['name'] != title:
             print("WARNING: Duplicate node ID: {} -- skipping".format(node['name']))
             continue
         metadata[ID] = {'name':str(title), 'date':str(date), 'edges': {'has' : {}, 'is': {}}}
