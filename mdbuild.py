@@ -47,7 +47,7 @@ if __name__ == "__main__":
     except:
         print("No existing metadata found--assuming empty")
         traceback.print_exc()
-    files = [join(args['<input_dir>'], join(dirpath,f)) for dirpath,dirnam,filenames in os.walk(args['<input_dir>']) for f in filenames]
+    files = [join(args['<input_dir>'], join(dirname,f)) for dirpath,dirname,filenames in os.walk(args['<input_dir>']) for f in filenames]
     for fn in files:
         print(fn)
         node = {}
