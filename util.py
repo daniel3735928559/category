@@ -1,9 +1,24 @@
-import hashlib
+import hashlib, json
 
 def get_id(node):
     return hashlib.sha256(node.encode()).hexdigest()
 
-def complete(metadata):
+def import_metadata(fn):
+    duals = {'has':'is','is':'has'}
+    try:
+        with open(fn,"r") as f:
+            data = json.loads(f.read())
+    except:
+        return {}
+    metadata = {}
+    for node_id in data:
+        node = data[node_id]
+        metadata[node['name']] = {'name':node['name']}
+        metadata[node['name']]['edges'] = {ed:{en:[data[nid]['name'] for nid in node['edges'][ed][en]] for en in node['edges'][ed]} for ed in duals}
+
+    return metadata
+
+def complete_metadata(metadata):
     duals = {'has':'is','is':'has'}
     name_to_id = {}
     ans = {}

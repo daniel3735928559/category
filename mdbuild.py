@@ -41,12 +41,7 @@ def extract_metadata(elem, doc):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    try:
-        with open(join(args['<output_dir>'],'metadata.json'),"r") as f:
-            metadata = json.loads(f.read())
-    except:
-        print("No existing metadata found--assuming empty")
-        traceback.print_exc()
+    metadata = import_metadata(join(args['<input_dir>'],'metadata.json'))
     files = [join(dirpath,f) for dirpath,dirnames,filenames in os.walk(args['<input_dir>']) for f in filenames]
     for fn in files:
         print(fn)
@@ -66,6 +61,6 @@ if __name__ == "__main__":
         metadata[ID] = node
         with open(join(args['<output_dir>'],'{}.html'.format(ID)),"w") as f:
             f.write(pf.convert_text(doc, input_format='panflute',output_format='html'))
-    metadata = complete(metadata)
+    metadata = complete_metadata(metadata)
     with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"w") as f:
         f.write(json.dumps(metadata))

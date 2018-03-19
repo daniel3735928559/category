@@ -17,12 +17,7 @@ def gen_html(filename):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    metadata = {}
-    try:
-        with open(join(args['<output_dir>'],'metadata.json'),"r") as f:
-            metadata = json.loads(f.read())
-    except:
-        print("No existing metadata found--assuming empty")
+    metadata = import_metadata(join(args['<input_dir>'],'metadata.json'))
     files = [f for f in listdir(args['<input_dir>']) if isfile(join(args['<input_dir>'], f))]
     for f in files:
         f = join(args['<input_dir>'],f)
@@ -48,7 +43,7 @@ if __name__ == "__main__":
         html = gen_html(f)
         with open(join(args['<output_dir>'],ID+'.html'),"w") as f:
             f.write(html)
-    metadata = complete(metadata)
+    metadata = complete_metadata(metadata)
             
     with open(join(args['<output_dir>'],'metadata.json'),"w") as f:
         f.write(json.dumps(metadata))
