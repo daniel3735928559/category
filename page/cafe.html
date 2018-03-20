@@ -20,9 +20,11 @@
 	  <div id="working_set">
 	    <h4 v-if="working_set.length != 0">Working set</h4>
 	    <ul>
-	      <li v-for="node in working_set">
-		<a href="#" v-on:click="close_snippet(node)">[x]</a> <a href="#" v-on:click="goto_snippet(node)">{{nodes[node].name}}</a>
-	      </li>
+	      <draggable v-model="working_set">
+		<li v-for="node in working_set">
+		  <a href="#" v-on:click="close_snippet(node)">[x]</a> <a href="#" v-on:click="goto_snippet(node)">{{nodes[node].name}}</a>
+		</li>
+	      </draggable>
 	    </ul>
 	  </div>
 	</div>
@@ -30,16 +32,15 @@
 	  <div id="main_col">
 	  <!-- list -->
 	  <div v-if="mode == 'list'" id="list">
-	    <draggable v-model="working_set">
 	      <div v-for="node in working_set">
 		<a :name="node"></a>
 		<div class="snippet">
 		  <!-- header -->
 		  <div class="snippet_header">
 		    <span class="snippet_title">{{nodes[node].name}}</span>
-		    <span v-on:click="close_snippet(node)" class="close_x">X</span>
+		    <span v-on:click="close_snippet(node)" class="close_x">&times;</span>
 		    <span v-on:click="view_doc(node)" class="close_x">+</span>
-		    <span v-on:click="minimise_snippet(node)" class="close_x">-</span>
+		    <span v-on:click="minimise_snippet(node)" class="close_x">&mdash;</span>
 		  </div>
 
 		  <!-- data -->
@@ -47,7 +48,6 @@
 		  <edge-display v-on:click="open_snippet" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
 		</div>
 	      </div>
-	    </draggable>
 	  </div>
 	  
 	  <!-- graph -->

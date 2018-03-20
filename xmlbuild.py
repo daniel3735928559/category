@@ -1,10 +1,10 @@
-""" Usage: build.sh <input_dir> <output_dir>"""
+""" Usage: build.sh <cat_name> <input_dir> <output_dir>"""
 
 from os import listdir
 from os.path import isfile, join
 from lxml import etree
 from io import StringIO, BytesIO
-import subprocess, sys, docopt, json
+import subprocess, sys, docopt, json, os
 
 from util import *
 
@@ -17,12 +17,12 @@ def gen_html(filename):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
-    if len(metadata) == 0:
-        print("WARNING: no existing metadata found -- assuming empty")
-    files = [f for f in listdir(args['<input_dir>']) if isfile(join(args['<input_dir>'], f))]
+    old_metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
+    metadata = {}
+    files = [join(dirpath,f) for dirpath,dirnames,filenames in os.walk(args['<input_dir>']) for f in filenames if f[-4:] == ".xml"]
+    print(files)
     for f in files:
-        f = join(args['<input_dir>'],f)
+        print(f)
         try:
             tree = etree.parse(f)
         except:
@@ -42,10 +42,13 @@ if __name__ == "__main__":
             ed,en = t.get('dir'),t.get('name')
             if not en in edges[ed]: edges[ed][en] = []
             edges[ed][en].append(t.text)
+
+        # Generate HTML
         html = gen_html(f)
         with open(join(args['<output_dir>'],ID+'.html'),"w") as f:
             f.write(html)
-    metadata = complete_metadata(metadata)
+    metadata = complete_metadata(args['<cat_name>'],metadata)
+    metadata.update(old_metadata)
             
     with open(join(args['<output_dir>'],'metadata.json'),"w") as f:
         f.write(json.dumps(metadata))

@@ -43,16 +43,19 @@ window.onload = function(){
 		response.json().then(function(data){
 		    self.working_set = [];
 		    self.query_results = [];
-		    for(var x in data){
-			self.query_results.push(x);
-			self.main_doc = x;
-		    }
+		    // for(var x in data){
+		    // 	self.query_results.push(x);
+		    // 	self.main_doc = x;
+		    // }
 		    self.nodes = data;
+		    self.query = 'is category';
+		    self.search()
 		});
 	    });
 	},
 	methods: {
 	    search: function(event){
+		if(this.query.length == 0) this.query = "*";
 		try{
 		    var q = query.parse(this.query);
 		    this.error = '';

@@ -1,4 +1,4 @@
-"""Usage: build.py <input_dir> <output_dir>"""
+"""Usage: build.py <cat_name> <input_dir> <output_dir>"""
 
 from io import StringIO
 from os import listdir
@@ -41,10 +41,8 @@ def extract_metadata(elem, doc):
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
-    if len(metadata) == 0:
-        print("WARNING: no existing metadata found -- assuming empty")
-    files = [join(dirpath,f) for dirpath,dirnames,filenames in os.walk(args['<input_dir>']) for f in filenames]
+    old_metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
+    files = [join(dirpath,f) for dirpath,dirnames,filenames in os.walk(args['<input_dir>']) for f in filenames if f[-3:] == ".md"]
     for fn in files:
         print(fn)
         node = {}
@@ -61,8 +59,9 @@ if __name__ == "__main__":
             traceback.print_exc()
             continue
         metadata[ID] = node
-        with open(join(args['<output_dir>'],'{}.html'.format(ID)),"w") as f:
-            f.write(pf.convert_text(doc, input_format='panflute',output_format='html'))
-    metadata = complete_metadata(metadata)
+        with open(join(args['<output_dir>'],'{}.html'.format(ID)),"wb") as f:
+            f.write(pf.convert_text(doc, input_format='panflute',output_format='html').encode('utf-8'))
+    metadata = complete_metadata(args['<cat_name>'],metadata)
+    metadata.update(old_metadata)
     with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"w") as f:
         f.write(json.dumps(metadata))
