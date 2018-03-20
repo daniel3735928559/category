@@ -12,5 +12,5 @@ To view the example category, go to https://daniel3735928559.github.io/category
 To build the example, do: 
 
 ```
-python mdbuild.py example/ page/data/
+python mdbuild.py poetry example/ page/data/
 ```
