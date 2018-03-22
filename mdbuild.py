@@ -11,6 +11,7 @@ from util import *
 node = {}
 metadata = {}
 path = ''
+filename = ''
 ID=''
 args = {}
 
@@ -46,15 +47,8 @@ def extract_metadata(elem, doc):
             ID = get_id(node['name'])
             return []
     elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
-        if elem.url[:6] == "files/":
-            files_dir = join(args['<output_dir>'],'files/'+ID)
-            try:
-                os.mkdir(files_dir)
-            except:
-                pass
-            print("COPY", join(path, elem.url), files_dir+"/"+elem.url[6:])
-            copyfile(join(path, elem.url), files_dir+"/"+elem.url[6:])
-            elem.url = "data/files/"+ID+"/"+elem.url[6:]
+        new_url = get_file(ID, filename, elem.url, args['<output_dir>'])
+        if new_url: elem.url = new_url
     elif isinstance(elem, pf.Math):
         print("MATH",elem.text)
         return pf.Str("$"+elem.text+"$")
@@ -63,15 +57,12 @@ def extract_metadata(elem, doc):
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     old_metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
-    try:
-        os.mkdir(join(args['<output_dir>'],'files'))
-    except:
-        pass
-    files = [join(dirpath,f) for dirpath,dirnames,filenames in os.walk(args['<input_dir>']) for f in filenames if f[-3:] == ".md"]
+    files = search_files(args['<input_dir>'],".md")
     for fn in files:
         print(fn)
         node = {}
         ID = ''
+        filename = fn
         try:
             with open(fn,"rb") as f:
                 doc = pf.convert_text(f.read().decode(),standalone=True)

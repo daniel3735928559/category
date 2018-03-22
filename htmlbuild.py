@@ -8,18 +8,28 @@ import subprocess, sys, docopt, json, os
 
 from util import *
 
-def gen_html(filename):
+args = {}
+
+def gen_html(filename, ID):
+    global args
     dom = etree.parse(filename)
-    xslt = etree.parse("node.xsl")
-    transform = etree.XSLT(xslt)
-    newdom = transform(dom)
-    return etree.tostring(newdom, pretty_print=True).decode()
+    ans = ""
+    nodes = dom.xpath("//img")
+    for n in nodes:
+        url = n.get("src")
+        print("FN",filename)
+        new_url = get_file(ID, filename, url, args['<output_dir>'])
+        if new_url: n.set("src", new_url)
+    children = dom.getroot().getchildren()[0].getchildren()[0].getchildren()
+    for c in children:
+        ans += etree.tostring(c, pretty_print=True).decode() + "\n"
+    return ans
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     old_metadata = import_metadata(join(args['<output_dir>'],'metadata.json'))
     metadata = {}
-    files = search_files(args['<input_dir>'],".xml")
+    files = search_files(args['<input_dir>'],".html")
     print(files)
     for f in files:
         print(f)
@@ -28,23 +38,18 @@ if __name__ == "__main__":
         except:
             print("WARNING: Invalid XML: {} -- skipping".format(f))
             continue
-        title = tree.xpath("/node/@title")[0]
+        raw_date = os.path.basename(os.path.dirname(f))
+        title = args['<cat_name>'] + raw_date
         ID = get_id(title)
-        date = tree.xpath("/node/@date")[0]
-        tags = tree.xpath("/node/edge")
-        
+        date = "{}-{}-{}".format(raw_date[:4],raw_date[4:6],raw_date[6:])
         if ID in metadata and metadata[ID]['name'] != title:
             print("WARNING: Duplicate node ID: {} -- skipping".format(node['name']))
             continue
         metadata[ID] = {'name':str(title), 'date':str(date), 'edges': {'has' : {}, 'is': {}}}
         edges = metadata[ID]['edges']
-        for t in tags:
-            ed,en = t.get('dir'),t.get('name')
-            if not en in edges[ed]: edges[ed][en] = []
-            edges[ed][en].append(t.text)
 
         # Generate HTML
-        html = gen_html(f)
+        html = gen_html(f, ID)
         with open(join(args['<output_dir>'],ID+'.html'),"w") as f:
             f.write(html)
     metadata = complete_metadata(args['<cat_name>'],metadata)

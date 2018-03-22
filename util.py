@@ -1,7 +1,26 @@
-import hashlib, json, traceback
+import hashlib, json, traceback, os
+from shutil import copyfile
 
 def get_id(node):
     return hashlib.sha256(node.encode()).hexdigest()
+
+def get_file(ID, filename, input_url, output_dir):
+    if input_url[:6] == "files/":
+        input_path = input_url[6:]
+        path = os.path.dirname(filename)
+        files_dir = os.path.join(output_dir,'files',ID)
+        try:
+            os.mkdir(files_dir)
+        except:
+            pass
+        src = os.path.join(path, input_url)
+        dst = os.path.join(files_dir,input_path)
+        print("COPY", src, dst)
+        copyfile(src, dst)
+        return "data/files/"+ID+"/"+input_path
+
+def search_files(base_path, ending):
+    return [os.path.join(dirpath,f) for dirpath,dirnames,filenames in os.walk(base_path) for f in filenames if f[-len(ending):] == ending]
 
 def import_metadata(fn):
     print("LOADING: {}".format(fn))
