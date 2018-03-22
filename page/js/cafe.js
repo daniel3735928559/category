@@ -18,13 +18,13 @@ window.onload = function(){
     Vue.component('edge-display', {
 	template: `<div class="edge_display">
                    <div v-for="(targets,edge) in edges.has">
-                      <div v-for="target in sorted_nodes(targets)">has {{edge}}: <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
-                   </div>
+                      <div v-for="target in sorted_nodes(targets)"><a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a><node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                   </div> 
                    <div v-for="(targets,edge) in edges.is">
-                      <div v-for="target in sorted_nodes(targets)">is {{edge}} of: <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                      <div v-for="target in sorted_nodes(targets)"><a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a><node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
                    </div>
                    </div>`,
-	props: ['edges','nodes'],
+	props: ['edges','nodes','node'],
 	methods: { sorted_nodes: sorted_nodes }
     });
     
@@ -66,6 +66,10 @@ window.onload = function(){
 	    });
 	},
 	methods: {
+	    set_query: function(q, event){
+		this.query = q;
+		this.search();
+	    },
 	    search: function(event){
 		if(this.query.length == 0) this.query = "*";
 		try{

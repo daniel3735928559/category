@@ -45,7 +45,7 @@
 
 		  <!-- data -->
 		  <div v-if="node_data[node] && node_data[node].length > 0" class="snippet_content" v-html="node_data[node] || 'Loading...'"></div>
-		  <edge-display v-on:click="open_snippet" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
+		  <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
 		</div>
 	      </div>
 	  </div>
@@ -61,7 +61,7 @@
 	      <span v-on:click="set_mode('list')" class="close_x">&lt;</span>
 	    </div>
 	    <div v-html="node_data[main_doc]"></div>
-	    <edge-display v-on:click="open_snippet" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
+	    <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="main_doc" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
 	  </div>
 	  </div>
 	</div>
