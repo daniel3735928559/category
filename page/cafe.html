@@ -79,7 +79,7 @@
 	    <div id="query_results">
 	      <span class="error">{{error}}</span>
 	      <ul v-if="error.length == 0">
-	      <li v-for="node in query_results">
+	      <li v-for="node in sorted_nodes(query_results)">
 		<node-link v-on:click="open_snippet" :name="nodes[node].name" :node="node"></node-link>
 	      </li>
 	      </ul>

@@ -1,5 +1,14 @@
-import hashlib, json, traceback, os
+import hashlib, json, traceback, os, datetime
 from shutil import copyfile
+
+class jsonenc(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        elif isinstance(obj, datetime.date):
+            return obj.isoformat()
+        else:
+            return super(jsonenc, self).default(obj)
 
 def get_id(node):
     return hashlib.sha256(node.encode()).hexdigest()
@@ -56,9 +65,8 @@ def complete_metadata(cat_name, metadata):
     for node in metadata.values():
         node_id = node.get('id',get_id(node['name']))
         name_to_id[node['name']] = node_id
-        ans[node_id] = {'data':node.get('data',''),
-                        'name':node['name'],
-                        'edges':{'has':{},'is':{}}}
+        ans[node_id] = {x:node[x] for x in node}
+        ans[node_id]['edges'] = {'has':{},'is':{}}
 
     # Now go through and find all the implicit ones and give them IDs in name_to_id:
     targets = set()

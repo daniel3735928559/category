@@ -43,7 +43,8 @@ def extract_metadata(elem, doc):
             if not 'name' in data:
                 sys.stderr.write("WARNING: 'name' required in info\n")
                 return []
-            node['name'] = data['name']
+            node = {x:data[x] for x in data}
+            print(node)
             ID = get_id(node['name'])
             return []
     elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
@@ -75,12 +76,12 @@ if __name__ == "__main__":
             print("WARNING: Invalid input file: {} -- skipping".format(fn))
             traceback.print_exc()
             continue
-        metadata[ID] = node
+        metadata[ID] = dict(node)
         with open(join(args['<output_dir>'],'{}.html'.format(ID)),"wb") as f:
             f.write(pf.convert_text(doc, input_format='panflute',output_format='html').encode('utf-8'))
     for x in metadata:
         print(x,metadata[x].get('name','NONE'))
     metadata = complete_metadata(args['<cat_name>'],metadata)
-    metadata.update(old_metadata)
+    old_metadata.update(metadata)
     with open(join(args['<output_dir>'],'metadata.json'.format(ID)),"w") as f:
-        f.write(json.dumps(metadata))
+        f.write(jsonenc().encode(old_metadata))

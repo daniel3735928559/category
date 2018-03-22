@@ -48,7 +48,7 @@ if __name__ == "__main__":
         with open(join(args['<output_dir>'],ID+'.html'),"w") as f:
             f.write(html)
     metadata = complete_metadata(args['<cat_name>'],metadata)
-    metadata.update(old_metadata)
+    old_metadata.update(metadata)
             
     with open(join(args['<output_dir>'],'metadata.json'),"w") as f:
-        f.write(json.dumps(metadata))
+        f.write(jsonenc().encode(old_metadata))

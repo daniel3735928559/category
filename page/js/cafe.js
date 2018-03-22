@@ -1,4 +1,15 @@
 window.onload = function(){
+    var sorted_nodes = function(nodes, event){
+	var ans = nodes.slice();
+	var self = this;
+		ans.sort(function(a,b){
+		    if('index' in self.nodes[a] && 'index' in self.nodes[b]) return self.nodes[a].index - self.nodes[b].index;
+		    if('date' in self.nodes[a] && 'date' in self.nodes[b]) return self.nodes[a].date.localeCompare(self.nodes[b].date);
+		    return self.nodes[a].name.localeCompare(self.nodes[b].name);
+		});
+	return ans;
+    };
+    
     Vue.component('node-link', {
 	template: `<a href="#" v-on:click="$emit('click',node)">{{name}}</a>`,
 	props: ['node','name'],
@@ -7,13 +18,14 @@ window.onload = function(){
     Vue.component('edge-display', {
 	template: `<div class="edge_display">
                    <div v-for="(targets,edge) in edges.has">
-                      <div v-for="target in targets">has {{edge}}: <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                      <div v-for="target in sorted_nodes(targets)">has {{edge}}: <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
                    </div>
                    <div v-for="(targets,edge) in edges.is">
-                      <div v-for="target in targets">is {{edge}} of: <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                      <div v-for="target in sorted_nodes(targets)">is {{edge}} of: <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
                    </div>
                    </div>`,
-	props: ['edges','nodes']
+	props: ['edges','nodes'],
+	methods: { sorted_nodes: sorted_nodes }
     });
     
     var app = new Vue({
@@ -68,6 +80,7 @@ window.onload = function(){
 		if(this.mode == 'graph')
 		    this.update_graph();
 	    },
+	    sorted_nodes: sorted_nodes,
 	    get_node: function(node, event){
 		var self = this;
 		if(node in self.node_data) return;
