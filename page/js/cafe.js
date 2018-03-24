@@ -1,4 +1,5 @@
 window.onload = function(){
+    Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
     var sorted_nodes = function(nodes, event){
 	var ans = nodes.slice();
 	var self = this;
@@ -92,6 +93,9 @@ window.onload = function(){
 		    response.text().then(function(data){
 			self.node_data[node] = response.status == 200 ? data : '';
 			self.$forceUpdate();
+			Vue.nextTick(function() {
+			    Guppy.Doc.render_all("text","$");
+			});
 		    });
 		});
 	    },
@@ -129,6 +133,7 @@ window.onload = function(){
 		    this.working_set.splice(idx,1);
 		    this.working_set.unshift(node);
 		}
+		Guppy.Doc.render_all("text","$");
 	    },
 	    goto_snippet: function(node, event){
 		if(this.mode == 'list') this.open_snippet(node, event);
@@ -149,6 +154,7 @@ window.onload = function(){
 		this.get_node(node);
 		this.main_doc = node;
 		this.set_mode('doc');
+		Guppy.Doc.render_all("text","$");
 	    },
 	    set_mode: function(mode, event){
 		this.mode = mode;

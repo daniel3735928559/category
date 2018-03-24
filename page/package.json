@@ -5,6 +5,7 @@
   "main": "cafe.js",
   "dependencies": {
     "bootstrap": "^4.0.0",
+    "guppy-js": "^2.0.0-beta.3",
     "http-server": "^0.11.1",
     "vis": "^4.21.0",
     "vue": "^2.5.15",
