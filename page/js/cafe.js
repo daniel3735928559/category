@@ -133,7 +133,7 @@ window.onload = function(){
 		    this.working_set.splice(idx,1);
 		    this.working_set.unshift(node);
 		}
-		Guppy.Doc.render_all("text","$");
+		Vue.nextTick(function() { Guppy.Doc.render_all("text","$"); });
 	    },
 	    goto_snippet: function(node, event){
 		if(this.mode == 'list') this.open_snippet(node, event);
@@ -154,15 +154,19 @@ window.onload = function(){
 		this.get_node(node);
 		this.main_doc = node;
 		this.set_mode('doc');
-		Guppy.Doc.render_all("text","$");
+		Vue.nextTick(function() { Guppy.Doc.render_all("text","$"); });
 	    },
 	    set_mode: function(mode, event){
 		this.mode = mode;
-		if(mode == 'graph')
+		if(mode == 'graph'){
 		    this.update_graph();
-		else if(this.network){
-		    this.network.destroy();
-		    this.network = false;
+		}
+		else {
+		    if(this.network){
+			this.network.destroy();
+			this.network = false;
+		    }
+		    Vue.nextTick(function() { Guppy.Doc.render_all("text","$"); });
 		}
 	    },
 	    update_graph: function(){
