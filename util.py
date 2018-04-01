@@ -1,4 +1,4 @@
-import hashlib, json, traceback, os, datetime
+import hashlib, json, traceback, os, datetime, re, sys
 from shutil import copyfile
 
 class jsonenc(json.JSONEncoder):
@@ -13,11 +13,38 @@ class jsonenc(json.JSONEncoder):
 def get_id(node):
     return hashlib.sha256(node.encode()).hexdigest()
 
+def add_edges(src, dst):
+    for et in src:
+        for en in src[et]:
+            if not en in dst[et]: dst[et][en] = []
+            for target in src[et][en]:
+                if not target in dst[et][en]:
+                    dst[et][en].append(target)
+
+def parse_config(data):
+    edges = {'has':{}, 'is':{}}
+    for line in data.split("\n"):
+        if len(line.strip()) == 0: continue
+        m = re.match(r"^\s*has\s+([^:]*):\s*(.*)\s*$", line)
+        et = 'has'
+        if not m:
+            m = re.match(r"^\s*is\s+([^:]*)\s+of:\s*(.*)\s*$", line)
+            et = 'is'
+            if not m:
+                sys.stderr.write("WARNING: Line not a valid edge: {}\n".format(line))
+                continue
+        en = m.group(1).strip()
+        target = m.group(2).strip()
+        if not en in edges[et]: edges[et][en] = []
+        edges[et][en].append(target)
+    return edges
+
 def get_file(ID, filename, input_url, output_dir):
     if input_url[:6] == "files/":
         input_path = input_url[6:]
         path = os.path.dirname(filename)
         files_dir = os.path.join(output_dir,'files',ID)
+        os.makedirs(files_dir, exist_ok=True)
         try:
             os.mkdir(files_dir)
         except:
@@ -35,29 +62,36 @@ def import_metadata(fn):
     print("LOADING: {}".format(fn))
     try:
         with open(fn,"r") as f:
-            return json.loads(f.read())
+            data = json.loads(f.read())
     except:
         traceback.print_exc()
         print("WARNING: no existing metadata found -- assuming empty")
         return {}
-    # metadata = {}
-    # for node_id in data:
-    #     node = data[node_id]
-    #     metadata[node['name']] = {'name':node['name']}
-    #     metadata[node['name']]['edges'] = {'has':{en:[data[nid]['name'] for nid in node['edges']['has'][en]] for en in node['edges']['has']}}
+    metadata = {}
+    for node_id in data:
+        node = data[node_id]
+        name = node['name']
+        metadata[name] = node
+        metadata[name]['edges'] = {'has':{en:[data[nid]['name'] for nid in node['edges']['has'][en]] for en in node['edges']['has']}}
 
-    # return metadata
+    return metadata
 
-def complete_metadata(cat_name, metadata):
+def get_targets(node):
+    targets = set()
+    for et in ['is','has']:
+        for ts in node.get('edges',{}).get(et,{}).values():
+            for t in ts: targets.add(t)
+    return targets
+    
+
+def complete_metadata(metadata):
     duals = {'has':'is','is':'has'}
     name_to_id = {}
     ans = {}
-    cat_id = get_id(cat_name)
 
-    # First, add category
+    # First, add edges
     for node in metadata.values():
         if not 'edges' in node: node['edges'] = {ed:{} for ed in duals}
-        node['edges']['has']['category'] = node['edges']['has'].get('category',[])+[cat_name]
     
     # Now, collect all the nodes, explicit and implicit
 
@@ -77,15 +111,28 @@ def complete_metadata(cat_name, metadata):
             for e in edges:
                 targets = targets.union(set(edges[e]))
                 
-    targets.add(cat_name)
-    
-    for t in targets:
-        if not t in name_to_id:
-            node_id = get_id(t)
-            print("Implicit node found: {} (ID={})".format(t, node_id))
-            name_to_id[t] = node_id
-            if t != cat_name: metadata[t] = {'name':t,'edges':{'has':{'category':[cat_name]},'is':{}}}
-            ans[node_id] = {'name':t,'edges':{'has':{},'is':{}}}
+    for node_name in targets:
+        if not node_name in name_to_id:
+            node_id = get_id(node_name)
+            print("Implicit node found: {} (ID={})".format(node_name, node_id))
+            name_to_id[node_name] = node_id
+
+            # Go through all nodes and get categories of all
+            # neighbours.  If there is a clear winner (over 80% of
+            # neighbours all have the same category), assign that
+            # category.  Otherwise, assign the "uncategorised"
+            # category.
+            category_votes = {}
+            for node in metadata.values():
+                if not node_name in get_targets(node): continue
+                cat = node.get('edges',{}).get('has',{}).get('category',['uncategorized'])[0]
+                if cat: category_votes[cat] = category_votes.get(cat,0)+1
+                tot = sum(category_votes.values())
+                for c in category_votes:
+                    if category_votes[c]/tot >= 0.8: cat = c
+            metadata[node_name] = {'name':node_name,'edges':{'has':{'category':[cat]},'is':{}}}
+            ans[node_id] = {'name':node_name,'edges':{'has':{},'is':{}}}
+            
             
     # Now every node--explicit and implicit--has an ID and an entry in
     # ans (without edges).  Go through and populate edges and dual
@@ -100,8 +147,10 @@ def complete_metadata(cat_name, metadata):
                 for target in edges[e]:
                     target_id = name_to_id[target]
                     # Add edge
-                    ans[node_id]['edges'][et][e] = ans[node_id]['edges'][et].get(e,[])+[target_id]
+                    if not e in ans[node_id]['edges'][et]: ans[node_id]['edges'][et][e] = []
+                    if not target_id in ans[node_id]['edges'][et][e]: ans[node_id]['edges'][et][e].append(target_id)
                     # Add dualised edge
-                    ans[target_id]['edges'][duals[et]][e] = ans[target_id]['edges'][duals[et]].get(e,[])+[node_id]
+                    if not e in ans[target_id]['edges'][duals[et]]: ans[target_id]['edges'][duals[et]][e] = []
+                    if not node_id in ans[target_id]['edges'][duals[et]][e]: ans[target_id]['edges'][duals[et]][e].append(node_id)
 
     return ans
