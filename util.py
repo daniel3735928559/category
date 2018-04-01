@@ -126,11 +126,14 @@ def complete_metadata(metadata):
             for node in metadata.values():
                 if not node_name in get_targets(node): continue
                 cat = node.get('edges',{}).get('has',{}).get('category',['uncategorized'])[0]
-                if cat: category_votes[cat] = category_votes.get(cat,0)+1
+                if cat == node_name:
+                    cat = None
+                    break
+                category_votes[cat] = category_votes.get(cat,0)+1
                 tot = sum(category_votes.values())
                 for c in category_votes:
                     if category_votes[c]/tot >= 0.8: cat = c
-            metadata[node_name] = {'name':node_name,'edges':{'has':{'category':[cat]},'is':{}}}
+            metadata[node_name] = {'name':node_name,'edges':{'has':{'category':[cat]} if cat else {},'is':{}}}
             ans[node_id] = {'name':node_name,'edges':{'has':{},'is':{}}}
             
             
