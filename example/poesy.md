@@ -1,8 +1,5 @@
 ``` info
 name: The Progress of Poesy
-```
-
-``` edges
 has author: Thomas Gray
 has influence: Pindar
 ```

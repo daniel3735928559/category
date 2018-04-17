@@ -1,8 +1,5 @@
 ``` info
 name: If--
-```
-
-``` edges
 has author: Rudyard Kipling
 ```
 

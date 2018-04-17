@@ -34,7 +34,7 @@ class cat_builder:
             if self.metadata_conf in files:
                 print("found config in",dirname)
                 with open(os.path.join(dirname, self.metadata_conf),"r") as f:
-                    self.config_edges = parse_config(f.read())
+                    _,self.config_edges = parse_config(f.read())
             # Now read the actual data files
             for fn in files:
                 fn = os.path.join(dirname, fn)

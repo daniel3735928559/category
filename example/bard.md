@@ -1,8 +1,5 @@
 ``` info
 name: The Bard
-```
-
-``` edges
 has author: Thomas Gray
 has influence: Pindar
 ```

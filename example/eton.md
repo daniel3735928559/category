@@ -1,8 +1,5 @@
 ``` info
 name: Ode on a Distant Prospect of Eton College
-```
-
-``` edges
 has author: Thomas Gray
 has influence: Horace
 ```

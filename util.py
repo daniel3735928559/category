@@ -21,23 +21,33 @@ def add_edges(src, dst):
                 if not target in dst[et][en]:
                     dst[et][en].append(target)
 
-def parse_config(data):
+def parse_config(text):
     edges = {'has':{}, 'is':{}}
-    for line in data.split("\n"):
+    data = {}
+    for line in text.split("\n"):
         if len(line.strip()) == 0: continue
+        # Check for "has" edge
         m = re.match(r"^\s*has\s+([^:]*):\s*(.*)\s*$", line)
         et = 'has'
         if not m:
+            # Check for "is" edge
             m = re.match(r"^\s*is\s+([^:]*)\s+of:\s*(.*)\s*$", line)
             et = 'is'
             if not m:
-                sys.stderr.write("WARNING: Line not a valid edge: {}\n".format(line))
-                continue
+                m = re.search(":\s*",line)
+                if m:
+                    et = None
+                    data[line[:m.start()]] = line[m.end():]
+                else:
+                    sys.stderr.write("WARNING: Line not a valid edge: {}\n".format(line))
+                    continue
+        if et is None:
+            continue
         en = m.group(1).strip()
         target = m.group(2).strip()
         if not en in edges[et]: edges[et][en] = []
         edges[et][en].append(target)
-    return edges
+    return data,edges
 
 def get_file(ID, filename, input_url, output_dir):
     if input_url[:6] == "files/":

@@ -1,8 +1,5 @@
 ``` info
 name: Modern Machinery
-```
-
-``` edges
 has author: Rudyard Kipling
 ```
 

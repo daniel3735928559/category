@@ -1,8 +1,5 @@
 ``` info
-name: Elegy Written in a Country Churchyard 
-```
-
-``` edges
+name: Elegy Written in a Country Churchyard
 has author: Thomas Gray
 ```
 

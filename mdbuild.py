@@ -9,12 +9,13 @@ import yaml, sys, re, hashlib, json, os, traceback
 from util import *
 
 class md_builder:
-    def __init__(self, filename, output_dir):
+    def __init__(self, filename, output_dir, plugins={}):
         self.OK = False
         self.ID = ''
         self.node = {}
         self.filename = filename
         self.output_dir = output_dir
+        self.plugins = plugins
         with open(filename,"rb") as f:
             doc = pf.convert_text(f.read().decode(),standalone=True)
         doc = doc.walk(self.extract_metadata)
@@ -23,21 +24,21 @@ class md_builder:
 
     def extract_metadata(self, elem, doc):
         if (isinstance(elem, pf.Code) or isinstance(elem, pf.CodeBlock)):
-            if 'edges' in elem.classes:
-                if not 'edges' in self.node: self.node['edges'] = {'has':{}, 'is':{}}
-                edges = self.node['edges']
-                new_edges = parse_config(elem.text)                
-                add_edges(new_edges, edges)
-                return []
-            elif 'info' in elem.classes:
-                data = yaml.load(elem.text)
+            if 'info' in elem.classes:  
+                data,new_edges = parse_config(elem.text)
                 if not 'name' in data:
                     sys.stderr.write("WARNING: 'name' required in info\n")
                     return []
                 self.node = {x:data[x] for x in data}
-                print(self.node)
+                self.node['edges'] = {'has':{}, 'is':{}}
+                edges = self.node['edges']
                 self.ID = get_id(self.node['name'])
+                add_edges(new_edges, edges)
                 return []
+            else:
+                for p in self.plugins:
+                    if p in elem.classes:
+                        return pf.Str("""<script type="category/plugin" lang="{}">\n{}\n</script>""".format(p,self.plugins[p].md(elem.text)))
         elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
             new_url = get_file(self.ID, self.filename, elem.url, self.output_dir)
             if new_url: elem.url = new_url

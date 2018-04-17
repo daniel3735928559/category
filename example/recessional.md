@@ -1,8 +1,5 @@
 ``` info
 name: Recessional
-```
-
-``` edges
 has author: Rudyard Kipling
 ```
 

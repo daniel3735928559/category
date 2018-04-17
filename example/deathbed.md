@@ -1,8 +1,5 @@
 ``` info
 name: The Death-Bed
-```
-
-``` edges
 has author: Rudyard Kipling
 ```
 
