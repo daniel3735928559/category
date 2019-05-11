@@ -7,17 +7,22 @@
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="node_modules/vis/dist/vis-network.min.css">
     <link rel="stylesheet" href="node_modules/guppy-js/guppy-default.min.css">
+    <link rel="stylesheet" href="plugins/slideshow.css">
     <script type="text/javascript" src="node_modules/vue/dist/vue.js"></script>
     <script type="text/javascript" src="node_modules/sortablejs/Sortable.min.js"></script>
     <script type="text/javascript" src="node_modules/vuedraggable/dist/vuedraggable.js"></script>
     <script type="text/javascript" src="node_modules/vis/dist/vis.js"></script>
     <script type="text/javascript" src="node_modules/guppy-js/guppy.min.js"></script>
+    <script type="text/javascript" src="plugins/link.js"></script>
+    <script type="text/javascript" src="plugins/query.js"></script>
+    <script type="text/javascript" src="plugins/math.js"></script>
+    <script type="text/javascript" src="plugins/slideshow.js"></script>
     <script type="text/javascript" src="js/query.js"></script>
     <script type="text/javascript" src="js/search.js"></script>
     <script type="text/javascript" src="js/cafe.js"></script>
   </head>
   <body>
-    <div id="app" class="container-full-width">
+    <div id="cafeapp" class="container-full-width">
       <div id="main" class="row">
 	<div class="col-md-2 offset-md-1">
 	  <div id="working_set">
@@ -35,7 +40,7 @@
 	  <div id="main_col">
 	  <!-- list -->
 	  <div v-if="mode == 'list'" id="list">
-	      <div v-for="node in working_set">
+	      <div :id="node+'-container'" v-for="node in working_set">
 		<a :name="node"></a>
 		<div class="snippet">
 		  <!-- header -->
@@ -58,12 +63,12 @@
 	  </div>
 
 	  <!-- doc -->
-	  <div v-if="mode == 'doc'" id="node">
+	  <div v-if="mode == 'doc'" :id="main_doc+'-container'" >
 	    <div class="snippet_header">
 	      <span class="snippet_title">{{nodes[main_doc].name}}</span>
 	      <span v-on:click="set_mode('list')" class="close_x">&lt;</span>
 	    </div>
-	    <div v-html="node_data[main_doc]"></div>
+	    <div v-html="node_data[main_doc]" class="expanded_content"></div>
 	    <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="main_doc" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
 	  </div>
 	  </div>

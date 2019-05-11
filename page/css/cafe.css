@@ -80,3 +80,11 @@
     vertical-align: middle;
     margin: 3px;
 }
+
+.snippet_content img {
+    max-width: 100%;
+}
+
+.expanded_content img {
+    max-width: 100%;
+}

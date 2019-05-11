@@ -92,7 +92,6 @@ def get_targets(node):
         for ts in node.get('edges',{}).get(et,{}).values():
             for t in ts: targets.add(t)
     return targets
-    
 
 def complete_metadata(metadata):
     duals = {'has':'is','is':'has'}
@@ -143,8 +142,8 @@ def complete_metadata(metadata):
                 tot = sum(category_votes.values())
                 for c in category_votes:
                     if category_votes[c]/tot >= 0.8: cat = c
-            metadata[node_name] = {'name':node_name,'edges':{'has':{'category':[cat]} if cat else {},'is':{}}}
-            ans[node_id] = {'name':node_name,'edges':{'has':{},'is':{}}}
+            metadata[node_name] = {'auto':'yes','name':node_name,'edges':{'has':{'category':[cat]} if cat else {},'is':{}}}
+            ans[node_id] = {'auto':'yes','name':node_name,'edges':{'has':{},'is':{}}}
             
             
     # Now every node--explicit and implicit--has an ID and an entry in

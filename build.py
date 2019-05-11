@@ -44,7 +44,10 @@ class cat_builder:
                         print("Already up-to-date: ",fn)
                         continue
                     print("PROCESSING",fn)
-                    builder = self.endings[ending](fn,output_dir)
+                    args = {}
+                    if ending == ".md":
+                        args = {"plugins":{"slideshow","math"}}
+                    builder = self.endings[ending](fn,output_dir,**args)
                     if not builder.OK:
                         print("WARNING: There was a problem building",fn)
                         continue

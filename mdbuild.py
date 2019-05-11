@@ -5,7 +5,7 @@ from os import listdir
 from os.path import isfile, join, dirname
 from shutil import copyfile
 import panflute as pf
-import yaml, sys, re, hashlib, json, os, traceback
+import yaml, sys, re, hashlib, json, os, traceback, urllib.parse
 from util import *
 
 class md_builder:
@@ -24,7 +24,9 @@ class md_builder:
 
     def extract_metadata(self, elem, doc):
         if (isinstance(elem, pf.Code) or isinstance(elem, pf.CodeBlock)):
-            if 'info' in elem.classes:  
+            print(elem.classes)
+            if 'info' in elem.classes:
+                print("info")
                 data,new_edges = parse_config(elem.text)
                 if not 'name' in data:
                     sys.stderr.write("WARNING: 'name' required in info\n")
@@ -38,10 +40,24 @@ class md_builder:
             else:
                 for p in self.plugins:
                     if p in elem.classes:
-                        return pf.Str("""<script type="category/plugin" lang="{}">\n{}\n</script>""".format(p,self.plugins[p].md(elem.text)))
+                        inner_doc = pf.convert_text(elem.text,standalone=True)
+                        inner_doc = inner_doc.walk(self.extract_metadata)
+                        inner_doc = pf.convert_text(inner_doc, input_format='panflute',output_format='html')
+                        return pf.RawBlock("""<script type="category/plugin" lang="{}">\n{}\n</script>""".format(p,inner_doc),format="html")
+                    
         elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
             new_url = get_file(self.ID, self.filename, elem.url, self.output_dir)
-            if new_url: elem.url = new_url
+            print("URL",elem.url)
+            if new_url:
+                elem.url = new_url
+            elif elem.url[:5] == "node:":
+                target = urllib.parse.unquote(elem.url[5:])
+                print("LINK",target)
+                return pf.RawInline("""<script type="category/plugin" lang="link">{}:{}</script>""".format(get_id(target),target),format="html")
+            elif elem.url[:6] == "query:":
+                q = urllib.parse.unquote(elem.url[6:])
+                print("QUERY",q)
+                return pf.RawInline("""<script type="category/plugin" lang="query">{}</script>""".format(q),format="html")
         elif isinstance(elem, pf.Math):
             print("MATH",elem.text)
             return pf.Str("$"+elem.text+"$")

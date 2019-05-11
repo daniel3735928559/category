@@ -1,15 +1,45 @@
+var sorted_nodes = function(nodes, event){
+    var ans = nodes.slice();
+    var self = this;
+    ans.sort(function(a,b){
+	if('index' in self.nodes[a] && 'index' in self.nodes[b]) return self.nodes[a].index - self.nodes[b].index;
+	if('date' in self.nodes[a] && 'date' in self.nodes[b]) return self.nodes[a].date.localeCompare(self.nodes[b].date);
+	return self.nodes[a].name.localeCompare(self.nodes[b].name);
+    });
+    return ans;
+};
+
 window.onload = function(){
-    Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
-    var sorted_nodes = function(nodes, event){
-	var ans = nodes.slice();
-	var self = this;
-		ans.sort(function(a,b){
-		    if('index' in self.nodes[a] && 'index' in self.nodes[b]) return self.nodes[a].index - self.nodes[b].index;
-		    if('date' in self.nodes[a] && 'date' in self.nodes[b]) return self.nodes[a].date.localeCompare(self.nodes[b].date);
-		    return self.nodes[a].name.localeCompare(self.nodes[b].name);
-		});
-	return ans;
-    };
+    var plugins = {"math":new MathPlugin(),
+		   "query":new QueryPlugin(),
+		   "link":new LinkPlugin(),
+		   "slideshow":new SlideshowPlugin()};
+    //Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
+
+    var run_plugins = function(comp){
+	for(var n in comp.nodes) {
+	    var container = document.getElementById(n+'-container');
+	    if(!container) continue;
+	    var l = container.getElementsByTagName("script");
+	    for(i = 0; i < l.length; i++){
+		if(l[i].getAttribute("type") == "category/plugin"){
+		    var p = l[i].getAttribute("lang");
+		    if(p in plugins){
+			console.log("RUN",p);
+			plugins[p].run(comp, n, l[i]);
+		    }
+		}
+	    }
+	    while(l.length > 0){
+		l[0].parentNode.removeChild(l[0]);
+	    }
+	    
+	    // last resort: run all plugins on nothing
+	    for(var p in plugins){
+		plugins[p].run();
+	    }
+	}
+    }
     
     Vue.component('node-link', {
 	template: `<a href="#" v-on:click="$emit('click',node)">{{name}}</a>`,
@@ -19,10 +49,17 @@ window.onload = function(){
     Vue.component('edge-display', {
 	template: `<div class="edge_display">
                    <div v-for="(targets,edge) in edges.has">
-                      <div v-for="target in sorted_nodes(targets)"><a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a><node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto != 'yes'"><a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
                    </div> 
                    <div v-for="(targets,edge) in edges.is">
-                      <div v-for="target in sorted_nodes(targets)"><a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a><node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto != 'yes'"><a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                   </div>
+                   <b>Auto-generated:</b>
+                   <div v-for="(targets,edge) in edges.has">
+                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto == 'yes'"><a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
+                   </div> 
+                   <div v-for="(targets,edge) in edges.is">
+                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto == 'yes'"><a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
                    </div>
                    </div>`,
 	props: ['edges','nodes','node'],
@@ -30,7 +67,7 @@ window.onload = function(){
     });
     
     var app = new Vue({
-	el: '#app',
+	el: '#cafeapp',
 	data() {
 	    return {
 		mode: 'list',
@@ -61,6 +98,7 @@ window.onload = function(){
 		    // 	self.main_doc = x;
 		    // }
 		    self.nodes = data;
+		    //console.log(JSON.stringify(self.nodes['89fa72baeb81db041ceceb3b58222baae1734cf8cf0573a683258e2fb5bee2d3']));
 		    self.query = 'is category';
 		    self.search()
 		});
@@ -93,9 +131,7 @@ window.onload = function(){
 		    response.text().then(function(data){
 			self.node_data[node] = response.status == 200 ? data : '';
 			self.$forceUpdate();
-			Vue.nextTick(function() {
-			    Guppy.Doc.render_all("text","$");
-			});
+			Vue.nextTick(function() { run_plugins(self); });
 		    });
 		});
 	    },
@@ -125,6 +161,7 @@ window.onload = function(){
 		return new vis.DataSet(ans);
 	    },
 	    open_snippet: function(node, event){
+		var self = this;
 		this.get_node(node);
 		this.main_doc = node;
 		idx = this.working_set.indexOf(node);
@@ -133,11 +170,13 @@ window.onload = function(){
 		    this.working_set.splice(idx,1);
 		    this.working_set.unshift(node);
 		}
-		Vue.nextTick(function() { Guppy.Doc.render_all("text","$"); });
+		Vue.nextTick(function() { run_plugins(self); });
 	    },
 	    goto_snippet: function(node, event){
+		var self = this;
 		if(this.mode == 'list') this.open_snippet(node, event);
 		else if(this.mode == 'doc') this.main_doc = node;
+		Vue.nextTick(function() { run_plugins(self); });
 	    },
 	    minimise_snippet: function(node, event){
 		idx = this.working_set.indexOf(node);
@@ -145,18 +184,23 @@ window.onload = function(){
 		    this.working_set.splice(idx,1);
 		    this.working_set.push(node);
 		}
+		Vue.nextTick(function() { run_plugins(self); });
 	    },
 	    close_snippet: function(node, event){
+		var self = this;
 		idx = this.working_set.indexOf(node);
 		if(idx >= 0) this.working_set.splice(idx,1);
+		Vue.nextTick(function(){ run_plugins(self); });
 	    },
 	    view_doc: function(node, event){
+		var self = this;
 		this.get_node(node);
 		this.main_doc = node;
 		this.set_mode('doc');
-		Vue.nextTick(function() { Guppy.Doc.render_all("text","$"); });
+		Vue.nextTick(function() { run_plugins(self); });
 	    },
 	    set_mode: function(mode, event){
+		var self = this;
 		this.mode = mode;
 		if(mode == 'graph'){
 		    this.update_graph();
@@ -166,7 +210,7 @@ window.onload = function(){
 			this.network.destroy();
 			this.network = false;
 		    }
-		    Vue.nextTick(function() { Guppy.Doc.render_all("text","$"); });
+		    Vue.nextTick(function() { run_plugins(self); });
 		}
 	    },
 	    update_graph: function(){
