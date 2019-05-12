@@ -12,6 +12,7 @@ var sorted_nodes = function(nodes, event){
 window.onload = function(){
     var plugins = {"math":new MathPlugin(),
 		   "query":new QueryPlugin(),
+		   "video":new VideoPlugin(),
 		   "link":new LinkPlugin(),
 		   "slideshow":new SlideshowPlugin()};
     //Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});

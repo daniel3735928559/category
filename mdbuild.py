@@ -1,5 +1,3 @@
-
-
 from io import StringIO
 from os import listdir
 from os.path import isfile, join, dirname
@@ -40,10 +38,16 @@ class md_builder:
             else:
                 for p in self.plugins:
                     if p in elem.classes:
-                        inner_doc = pf.convert_text(elem.text,standalone=True)
-                        inner_doc = inner_doc.walk(self.extract_metadata)
-                        inner_doc = pf.convert_text(inner_doc, input_format='panflute',output_format='html')
-                        return pf.RawBlock("""<script type="category/plugin" lang="{}">\n{}\n</script>""".format(p,inner_doc),format="html")
+                        plugin = self.plugins[p]
+                        if hasattr(plugin, 'get_files'):
+                            plugin.get_files(elem, lambda fn: get_file(self.ID, self.filename, fn, self.output_dir))
+                        if self.plugins[p] == "md":
+                            inner_doc = pf.convert_text(elem.text,standalone=True)
+                            inner_doc = inner_doc.walk(self.extract_metadata)
+                            inner_doc = pf.convert_text(inner_doc, input_format='panflute',output_format='html')
+                        else:
+                            inner_doc = elem.text
+                        return pf.RawBlock("""<script type="category/plugin" lang="{}">{}</script>""".format(p,inner_doc),format="html")
                     
         elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
             new_url = get_file(self.ID, self.filename, elem.url, self.output_dir)

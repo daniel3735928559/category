@@ -4,6 +4,7 @@ import docopt, os, traceback
 from util import *
 from mdbuild import md_builder
 from xmlbuild import xml_builder
+from plugins import *
 
 class cat_builder:
     def __init__(self, input_dir, output_dir, force_rebuild=False):
@@ -46,7 +47,7 @@ class cat_builder:
                     print("PROCESSING",fn)
                     args = {}
                     if ending == ".md":
-                        args = {"plugins":{"slideshow","math"}}
+                        args = {"plugins":{"slideshow":{},"math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt"}}
                     builder = self.endings[ending](fn,output_dir,**args)
                     if not builder.OK:
                         print("WARNING: There was a problem building",fn)
