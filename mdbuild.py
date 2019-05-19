@@ -64,7 +64,7 @@ class md_builder:
                 return pf.RawInline("""<script type="category/plugin" lang="query">{}</script>""".format(q),format="html")
         elif isinstance(elem, pf.Math):
             print("MATH",elem.text)
-            return pf.Str("$"+elem.text+"$")
+            return pf.RawInline("""<script type="category/plugin" lang="math">{}</script>""".format(elem.text),format="html")
 
 if __name__ == "__main__":
     import docopt

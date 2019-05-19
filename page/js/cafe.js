@@ -26,18 +26,13 @@ window.onload = function(){
 		if(l[i].getAttribute("type") == "category/plugin"){
 		    var p = l[i].getAttribute("lang");
 		    if(p in plugins){
-			console.log("RUN",p);
+			console.log("RUN",p,l[i]);
 			plugins[p].run(comp, n, l[i]);
 		    }
 		}
 	    }
 	    while(l.length > 0){
 		l[0].parentNode.removeChild(l[0]);
-	    }
-	    
-	    // last resort: run all plugins on nothing
-	    for(var p in plugins){
-		plugins[p].run();
 	    }
 	}
     }
