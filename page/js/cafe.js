@@ -26,8 +26,8 @@ window.onload = function(){
 		if(l[i].getAttribute("type") == "category/plugin"){
 		    var p = l[i].getAttribute("lang");
 		    if(p in plugins){
-			console.log("RUN",p,l[i]);
-			plugins[p].run(comp, n, l[i]);
+			console.log("RUN",p,l[i],i);
+			plugins[p].run(comp, n, l[i], i);
 		    }
 		}
 	    }
