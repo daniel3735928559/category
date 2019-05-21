@@ -47,7 +47,7 @@ class cat_builder:
                     print("PROCESSING",fn)
                     args = {}
                     if ending == ".md":
-                        args = {"plugins":{"slideshow":{},"math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt"}}
+                        args = {"plugins":{"slideshow":"md","math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt"}}
                     builder = self.endings[ending](fn,output_dir,**args)
                     if not builder.OK:
                         print("WARNING: There was a problem building",fn)
