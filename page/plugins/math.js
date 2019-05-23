@@ -10,7 +10,7 @@ class MathPlugin {
 	    template: `
 <span class="category-math-plugin">
 <a v-bind:name="'category-math-plugin-link-'+id"></a>
-  <span v-bind:id="'category-math-plugin-expr-'+id" class="category-math-plugin-math" v-on:click="display_syms = !display_syms" v-html="rendered"></span>
+  <div v-bind:id="'category-math-plugin-expr-'+id" class="category-math-plugin-math" v-on:click="display_syms = !display_syms" v-html="rendered"></div>
   <div class="category-math-plugin-vars" v-bind:style="get_pos(id)" v-if="display_syms">
     <a href="#" v-on:click="display_syms = false; query = ''">[x]</a>
     Vars:
@@ -32,8 +32,9 @@ class MathPlugin {
 	    props: ["query","syms","id","display_syms","rendered","master"],
 	    methods: {
 		get_pos: function(id) {
-		    var el = document.getElementById(id);
-		    return {'position':'absolute','left':'100%','top':0,'max-width':'50%'};
+		    var el = document.getElementById("category-math-plugin-expr-"+id);
+		    var top = el.getBoundingClientRect().y;
+		    return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};
 		}
 	    }
 	});

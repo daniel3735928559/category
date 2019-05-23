@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "./make.sh",
-    "serve": "./node_modules/.bin/http-server -c-1 -a 127.0.0.1 -p 3798"
+    "serve": "./node_modules/.bin/http-server -c-1 -a 127.0.0.1 -p 3545"
   },
   "devDependencies": {
     "jison": "^0.4.18"

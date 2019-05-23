@@ -1,5 +1,6 @@
 .category-math-plugin-math {
     cursor:pointer;
+    display:inline-block;
 }
 
 .category-math-plugin-vars {

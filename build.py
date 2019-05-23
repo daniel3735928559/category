@@ -31,11 +31,17 @@ class cat_builder:
         srcs = {x.get('src','') for x in self.metadata.values()}
         
         for dirname,dirs,files in os.walk(input_dir):
+            # Skip the OLD directory
+            if "OLD" in dirname:
+                print("skipping OLD")
+                continue
+            
             # Read the metadata
             if self.metadata_conf in files:
                 print("found config in",dirname)
                 with open(os.path.join(dirname, self.metadata_conf),"r") as f:
                     _,self.config_edges = parse_config(f.read())
+                    
             # Now read the actual data files
             for fn in files:
                 fn = os.path.join(dirname, fn)
