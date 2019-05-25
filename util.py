@@ -63,7 +63,7 @@ def get_file(ID, filename, input_url, output_dir):
         dst = os.path.join(files_dir,input_path)
         print("COPY", src, dst)
         copyfile(src, dst)
-        return "data/files/"+ID+"/"+input_path
+        return "/category/files/"+ID+"/"+input_path
 
 def search_files(base_path, ending):
     return [os.path.join(dirpath,f) for dirpath,dirnames,filenames in os.walk(base_path) for f in filenames if f[-len(ending):] == ending]

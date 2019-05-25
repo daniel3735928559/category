@@ -85,7 +85,7 @@ window.onload = function(){
 	},
 	mounted: function(){
 	    var self = this;
-	    fetch('data/metadata.json').then(function(response){
+	    fetch('/category/metadata.json').then(function(response){
 		response.json().then(function(data){
 		    self.working_set = [];
 		    self.query_results = [];
@@ -123,7 +123,7 @@ window.onload = function(){
 	    get_node: function(node, event){
 		var self = this;
 		if(node in self.node_data) return;
-		fetch('data/'+node+'.html').then(function(response){
+		fetch('/category/'+node+'.html').then(function(response){
 		    response.text().then(function(data){
 			self.node_data[node] = response.status == 200 ? data : '';
 			self.$forceUpdate();

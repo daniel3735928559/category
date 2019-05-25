@@ -1,0 +1,103 @@
+#!/usr/bin/python
+
+""" Category
+
+Usage: 
+  category init <path> <name>
+  category build <path>
+  category rebuild <path>
+  category subcat <src_path> <dst_path>
+  category serve <path> [(-p <port>)] [(-a <bind_addr>)]
+
+Options:
+  -p port (default: 7688)
+  -a address to bind (default: 127.0.0.1)
+"""
+
+from flask import Flask, send_from_directory
+import docopt, yaml, os
+from build import cat_builder
+
+def cat_error(*args):
+    print("[ERROR]:",*args)
+    exit(1)
+
+def config_path(cat_path):
+    return os.path.join(cat_path, "category.yaml")
+
+def is_category(cat_path):
+    return os.path.exists(config_path(cat_path))
+
+def read_config(cat_path):
+    if not is_category(cat_path):
+        cat_error(f"Not a category. Run: category init {cat_path}")
+    with open(config_path,"r") as f:
+        return yaml.load(f)
+
+def cat_init(cat_path, name):
+    # In the cat_path folder, create the structure
+    # $CAT_PATH/src
+    # $CAT_PATH/out
+    # $CAT_PATH/category.yaml (with name: <name>)
+    if is_category(cat_path):
+        cat_error(f"Pre-existing category found in {cat_path}")
+    for dirname in ["src","out"]:
+        dir_path = os.path.join(cat_path,dirname)
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+    with open(config_path(cat_path),"w") as f:
+        yaml.dump({"name":name},f)
+
+def cat_build(cat_path):
+    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"))
+
+def cat_rebuild(cat_path):
+    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), True)
+
+def cat_subcat(src_path, dst_path):
+    pass
+
+def cat_serve(cat_path, port, bind_addr):
+    if not is_category(cat_path):
+        cat_error(f"Not a category. Run: category init {cat_path}")
+        
+    cat_root = os.path.join(os.path.realpath(cat_path),"out")
+    print(f"Serving {cat_root} on port {bind_addr}:{port}...")
+    static_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
+    print("static",static_root)
+    app = Flask(__name__,static_url_path='')
+
+    @app.route('/static/<path:path>')
+    def send_static(path):
+        print("sending static file",path)
+        return send_from_directory(static_root, path)
+    
+    @app.route('/category/<path:path>')
+    def send_file(path):
+        print("sending category file",path)
+        return send_from_directory(cat_root, path)
+
+    @app.route('/')
+    def send_root():
+        print("ROOT",os.path.join(static_root,"cafe.html"))
+        return app.send_static_file(os.path.join(static_root,"cafe.html"))
+
+    app.run(host=bind_addr, port=port, debug=False)
+
+if __name__ == "__main__":
+    args = docopt.docopt(__doc__)
+    print(args)
+    if args['init']:
+        cat_init(args['<path>'], args['<name>'])
+    elif args['build']:
+        cat_build(args['<path>'])
+    elif args['rebuild']:
+        cat_rebuild(args['<path>'])
+    elif args['subcat']:
+        cat_subcat(args['<src_path>'],
+                   args['<dst_path>'])
+    elif args['serve']:
+        print("asda")
+        cat_serve(args['<path>'],
+                  args['-p'] if args['-p'] != False else 7688,
+                  args['-a'] if args['-a'] != False else "127.0.0.1")
