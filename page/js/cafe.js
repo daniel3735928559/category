@@ -138,12 +138,17 @@ window.onload = function(){
 		    this.update_graph();
 	    },
 	    sorted_nodes: sorted_nodes,
+	    get_auto_node: function(node) {
+		if(!("category" in self.node_data[node]["edges"]["is"])) return "";
+		// Find all edges in category and provide 
+		return "";
+	    },
 	    get_node: function(node, event){
 		var self = this;
 		if(node in self.node_data) return;
 		fetch('/category/'+node+'.html', fetch_params).then(function(response){
 		    response.text().then(function(data){
-			self.node_data[node] = response.status == 200 ? data : '';
+			self.node_data[node] = response.status == 200 ? data : this.get_auto_node(node);
 			self.$forceUpdate();
 			Vue.nextTick(function() { run_plugins(self); });
 		    });
