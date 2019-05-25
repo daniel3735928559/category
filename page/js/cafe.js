@@ -17,6 +17,15 @@ window.onload = function(){
 		   "slideshow":new SlideshowPlugin()};
     //Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
 
+    var fetch_headers = new Headers();
+    fetch_headers.append('pragma', 'no-cache');
+    fetch_headers.append('cache-control', 'no-cache');
+    
+    var fetch_params = {
+	method: 'GET',
+	headers: fetch_headers,
+    };
+    
     var run_plugins = function(comp){
 	for(var n in comp.nodes) {
 	    var container = document.getElementById(n+'-container');
@@ -85,7 +94,7 @@ window.onload = function(){
 	},
 	mounted: function(){
 	    var self = this;
-	    fetch('/category/metadata.json').then(function(response){
+	    fetch('/category/metadata.json', fetch_params).then(function(response){
 		response.json().then(function(data){
 		    self.working_set = [];
 		    self.query_results = [];
@@ -101,6 +110,15 @@ window.onload = function(){
 	    });
 	},
 	methods: {
+	    reload: function(){
+		var self = this;
+		fetch('/category/metadata.json', fetch_params).then(function(response){
+		    response.json().then(function(data){
+			self.nodes = data;
+			self.$forceUpdate();
+		    });
+		});
+	    },
 	    set_query: function(q, event){
 		this.query = q;
 		this.search();
@@ -123,11 +141,23 @@ window.onload = function(){
 	    get_node: function(node, event){
 		var self = this;
 		if(node in self.node_data) return;
-		fetch('/category/'+node+'.html').then(function(response){
+		fetch('/category/'+node+'.html', fetch_params).then(function(response){
 		    response.text().then(function(data){
 			self.node_data[node] = response.status == 200 ? data : '';
 			self.$forceUpdate();
 			Vue.nextTick(function() { run_plugins(self); });
+		    });
+		});
+	    },
+	    reload_node: function(node, event){
+		delete this.node_data[node];
+		this.get_node(node);
+	    },
+	    edit_node: function(node, event){
+		var self = this;
+		fetch('/edit/'+node, fetch_params).then(function(response){
+		    response.text().then(function(data){
+			console.log(data);
 		    });
 		});
 	    },

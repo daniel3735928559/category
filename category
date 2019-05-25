@@ -15,7 +15,7 @@ Options:
 """
 
 from flask import Flask, send_from_directory
-import docopt, yaml, os, subprocess, shlex, select, json, shutil
+import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading
 from src.build import cat_builder
 import src.util
 
@@ -25,6 +25,17 @@ def cat_error(*args):
 
 def config_path(cat_path):
     return os.path.join(cat_path, "category.yaml")
+
+def metadata_path(cat_path):
+    return os.path.join(cat_path, "out/metadata.json")
+
+def load_config(cat_path):
+    with open(config_path(cat_path)) as f:
+        return yaml.load(f)
+    
+def load_metadata(cat_path):
+    with open(metadata_path(cat_path)) as f:
+        return json.load(f)
 
 def is_category(cat_path):
     return os.path.exists(config_path(cat_path))
@@ -107,6 +118,14 @@ def cat_subcat(src_path, subcat_path, subcat_name, query):
         cat_error(proc_output.decode())
 
 def cat_serve(cat_path, port, bind_addr):
+    # Ensure we don't zombify our editors
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN);
+
+    # Load the category metadata and configuration
+    metadata = load_metadata(cat_path)
+    config = load_config(cat_path)
+    editor = config.get("editor","/usr/bin/emacs")
+    
     if not is_category(cat_path):
         cat_error(f"Not a category. Run: category init {cat_path}")
         
@@ -114,10 +133,25 @@ def cat_serve(cat_path, port, bind_addr):
     print(f"Serving {cat_root} on port {bind_addr}:{port}...")
     static_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
     app = Flask(__name__,static_url_path='')
-
+    
     @app.route('/static/<path:path>')
     def send_static(path):
         return send_from_directory(static_root, path)
+    
+    @app.route('/edit/<node>')
+    def edit_file(node):
+        node_src = os.path.join(cat_path,metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+        def edit_node(cat_path, editor, node_src):
+            proc = subprocess.Popen([editor, node_src],shell=False)
+            proc.wait()
+            cat_build(cat_path)
+            return
+        if os.path.exists(node_src):
+            thread = threading.Thread(target=edit_node, args=(cat_path, editor, node_src))
+            thread.start()
+            return f"Editor {editor} started"
+        else:
+            return f"Source file {node_src} does not exist"
     
     @app.route('/category/<path:path>')
     def send_file(path):
@@ -128,7 +162,7 @@ def cat_serve(cat_path, port, bind_addr):
         return send_from_directory(static_root,"cafe.html")
 
     app.run(host=bind_addr, port=port, debug=False)
-
+    
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     if args['init']:

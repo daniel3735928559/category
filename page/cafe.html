@@ -51,6 +51,8 @@
 		    <span v-on:click="close_snippet(node)" class="close_x">&times;</span>
 		    <span v-on:click="view_doc(node)" class="close_x">+</span>
 		    <span v-on:click="minimise_snippet(node)" class="close_x">&mdash;</span>
+		    <span v-on:click="reload_node(node)" class="close_x">r</span>
+		    <span v-on:click="edit_node(node)" class="close_x">e</span>
 		  </div>
 
 		  <!-- data -->
@@ -69,6 +71,8 @@
 	    <div class="snippet_header">
 	      <span class="snippet_title">{{nodes[main_doc].name}}</span>
 	      <span v-on:click="set_mode('list')" class="close_x">&lt;</span>
+	      <span v-on:click="edit_node(main_doc)" class="close_x">e</span>
+	      <span v-on:click="reload_node(main_doc)" class="close_x">r</span>
 	    </div>
 	    <div v-html="node_data[main_doc]" class="expanded_content"></div>
 	    <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="main_doc" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>

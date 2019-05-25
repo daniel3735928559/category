@@ -63,7 +63,10 @@ class cat_builder:
                         print("WARNING: No name found in",fn)
                         continue
                     self.metadata[builder.ID] = builder.node
-                    self.metadata[builder.ID]['src'] = fn
+                    src_fn_s = list(os.path.split(fn))
+                    while src_fn_s[0] != '':
+                        src_fn_s = list(os.path.split(src_fn_s[0])) + src_fn_s[1:]
+                    self.metadata[builder.ID]['src'] = os.path.join(*src_fn_s[2:])
                     if not 'edges' in self.metadata[builder.ID]: self.metadata[builder.ID]['edges'] = {'has':{},'is':{}}
                     edges = self.metadata[builder.ID]['edges']
                     add_edges(self.config_edges, edges)
