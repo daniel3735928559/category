@@ -1,6 +1,6 @@
 from lxml import etree
 import docopt
-from util import *
+from . util import *
 
 class xml_builder:
     def __init__(self, filename, output_dir):

@@ -1,10 +1,10 @@
 """Usage: build.py <input_dir> <output_dir> [rebuild]"""
 
 import docopt, os, traceback
-from util import *
-from mdbuild import md_builder
-from xmlbuild import xml_builder
-from plugins import *
+from . util import *
+from . mdbuild import md_builder
+from . xmlbuild import xml_builder
+from . plugins import *
 
 class cat_builder:
     def __init__(self, input_dir, output_dir, force_rebuild=False):

@@ -6,7 +6,7 @@ Usage:
   category init <path> <name>
   category build <path>
   category rebuild <path>
-  category subcat <src_path> <dst_path>
+  category subcat <path> <subcat_path> <subcat_name> <query>
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
 
 Options:
@@ -15,8 +15,9 @@ Options:
 """
 
 from flask import Flask, send_from_directory
-import docopt, yaml, os
-from build import cat_builder
+import docopt, yaml, os, subprocess, shlex, select, json, shutil
+from src.build import cat_builder
+import src.util
 
 def cat_error(*args):
     print("[ERROR]:",*args)
@@ -41,7 +42,7 @@ def cat_init(cat_path, name):
     # $CAT_PATH/category.yaml (with name: <name>)
     if is_category(cat_path):
         cat_error(f"Pre-existing category found in {cat_path}")
-    for dirname in ["src","out"]:
+    for dirname in ["src","out","out/files"]:
         dir_path = os.path.join(cat_path,dirname)
         if not os.path.exists(dir_path):
             os.mkdir(dir_path)
@@ -54,8 +55,56 @@ def cat_build(cat_path):
 def cat_rebuild(cat_path):
     cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), True)
 
-def cat_subcat(src_path, dst_path):
-    pass
+def cat_subcat(src_path, subcat_path, subcat_name, query):
+    if not is_category(subcat_path):
+        cat_init(subcat_path, subcat_name)
+    subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page/module/subcat.js")
+    metadata_path = os.path.join(src_path,"out/metadata.json")
+    proc = subprocess.Popen(shlex.split(f"node {subcat_js_path} {metadata_path} '{query}'"),shell=False,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    proc_output = bytes()
+    while proc.poll() == None:
+        readx = select.select([proc.stdout.fileno()], [], [])[0]
+        if readx:
+            proc_output += proc.stdout.read()
+    if proc.returncode == 0:
+        subcat_nodes = json.loads(proc_output)
+        src_out_path = os.path.join(src_path,"out")
+        dst_out_path = os.path.join(subcat_path,"out")
+        src_out_files_path = os.path.join(src_out_path,"files")
+        dst_out_files_path = os.path.join(dst_out_path,"files")
+            
+        for node_id in subcat_nodes:
+            src_file_path = os.path.join(src_out_path, node_id+".html")
+            dst_file_path = os.path.join(dst_out_path, node_id+".html")
+            src_files_path = os.path.join(src_out_files_path, node_id)
+            dst_files_path = os.path.join(dst_out_files_path, node_id)
+            # Copy page if it exists:
+            if os.path.exists(src_file_path):
+                shutil.copy2(src_file_path, dst_file_path)
+            # Copy files dir if it exists:
+            if os.path.exists(src_files_path):
+                shutil.copytree(src_files_path, dst_files_path)
+
+        # Generate metadata.json for subcategory
+        src_md_path = os.path.join(src_out_path,"metadata.json")
+        dst_md_path = os.path.join(dst_out_path,"metadata.json")
+        with open(src_md_path,"r") as f:
+            md = json.load(f)
+            new_md = {x:md[x] for x in subcat_nodes}
+            new_md = src.util.complete_metadata(new_md)
+            autos = [i for i in new_md if new_md[i].get("auto","no") == "yes"]
+            for x in autos:
+                d = new_md[x]
+                real_id = d["name"]
+                real_name = md[real_id]["name"]
+                d["name"] = real_name
+                new_md[real_id] = d
+                del new_md[x]
+            with open(dst_md_path,"w") as f2:
+                json.dump(new_md,f2)
+                
+    elif proc.returncode == 1:
+        cat_error(proc_output.decode())
 
 def cat_serve(cat_path, port, bind_addr):
     if not is_category(cat_path):
@@ -64,29 +113,24 @@ def cat_serve(cat_path, port, bind_addr):
     cat_root = os.path.join(os.path.realpath(cat_path),"out")
     print(f"Serving {cat_root} on port {bind_addr}:{port}...")
     static_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
-    print("static",static_root)
     app = Flask(__name__,static_url_path='')
 
     @app.route('/static/<path:path>')
     def send_static(path):
-        print("sending static file",path)
         return send_from_directory(static_root, path)
     
     @app.route('/category/<path:path>')
     def send_file(path):
-        print("sending category file",path)
         return send_from_directory(cat_root, path)
 
     @app.route('/')
     def send_root():
-        print("ROOT",os.path.join(static_root,"cafe.html"))
-        return app.send_static_file(os.path.join(static_root,"cafe.html"))
+        return send_from_directory(static_root,"cafe.html")
 
     app.run(host=bind_addr, port=port, debug=False)
 
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
-    print(args)
     if args['init']:
         cat_init(args['<path>'], args['<name>'])
     elif args['build']:
@@ -94,10 +138,11 @@ if __name__ == "__main__":
     elif args['rebuild']:
         cat_rebuild(args['<path>'])
     elif args['subcat']:
-        cat_subcat(args['<src_path>'],
-                   args['<dst_path>'])
+        cat_subcat(args['<path>'],
+                   args['<subcat_path>'],
+                   args['<subcat_name>'],
+                   args['<query>'])
     elif args['serve']:
-        print("asda")
         cat_serve(args['<path>'],
                   args['-p'] if args['-p'] != False else 7688,
                   args['-a'] if args['-a'] != False else "127.0.0.1")

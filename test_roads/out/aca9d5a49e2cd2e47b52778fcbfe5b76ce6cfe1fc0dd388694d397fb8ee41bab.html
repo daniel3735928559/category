@@ -1,0 +1,31 @@
+<h1 id="problem">Problem</h1>
+<p>We have a main road (such as a major highway) and another road (such as a normal city road), and we want to provide an access point between them without severly impacting traffic flow on the main road.</p>
+<p>For example, we simply create an intersection between them, but if intersecting a city road and a highway, this will impede traffic on the highway.</p>
+<p>There are many available designs for this, a few more elaborate examples of which can be found at <script type="category/plugin" lang="link">5bee8eee6deaebedc919be9bd966b4adc07089f7eca59682dad65b9eb25cc152:Interchange examples</script>. For now, we want to focus on those that create only a single intersection in the city road, and only use onramps and offramps to get to the major road.</p>
+<h1 id="state-of-the-art">State of the art</h1>
+<p>This is the original single-point urban interchange design (or “SPUI”):</p>
+<figure>
+<img src="/category/files/aca9d5a49e2cd2e47b52778fcbfe5b76ce6cfe1fc0dd388694d397fb8ee41bab/SPUI.png" alt="Single-Point Urban Interchange" /><figcaption>Single-Point Urban Interchange</figcaption>
+</figure>
+<p>It is believed both efficient and safe, but it takes up a lot of room.</p>
+<p>This is a much more compact design–the “inverted SPUI”.</p>
+<figure>
+<img src="/category/files/aca9d5a49e2cd2e47b52778fcbfe5b76ce6cfe1fc0dd388694d397fb8ee41bab/ISPUI.png" alt="Inverted SPUI" /><figcaption>Inverted SPUI</figcaption>
+</figure>
+<p>It has similar qualities to the original SPUI, except it requires drivers to enter and exit the main road using the left lane, which creates severe confusion.</p>
+<h1 id="proposals">Proposals</h1>
+<p>We want the best of both worlds:</p>
+<ul>
+<li><p>Drivers leaving the main road use the right lanes to exit</p></li>
+<li><p>There is only one, normal-sized intersection on the city road.</p></li>
+</ul>
+<p>This is topologically feasible, and we present two designs that accomplish this</p>
+<p>First, the Twisted SPUI:</p>
+<figure>
+<img src="/category/files/aca9d5a49e2cd2e47b52778fcbfe5b76ce6cfe1fc0dd388694d397fb8ee41bab/TSPUI.png" alt="Twisted SPUI" /><figcaption>Twisted SPUI</figcaption>
+</figure>
+<p>However, this requires either raising or the entire halves of the major road, which could be expensive. Therefore, we also present the inside-out SPUI:</p>
+<figure>
+<img src="/category/files/aca9d5a49e2cd2e47b52778fcbfe5b76ce6cfe1fc0dd388694d397fb8ee41bab/IOSPUI.png" alt="Inside-out SPUI" /><figcaption>Inside-out SPUI</figcaption>
+</figure>
+<p>Here, only a single lane needs to be elevated or tunnelled.</p>

@@ -4,7 +4,7 @@ from os.path import isfile, join, dirname
 from shutil import copyfile
 import panflute as pf
 import yaml, sys, re, hashlib, json, os, traceback, urllib.parse
-from util import *
+from . util import *
 
 class md_builder:
     def __init__(self, filename, output_dir, plugins={}):

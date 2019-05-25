@@ -9,8 +9,34 @@ relationships.
 
 To view the example category, go to https://daniel3735928559.github.io/category
 
-To build the example, do: 
+### Building
+
+To incrementally build the example, do: 
 
 ```
-python build.py example/ page/data/
+./category build test
+```
+
+To rebuild the example as though from scratch, do: 
+
+```
+./category rebuild test
+```
+
+### Serving
+
+To serve the example locally on port 1234: 
+
+```
+./category serve test -p 1234
+```
+
+### Subcategory construction
+
+To build and serve the "roads" subcategory
+
+```
+rm -rf test_roads/*
+./category subcat test test_roads roads "has category: roads"
+./category serve test_roads -p 2345
 ```
