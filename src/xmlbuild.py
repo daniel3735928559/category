@@ -1,5 +1,5 @@
 from lxml import etree
-import docopt
+import docopt, os
 from . util import *
 
 class xml_builder:
@@ -28,7 +28,8 @@ class xml_builder:
 
     def gen_html(self,filename):
         dom = etree.parse(filename)
-        xslt = etree.parse("node.xsl")
+        xsl_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"node.xsl")
+        xslt = etree.parse(xsl_path)
         transform = etree.XSLT(xslt)
         newdom = transform(dom)
         return etree.tostring(newdom, pretty_print=True).decode()
