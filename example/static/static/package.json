@@ -1,0 +1,24 @@
+{
+  "name": "category",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cafe.js",
+  "dependencies": {
+    "bootstrap": "^4.0.0",
+    "guppy-js": "^2.0.0-beta.3",
+    "http-server": "^0.11.1",
+    "vis": "^4.21.0",
+    "vue": "^2.5.15",
+    "vue-draggable": "^1.0.1",
+    "vuedraggable": "^2.16.0"
+  },
+  "scripts": {
+    "build": "./make.sh",
+    "serve": "./node_modules/.bin/http-server -c-1 -a 127.0.0.1 -p 3545"
+  },
+  "devDependencies": {
+    "jison": "^0.4.18"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -63,7 +63,7 @@ def get_file(ID, filename, input_url, output_dir):
         dst = os.path.join(files_dir,input_path)
         print("COPY", src, dst)
         copyfile(src, dst)
-        return "/category/files/"+ID+"/"+input_path
+        return "out/files/"+ID+"/"+input_path
 
 def search_files(base_path, ending):
     return [os.path.join(dirpath,f) for dirpath,dirnames,filenames in os.walk(base_path) for f in filenames if f[-len(ending):] == ending]
@@ -93,7 +93,23 @@ def get_targets(node):
             for t in ts: targets.add(t)
     return targets
 
+def create_subcat(metadata, node_list):
+    # Want to return exactly only nodes in the node list and also constrain any links to this subset as well
+    ans = {}
+    duals = {'has':'is','is':'has'}
+    node_set = set(node_list)
+    for x in node_list:
+        node = metadata[x]
+        print(node)
+        for et in duals:
+            edges = node['edges'][et]
+            for e in edges:
+                edges[e] = [target for target in edges[e] if target in node_set]
+        ans[x] = node
+    return ans
+
 def complete_metadata(metadata):
+    print("completing",metadata)
     duals = {'has':'is','is':'has'}
     name_to_id = {}
     ans = {}
@@ -106,6 +122,7 @@ def complete_metadata(metadata):
 
     # Start with the explicit ones:
     for node in metadata.values():
+        print("NN",node.get('id',node.get('name',False)))
         node_id = node.get('id',get_id(node['name']))
         name_to_id[node['name']] = node_id
         ans[node_id] = {x:node[x] for x in node}

@@ -6,7 +6,7 @@ Usage:
   category init <path> <name>
   category build <path>
   category rebuild <path>
-  category subcat <path> <subcat_path> <subcat_name> <query>
+  category subcat [--static] <path> <subcat_path> <subcat_name> <query>
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
 
 Options:
@@ -66,11 +66,20 @@ def cat_build(cat_path):
 def cat_rebuild(cat_path):
     cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), True)
 
-def cat_subcat(src_path, subcat_path, subcat_name, query):
+def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
     if not is_category(subcat_path):
         cat_init(subcat_path, subcat_name)
-    subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page/module/subcat.js")
-    metadata_path = os.path.join(src_path,"out/metadata.json")
+
+    if static:
+        # Copy page folder into subcat directory
+        index_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","cafe.html")
+        page_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
+        statics_path = os.path.join(subcat_path,"static")
+        shutil.copy2(index_path, os.path.join(subcat_path,"index.html"))
+        shutil.copytree(page_path, statics_path)
+        
+    subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","module","subcat.js")
+    metadata_path = os.path.join(src_path,"out","metadata.json")
     proc = subprocess.Popen(shlex.split(f"node {subcat_js_path} {metadata_path} '{query}'"),shell=False,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     proc_output = bytes()
     while proc.poll() == None:
@@ -101,16 +110,7 @@ def cat_subcat(src_path, subcat_path, subcat_name, query):
         dst_md_path = os.path.join(dst_out_path,"metadata.json")
         with open(src_md_path,"r") as f:
             md = json.load(f)
-            new_md = {x:md[x] for x in subcat_nodes}
-            new_md = src.util.complete_metadata(new_md)
-            autos = [i for i in new_md if new_md[i].get("auto","no") == "yes"]
-            for x in autos:
-                d = new_md[x]
-                real_id = d["name"]
-                real_name = md[real_id]["name"]
-                d["name"] = real_name
-                new_md[real_id] = d
-                del new_md[x]
+            new_md = src.util.create_subcat(md, subcat_nodes)
             with open(dst_md_path,"w") as f2:
                 json.dump(new_md,f2)
                 
@@ -154,7 +154,7 @@ def cat_serve(cat_path, port, bind_addr):
         else:
             return f"Source file {node_src} does not exist"
     
-    @app.route('/category/<path:path>')
+    @app.route('/out/<path:path>')
     def send_file(path):
         return send_from_directory(cat_root, path)
 
@@ -176,7 +176,8 @@ if __name__ == "__main__":
         cat_subcat(args['<path>'],
                    args['<subcat_path>'],
                    args['<subcat_name>'],
-                   args['<query>'])
+                   args['<query>'],
+                   args['--static'])
     elif args['serve']:
         cat_serve(args['<path>'],
                   args['-p'] if args['-p'] != False else 7688,

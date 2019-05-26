@@ -5,6 +5,12 @@ relationships to the others (when applicable), and displaying them in
 a way that lets you navigate among the documents using those
 relationships.
 
+## Example
+
+To view the static example category: 
+
+[http://daniel3735928559.github.io/cateogry/example/static/](http://localhost:1234)
+
 ## Quick Start
 
 To test the example category:
