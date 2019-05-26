@@ -9,7 +9,7 @@ relationships.
 
 To view the static example category: 
 
-[http://daniel3735928559.github.io/cateogry/example/static/](http://daniel3735928559.github.io/cateogry/example/static/)
+[http://daniel3735928559.github.io/category/example/static/](http://daniel3735928559.github.io/cateogry/example/static/)
 
 ## Quick Start
 
