@@ -140,7 +140,8 @@ def cat_serve(cat_path, port, bind_addr):
     
     @app.route('/edit/<node>')
     def edit_file(node):
-        node_src = os.path.join(cat_path,metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+        node_src = os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+        print("EDIT",node_src)
         def edit_node(cat_path, editor, node_src):
             proc = subprocess.Popen([editor, node_src],shell=False)
             proc.wait()

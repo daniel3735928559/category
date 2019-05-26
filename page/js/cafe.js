@@ -148,7 +148,7 @@ window.onload = function(){
 		if(node in self.node_data) return;
 		fetch('/category/'+node+'.html', fetch_params).then(function(response){
 		    response.text().then(function(data){
-			self.node_data[node] = response.status == 200 ? data : this.get_auto_node(node);
+			self.node_data[node] = response.status == 200 ? data : self.get_auto_node(node);
 			self.$forceUpdate();
 			Vue.nextTick(function() { run_plugins(self); });
 		    });
