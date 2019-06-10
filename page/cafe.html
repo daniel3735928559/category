@@ -1,108 +1,184 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>CAFE</title>
-    <link rel="stylesheet" href="static/css/cafe.css">
-    <link rel="stylesheet" href="static/css/fontawesome.css">
-    <link rel="stylesheet" href="static/css/cafe-light.css">
-    <link rel="stylesheet" href="static/node_modules/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="static/node_modules/vis/dist/vis-network.min.css">
-    <link rel="stylesheet" href="static/css/guppy-default.min.css">
-    <link rel="stylesheet" href="static/plugins/math.css">
-    <link rel="stylesheet" href="static/plugins/slideshow.css">
-    <script type="text/javascript" src="static/node_modules/vue/dist/vue.js"></script>
-    <script type="text/javascript" src="static/node_modules/sortablejs/Sortable.min.js"></script>
-    <script type="text/javascript" src="static/node_modules/vuedraggable/dist/vuedraggable.js"></script>
-    <script type="text/javascript" src="static/node_modules/vis/dist/vis.js"></script>
-    <script type="text/javascript" src="static/js/guppy.js"></script>
-    <script type="text/javascript" src="static/plugins/video.js"></script>
-    <script type="text/javascript" src="static/plugins/link.js"></script>
-    <script type="text/javascript" src="static/plugins/query.js"></script>
-    <script type="text/javascript" src="static/plugins/math.js"></script>
-    <script type="text/javascript" src="static/plugins/slideshow.js"></script>
-    <script type="text/javascript" src="static/js/query.js"></script>
-    <script type="text/javascript" src="static/js/search.js"></script>
-    <script type="text/javascript" src="static/js/cafe.js"></script>
-  </head>
-  <body>
-    <div id="cafeapp" class="container-full-width">
-      <div id="main" class="row">
-	<div class="col-md-2 offset-md-1">
-	  <div id="working_set">
-	    <h4 v-if="working_set.length != 0">Working set</h4>
-	    <ul>
-	      <draggable v-model="working_set">
-		<li v-for="node in working_set">
-		  <a href="#" v-on:click="close_snippet(node)">[x]</a> <a href="#" v-on:click="goto_snippet(node)">{{nodes[node].name}}</a>
-		</li>
-	      </draggable>
-	    </ul>
-	  </div>
-	</div>
-	<div class="col-md-6">
-	  <div id="main_col">
-	  <!-- list -->
-	  <div v-if="mode == 'list'" id="list">
-	      <div :id="node+'-container'" v-for="node in working_set">
-		<a :name="node"></a>
-		<div class="snippet">
-		  <!-- header -->
-		  <div class="snippet_header">
-		    <span class="snippet_title">{{nodes[node].name}}</span>
-		    <span v-on:click="close_snippet(node)" class="close_x"><span class="fas fa-times"></span></span>
-		    <span v-on:click="view_doc(node)" class="close_x"><span class="fas fa-window-maximize"></span></span>
-		    <span v-on:click="minimise_snippet(node)" class="close_x"><span class="fas fa-window-minimize"></span></span>
-		    <span v-on:click="edit_node(node)" class="close_x"><span class="fas fa-edit"></span></span>
-		    <span v-on:click="reload_node(node)" class="close_x"><span class="fas fa-sync"></span></span>
-		  </div>
-
-		  <!-- data -->
-		  <div v-if="node_data[node] && node_data[node].length > 0" class="snippet_content" v-html="node_data[node] || 'Loading...'"></div>
-		  <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
+    <head>
+	<title>CAFE</title>
+	<link rel="stylesheet" href="static/css/cafe.css">
+	<link rel="stylesheet" href="static/css/fontawesome.css">
+	<link rel="stylesheet" href="static/css/cafe-light.css">
+	<link rel="stylesheet" href="static/node_modules/bootstrap/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" href="static/node_modules/vis/dist/vis-network.min.css">
+	<link rel="stylesheet" href="static/css/guppy-default.min.css">
+	<link rel="stylesheet" href="static/plugins/math.css">
+	<link rel="stylesheet" href="static/plugins/slideshow.css">
+	<script type="text/javascript" src="static/node_modules/vue/dist/vue.js"></script>
+	<script type="text/javascript" src="static/node_modules/sortablejs/Sortable.min.js"></script>
+	<script type="text/javascript" src="static/node_modules/vuedraggable/dist/vuedraggable.js"></script>
+	<script type="text/javascript" src="static/node_modules/vis/dist/vis.js"></script>
+	<script type="text/javascript" src="static/js/guppy.js"></script>
+	<script type="text/javascript" src="static/plugins/video.js"></script>
+	<script type="text/javascript" src="static/plugins/link.js"></script>
+	<script type="text/javascript" src="static/plugins/query.js"></script>
+	<script type="text/javascript" src="static/plugins/math.js"></script>
+	<script type="text/javascript" src="static/plugins/slideshow.js"></script>
+	<script type="text/javascript" src="static/js/query.js"></script>
+	<script type="text/javascript" src="static/js/search.js"></script>
+	<script type="text/javascript" src="static/js/cafe.js"></script>
+    </head>
+    <body>
+	<script type="text/x-template" id="edge-display">
+	    <div class="edge_display">
+		<div v-for="(targets,edge) in edges.has">
+                    <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto != 'yes'">
+			<a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a>
+			<node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" />
+		    </div>
+		</div> 
+		<div v-for="(targets,edge) in edges.is">
+                    <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto != 'yes'">
+			<a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a>
+			<node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" />
+		    </div>
 		</div>
-	      </div>
-	  </div>
-	  
-	  <!-- graph -->
-	  <div id="graph" v-if="mode == 'graph'">
-	  </div>
-
-	  <!-- doc -->
-	  <div v-if="mode == 'doc'" :id="main_doc+'-container'" >
-	    <div class="snippet_header">
-	      <span class="snippet_title">{{nodes[main_doc].name}}</span>
-	      <span v-on:click="set_mode('list')" class="close_x"><span class="fas fa-window-restore"></span></span>
-	      <span v-on:click="edit_node(main_doc)" class="close_x"><span class="fas fa-edit"></span></span>
-	      <span v-on:click="reload_node(main_doc)" class="close_x"><span class="fas fa-sync"></span></span>
-	    </div>
-	    <div v-html="node_data[main_doc]" class="expanded_content"></div>
-	    <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="main_doc" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
-	  </div>
-	  </div>
-	</div>
+		<b>Auto-generated:</b>
+		<div v-for="(targets,edge) in edges.has">
+                    <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto == 'yes'">
+			<a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a>
+			<node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" />
+		    </div>
+		</div> 
+		<div v-for="(targets,edge) in edges.is">
+                    <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto == 'yes'">
+			<a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a>
+			<node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" />
+		    </div>
+		</div>
+            </div>
+	</script>
 	
-	<!-- sidebar -->
-	<div class="col-md-2">
-	  <div id="sidebar">
-	  <div id="modes">
-	    <span v-bind:class="{active: mode=='list'}" v-on:click="set_mode('list')"><span class="fas fa-th-list"></span></span>
-	    <span v-bind:class="{active: mode=='graph'}" v-on:click="set_mode('graph')"><span class="fas fa-project-diagram"></span></span>
-	    <span v-bind:class="{active: mode=='doc'}" v-on:click="set_mode('doc')"><span class="fas fa-expand"></span></span>
-	  </div>
-	  <div id="query">
-	    <input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" />
-	    <div id="query_results">
-	      <span class="error">{{error}}</span>
-	      <ul v-if="error.length == 0">
-	      <li v-for="node in sorted_nodes(query_results)">
-		<node-link v-on:click="open_snippet" :name="nodes[node].name" :node="node"></node-link>
-	      </li>
-	      </ul>
+	<!-- This template is for displaying all nodes in a given set in a "sensible" way. Currently, this means:
+	   - Order all edge labels by most common to least common
+	   - Go down the list until all nodes have at least one edge with a label in the list (except nodes with no edges at all)
+	   - For each label X, use a label-index component to display the nodes with that edge label in the suitable configuration:
+	   - "by" if there are a few "is X of" nodes and many "has X" nodes (e.g. X = author)
+	   - "menu" if there are a few "has X" nodes and many "is X of" nodes (e.g. food)
+	   - "matrix" if the graph is bipartite but dense (e.g. location to event)
+           - "pairing" if the graph is a pairing (e.g. person to phone)
+	   - "lattice" if the graph is very dense and can be used to compute an approximate ordering (e.g. numbers and "successor"--this hard, not yet implemented)
+	   -->
+	<script type="text/x-template" id="node-index">
+	    <div>
+		<div v-for="l in labels">
+		    <a href="#" v-on:click="display[l]=!display[l]"><h3>{{modes[l] == 'by' ? 'by '+l : l + ' menu'}}</h3></a>
+		    <label-index v-if="display[l]" v-on:open="$emit('open-snippet',n)" :nodes="nodes" :label="l" :mode="modes[l]" />
+		    <hr />
+		</div>
 	    </div>
-	  </div>
-	  </div>
+	</script>
+	
+	<!-- This template is for displaying all nodes adjacent to an edge with a specific label -->
+	<script type="text/x-template" id="label-index">
+	    <ul v-if="mode == 'by' || mode == 'menu'">
+		<li v-for="n in headers">
+		    <node-link v-on:click="$emit('open',n)" :name="nodes[n].name" :node="n"></node-link>
+		    <ul>
+			<li v-for="m in nodes[n].edges[mode == 'menu' ? 'has' : 'is'][label]">
+			    <node-link v-on:click="$emit('open',m)" :name="nodes[m].name" :node="m"></node-link>
+			</li>
+		    </ul>
+		</li>
+	    </ul>
+	</script>
+
+	<div id="cafeapp" class="container-full-width">
+	    <div id="main" class="row">
+		<div class="col-md-2 offset-md-1">
+		    <div id="working_set">
+			<h4 v-if="working_set.length != 0">Working set</h4>
+			<ul>
+			    <draggable v-model="working_set">
+				<li v-for="node in working_set">
+				    <a href="#" v-on:click="close_snippet(node)">[x]</a> <a href="#" v-on:click="goto_snippet(node)">{{nodes[node].name}}</a>
+				</li>
+			    </draggable>
+			</ul>
+		    </div>
+		</div>
+		<div class="col-md-6">
+		    <div id="main_col">
+			<!-- home -->
+			<div id="home" v-if="mode == 'home'">
+			    <node-index :nodes="nodes" />
+			</div>
+			
+			<!-- list -->
+			<div v-if="mode == 'list'" id="list">
+			    <div :id="node+'-container'" v-for="node in working_set">
+				<a :name="node"></a>
+				<div class="snippet">
+				    <!-- header -->
+				    <div class="snippet_header">
+					<span class="snippet_title">{{nodes[node].name}}</span>
+					<span v-on:click="close_snippet(node)" class="close_x"><span class="fas fa-times"></span></span>
+					<span v-on:click="view_doc(node)" class="close_x"><span class="fas fa-window-maximize"></span></span>
+					<span v-on:click="minimise_snippet(node)" class="close_x"><span class="fas fa-window-minimize"></span></span>
+					<span v-on:click="edit_node(node)" class="close_x"><span class="fas fa-edit"></span></span>
+					<span v-on:click="reload_node(node)" class="close_x"><span class="fas fa-sync"></span></span>
+				    </div>
+
+				    <!-- data -->
+				    <div v-if="nodes[node].auto != 'yes'">
+					<div v-if="node_data[node] && node_data[node].length > 0" class="snippet_content" v-html="node_data[node] || 'Loading...'"></div>
+					<edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
+				    </div>
+				    <div v-if="nodes[node].auto == 'yes'">
+					<node-index :nodes="neighbours(node)" />
+				    </div>
+				    
+				</div>
+			    </div>
+			</div>
+			
+			<!-- graph -->
+			<div id="graph" v-if="mode == 'graph'">
+			</div>
+
+			<!-- doc -->
+			<div v-if="mode == 'doc'" :id="main_doc+'-container'" >
+			    <div class="snippet_header">
+				<span class="snippet_title">{{nodes[main_doc].name}}</span>
+				<span v-on:click="set_mode('list')" class="close_x"><span class="fas fa-window-restore"></span></span>
+				<span v-on:click="edit_node(main_doc)" class="close_x"><span class="fas fa-edit"></span></span>
+				<span v-on:click="reload_node(main_doc)" class="close_x"><span class="fas fa-sync"></span></span>
+			    </div>
+			    <div v-html="node_data[main_doc]" class="expanded_content"></div>
+			    <edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="main_doc" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
+			</div>
+		    </div>
+		</div>
+		
+		<!-- sidebar -->
+		<div class="col-md-2">
+		    <div id="sidebar">
+			<div id="modes">
+			    <span v-bind:class="{active: mode=='home'}" v-on:click="set_mode('home')"><span class="fas fa-home"></span></span>
+			    <span v-bind:class="{active: mode=='list'}" v-on:click="set_mode('list')"><span class="fas fa-th-list"></span></span>
+			    <span v-bind:class="{active: mode=='graph'}" v-on:click="set_mode('graph')"><span class="fas fa-project-diagram"></span></span>
+			    <span v-bind:class="{active: mode=='doc'}" v-on:click="set_mode('doc')"><span class="fas fa-expand"></span></span>
+			</div>
+			<div id="query">
+			    <input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" />
+			    <div id="query_results">
+				<span class="error">{{error}}</span>
+				<ul v-if="error.length == 0">
+				    <li v-for="node in sorted_nodes(query_results)">
+					<node-link v-on:click="open_snippet" :name="nodes[node].name" :node="node"></node-link>
+				    </li>
+				</ul>
+			    </div>
+			</div>
+		    </div>
+		</div>
+	    </div>
 	</div>
-      </div>
-    </div>
-  </body>
+    </body>
 </html>    
