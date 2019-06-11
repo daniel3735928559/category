@@ -179,7 +179,6 @@ window.onload = function(){
 	methods: {
 	    sorted_nodes: sorted_nodes,
 	    opening: function(n, event) {
-		console.log("OO",n,event);
 		this.$emit('open-snippet',n);
 	    },
 	    toggle_display: function(l) {
@@ -345,7 +344,6 @@ window.onload = function(){
 		return new vis.DataSet(ans);
 	    },
 	    open_snippet: function(node, event){
-		console.log('oo',node);
 		var self = this;
 		this.get_node(node);
 		this.main_doc = node;
