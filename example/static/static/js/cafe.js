@@ -25,6 +25,11 @@ window.onload = function(){
 	method: 'GET',
 	headers: fetch_headers,
     };
+
+    var is_empty = function(obj) {
+	for (var prop in obj) if (obj.hasOwnProperty(prop)) return false;
+	return true;
+    };
     
     var run_plugins = function(comp){
 	for(var n in comp.nodes) {
@@ -51,22 +56,174 @@ window.onload = function(){
 	props: ['node','name'],
     });
 
+    Vue.component('node-index', {
+	template: '#node-index',
+	data() {
+	    return {
+		modes: {},
+		disconnected_nodes: [],
+		display: {}
+	    }
+	},
+	computed: {
+	    labels: function() {
+		// We build the data structure needed to prepare the index.
+		// For each label, we create an entry like:
+		// {
+		//   count: how many nodes does this label cover
+		//   covered: the set of nodes hit by the eddge
+		//   has: the list of nodes that "have" this edge
+		//   is: the list of nodes that "is" this edge
+	        // }
+		var all_labels = {}; 
+		for(var n in this.nodes) {
+		    for(var e in this.nodes[n].edges.has) {
+			if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
+			for(var t in this.nodes[n].edges.has[e]){
+			    t = this.nodes[n].edges.has[e][t];
+			    if(!(t in this.nodes)) continue;
+			    if(!all_labels[e].covered[t]){
+				// We haven't seen this node before
+				all_labels[e].covered[t] = true;
+				all_labels[e].count++;
+			    }
+			    if(all_labels[e].has.indexOf(n) == -1)
+				all_labels[e].has.push(n);
+			}
+		    }
+		    for(var e in this.nodes[n].edges.is){
+			if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
+			for(var t in this.nodes[n].edges.is[e]){
+			    t = this.nodes[n].edges.is[e][t];
+			    if(!(t in this.nodes)) continue;
+			    if(!all_labels[e].covered[t]){
+				// We haven't seen this node before
+				all_labels[e].covered[t] = true;
+				all_labels[e].count++;
+			    }
+			    if(all_labels[e].is.indexOf(n) == -1)
+				all_labels[e].is.push(n);
+			}
+		    }
+		}
+		// Place the labels into a sorted list in order of
+		// most edges to fewest edges (also, take this
+		// opportunity to select the mode)
+		var sorted_labels = [];
+		for(var l in all_labels){
+		    if(all_labels[l].count == 0) continue;
+		    this.modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';
+		    this.display[l] = false;
+		    sorted_labels.push(l);
+		}
+		var discriminitivity = function(l){
+		    return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);
+		}
+		sorted_labels.sort(function(a, b){
+		    da = discriminitivity(a);
+		    db = discriminitivity(b);
+		    if(da < db) return 1; // TODO: -1 or 1 for descending order?
+		    if(da > db) return -1;
+		    return 0;
+		});
+		// Prep a set of all nodes so we can mark which ones we've finished
+		var finished_nodes = {};
+		var nodes_count = 0;
+		var finished_count = 0;
+		this.disconnected_nodes = []
+		for(var n in this.nodes) {
+		    // Only count nodes with actual edges; we'll deal
+		    // with disconnected ones separately
+		    var disconnected = true;
+		    for(var e in this.nodes[n].edges.has){
+			for(var i = 0; i < this.nodes[n].edges.has[e].length; i++){
+			    t = this.nodes[n].edges.has[e][i];
+			    if(this.nodes[t]) disconnected = false;
+			}
+		    }
+		    for(var e in this.nodes[n].edges.is){
+			for(var i = 0; i < this.nodes[n].edges.is[e].length; i++){
+			    t = this.nodes[n].edges.is[e][i];
+			    if(this.nodes[t]) disconnected = false;
+			}
+		    }
+		    if(disconnected){
+			this.disconnected_nodes.push(n);
+		    }
+		    else {
+			finished_nodes[n] = false;
+			nodes_count++;
+		    }
+		}
+
+		// Now we want to collect the labels we will use for
+		// indexing as well as figure out what modes to
+		// display them in
+		var best_labels = [];
+		
+		// Run through the labels
+		for(var i = 0; i < sorted_labels.length; i++) {
+		    best_labels.push(sorted_labels[i]);
+		    // Mark all nodes covered as finished:
+		    for(var n in sorted_labels[i].covered){
+			if(!finished_nodes[n]){
+			    finished_count++;
+			    finished_nodes[n] = true;
+			}
+		    }
+		    if(finished_count == nodes_count)
+			break;
+		}
+
+		// Now we are done!
+		if(best_labels.length == 1) this.display[best_labels[0]] = true;
+		return best_labels;
+	    }
+	},
+	props: ['nodes'],
+	methods: {
+	    sorted_nodes: sorted_nodes,
+	    opening: function(n, event) {
+		this.$emit('open-snippet',n);
+	    },
+	    toggle_display: function(l) {
+		this.display[l] = !this.display[l];
+		this.$forceUpdate();
+	    }
+	}
+    });
+
+    Vue.component('label-index', {
+	template: '#label-index',
+	data() {
+	    return {
+		test: "hi"
+	    }
+	},
+	computed: {
+	    headers: function() {
+		if(this.mode == 'menu'){
+		    ans = []
+		    for(var n in this.nodes) {
+			if(this.nodes[n].edges['has'][this.label]) ans.push(n);
+		    }
+		    return ans;
+		}
+		else if(this.mode == 'by') {
+		    ans = []
+		    for(var n in this.nodes) {
+			if(this.nodes[n].edges['is'][this.label]) ans.push(n);
+		    }
+		    return ans;
+		}
+	    }
+	},
+	props: ['nodes', 'mode', 'label'],
+	methods: { sorted_nodes: sorted_nodes }
+    });
+
     Vue.component('edge-display', {
-	template: `<div class="edge_display">
-                   <div v-for="(targets,edge) in edges.has">
-                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto != 'yes'"><a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
-                   </div> 
-                   <div v-for="(targets,edge) in edges.is">
-                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto != 'yes'"><a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
-                   </div>
-                   <b>Auto-generated:</b>
-                   <div v-for="(targets,edge) in edges.has">
-                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto == 'yes'"><a href="#" v-on:click="$emit('edgeclick',edge+' of: '+nodes[node].name)">has {{edge}}: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
-                   </div> 
-                   <div v-for="(targets,edge) in edges.is">
-                      <div v-for="target in sorted_nodes(targets)" v-if="nodes[target].auto == 'yes'"><a href="#" v-on:click="$emit('edgeclick','has '+edge+': '+nodes[node].name)">is {{edge}} of: </a> <node-link v-on:click="$emit('click',target)" :name="nodes[target].name" :node="target" /></div>
-                   </div>
-                   </div>`,
+	template: '#edge-display',
 	props: ['edges','nodes','node'],
 	methods: { sorted_nodes: sorted_nodes }
     });
@@ -243,6 +400,22 @@ window.onload = function(){
 		    }
 		    Vue.nextTick(function() { run_plugins(self); });
 		}
+	    },
+	    neighbours: function(node, event){
+		var ans = {};
+		for(var e in this.nodes[node].edges.has){
+		    for(var i = 0; i < this.nodes[node].edges.has[e].length; i++){
+			n = this.nodes[node].edges.has[e][i];
+			ans[n] = this.nodes[n];
+		    }
+		}
+		for(var e in this.nodes[node].edges.is){
+		    for(var i = 0; i < this.nodes[node].edges.is[e].length; i++){
+			n = this.nodes[node].edges.is[e][i];
+			ans[n] = this.nodes[n];
+		    }
+		}
+		return ans;
 	    },
 	    update_graph: function(){
 		if(this.mode != 'graph') return;

@@ -116,9 +116,14 @@ window.onload = function(){
 		    this.display[l] = false;
 		    sorted_labels.push(l);
 		}
+		var discriminitivity = function(l){
+		    return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);
+		}
 		sorted_labels.sort(function(a, b){
-		    if(all_labels[a].count < all_labels[b].count) return 1; // TODO: -1 or 1 for descending order?
-		    if(all_labels[a].count > all_labels[b].count) return -1;
+		    da = discriminitivity(a);
+		    db = discriminitivity(b);
+		    if(da < db) return 1; // TODO: -1 or 1 for descending order?
+		    if(da > db) return -1;
 		    return 0;
 		});
 		// Prep a set of all nodes so we can mark which ones we've finished
