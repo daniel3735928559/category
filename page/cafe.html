@@ -72,18 +72,25 @@
 		    <label-index v-if="display[l]" v-on:opening="opening" :nodes="nodes" :label="l" :mode="modes[l]" />
 		    <hr />
 		</div>
-		<h3 v-if="disconnected_nodes.length > 0">Unlinked</h3>
+		<div v-if="disconnected_nodes.length > 0 && disconnected_nodes.length < num_nodes">
+		<h3>Unlinked</h3>
 		<ul>
 		    <li v-for="n in disconnected_nodes">
 			<node-link v-on:click="$emit('open-snippet',n)" :name="nodes[n].name" :node="n"></node-link>
 		    </li>
 		</ul>
+		</div>
 		<h3>All</h3>
-		<ul>
-		    <li v-for="(node,n) in nodes">
-			<node-link v-on:click="$emit('open-snippet',n)" :name="nodes[n].name" :node="n"></node-link>
-		    </li>
-		</ul>
+		<div v-if="node">
+		    <edge-display v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="edges"></edge-display>
+		</div>
+		<div v-if="!node">
+		    <ul>
+			<li v-for="(node,n) in nodes">
+			    <node-link v-on:click="$emit('open-snippet',n)" :name="nodes[n].name" :node="n"></node-link>
+			</li>
+		    </ul>
+		</div>
 	    </div>
 	</script>
 	
@@ -143,7 +150,7 @@
 					<edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
 				    </div>
 				    <div v-if="nodes[node].auto == 'yes'">
-					<node-index v-on:open-snippet="open_snippet" :nodes="neighbours(node)" />
+					<node-index v-on:open-snippet="open_snippet" :nodes="neighbours(node)" :node="node" :edges="nodes[node].edges" />
 				    </div>
 				    
 				</div>
@@ -168,7 +175,7 @@
 				<edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="main_doc" :nodes="nodes" :edges="nodes[main_doc].edges"></edge-display>
 			    </div>
 			    <div v-if="nodes[main_doc].auto == 'yes'">
-				<node-index v-on:open-snippet="open_snippet" :nodes="neighbours(main_doc)" />
+				<node-index v-on:open-snippet="open_snippet" :nodes="neighbours(main_doc)" :node="main_doc" :edges="nodes[main_doc].edges" />
 			    </div>
 			    
 
