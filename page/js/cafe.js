@@ -61,6 +61,7 @@ window.onload = function(){
 	data() {
 	    return {
 		modes: {},
+		disconnected_nodes: [],
 		display: {}
 	    }
 	},
@@ -77,53 +78,72 @@ window.onload = function(){
 		var all_labels = {}; 
 		for(var n in this.nodes) {
 		    for(var e in this.nodes[n].edges.has) {
-			all_labels[e] = all_labels[e] || {'count':0,'covered':{},'has':[],'is':[], 'mode':''};
+			if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
 			for(var t in this.nodes[n].edges.has[e]){
 			    t = this.nodes[n].edges.has[e][t];
+			    if(!(t in this.nodes)) continue;
 			    if(!all_labels[e].covered[t]){
 				// We haven't seen this node before
 				all_labels[e].covered[t] = true;
 				all_labels[e].count++;
 			    }
-			    all_labels[e].is.push(n);
+			    if(all_labels[e].has.indexOf(n) == -1)
+				all_labels[e].has.push(n);
 			}
-			for(var e in this.nodes[n].edges.is){
-			    all_labels[e] = all_labels[e] || {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
+		    }
+		    for(var e in this.nodes[n].edges.is){
+			if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
+			for(var t in this.nodes[n].edges.is[e]){
+			    t = this.nodes[n].edges.is[e][t];
+			    if(!(t in this.nodes)) continue;
 			    if(!all_labels[e].covered[t]){
 				// We haven't seen this node before
 				all_labels[e].covered[t] = true;
 				all_labels[e].count++;
 			    }
-			    all_labels[e].has.push(n);
+			    if(all_labels[e].is.indexOf(n) == -1)
+				all_labels[e].is.push(n);
 			}
 		    }
 		}
-		
 		// Place the labels into a sorted list in order of
 		// most edges to fewest edges (also, take this
 		// opportunity to select the mode)
 		var sorted_labels = [];
 		for(var l in all_labels){
-		    this.modes[l] = all_labels[l].is.length > all_labels[l].has.length ? 'by' : 'menu';
-		    this.display[l] = true;
+		    if(all_labels[l].count == 0) continue;
+		    this.modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';
+		    this.display[l] = false;
 		    sorted_labels.push(l);
 		}
 		sorted_labels.sort(function(a, b){
-		    if(a.count < b.count) return -1; // TODO: -1 or 1 for descending order?
-		    if(a.count > b.count) return 1;
+		    if(all_labels[a].count < all_labels[b].count) return 1; // TODO: -1 or 1 for descending order?
+		    if(all_labels[a].count > all_labels[b].count) return -1;
 		    return 0;
 		});
-
 		// Prep a set of all nodes so we can mark which ones we've finished
 		var finished_nodes = {};
 		var nodes_count = 0;
 		var finished_count = 0;
-		var disconnected_nodes = {}
+		this.disconnected_nodes = []
 		for(var n in this.nodes) {
 		    // Only count nodes with actual edges; we'll deal
 		    // with disconnected ones separately
-		    if(is_empty(this.nodes[n].edges.has) && is_empty(this.nodes[n].edges.is)){
-			disconnected_nodes[n] = true;
+		    var disconnected = true;
+		    for(var e in this.nodes[n].edges.has){
+			for(var i = 0; i < this.nodes[n].edges.has[e].length; i++){
+			    t = this.nodes[n].edges.has[e][i];
+			    if(this.nodes[t]) disconnected = false;
+			}
+		    }
+		    for(var e in this.nodes[n].edges.is){
+			for(var i = 0; i < this.nodes[n].edges.is[e].length; i++){
+			    t = this.nodes[n].edges.is[e][i];
+			    if(this.nodes[t]) disconnected = false;
+			}
+		    }
+		    if(disconnected){
+			this.disconnected_nodes.push(n);
 		    }
 		    else {
 			finished_nodes[n] = false;
@@ -151,11 +171,22 @@ window.onload = function(){
 		}
 
 		// Now we are done!
+		if(best_labels.length == 1) this.display[best_labels[0]] = true;
 		return best_labels;
 	    }
 	},
 	props: ['nodes'],
-	methods: { sorted_nodes: sorted_nodes }
+	methods: {
+	    sorted_nodes: sorted_nodes,
+	    opening: function(n, event) {
+		console.log("OO",n,event);
+		this.$emit('open-snippet',n);
+	    },
+	    toggle_display: function(l) {
+		this.display[l] = !this.display[l];
+		this.$forceUpdate();
+	    }
+	}
     });
 
     Vue.component('label-index', {
@@ -314,6 +345,7 @@ window.onload = function(){
 		return new vis.DataSet(ans);
 	    },
 	    open_snippet: function(node, event){
+		console.log('oo',node);
 		var self = this;
 		this.get_node(node);
 		this.main_doc = node;
@@ -371,14 +403,12 @@ window.onload = function(){
 		for(var e in this.nodes[node].edges.has){
 		    for(var i = 0; i < this.nodes[node].edges.has[e].length; i++){
 			n = this.nodes[node].edges.has[e][i];
-			console.log(n);
 			ans[n] = this.nodes[n];
 		    }
 		}
 		for(var e in this.nodes[node].edges.is){
 		    for(var i = 0; i < this.nodes[node].edges.is[e].length; i++){
 			n = this.nodes[node].edges.is[e][i];
-			console.log(n);
 			ans[n] = this.nodes[n];
 		    }
 		}

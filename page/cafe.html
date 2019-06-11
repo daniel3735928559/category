@@ -68,10 +68,16 @@
 	<script type="text/x-template" id="node-index">
 	    <div>
 		<div v-for="l in labels">
-		    <a href="#" v-on:click="display[l]=!display[l]"><h3>{{modes[l] == 'by' ? 'by '+l : l + ' menu'}}</h3></a>
-		    <label-index v-if="display[l]" v-on:open="$emit('open-snippet',n)" :nodes="nodes" :label="l" :mode="modes[l]" />
+		    <a href="#" v-on:click="toggle_display(l)"><h3>{{display[l] ? '[-]' : '[+]'}} {{modes[l] == 'by' ? 'by '+l : l + ' menu'}}</h3></a>
+		    <label-index v-if="display[l]" v-on:opening="opening" :nodes="nodes" :label="l" :mode="modes[l]" />
 		    <hr />
 		</div>
+		<h3 v-if="disconnected_nodes.length > 0">Unlinked</h3>
+		<ul>
+		    <li v-for="n in disconnected_nodes">
+			<node-link v-on:click="$emit('open-snippet',n)" :name="nodes[n].name" :node="n"></node-link>
+		    </li>
+		</ul>
 	    </div>
 	</script>
 	
@@ -79,10 +85,10 @@
 	<script type="text/x-template" id="label-index">
 	    <ul v-if="mode == 'by' || mode == 'menu'">
 		<li v-for="n in headers">
-		    <node-link v-on:click="$emit('open',n)" :name="nodes[n].name" :node="n"></node-link>
+		    <node-link v-on:click="$emit('opening',n)" :name="nodes[n].name" :node="n"></node-link>
 		    <ul>
 			<li v-for="m in nodes[n].edges[mode == 'menu' ? 'has' : 'is'][label]">
-			    <node-link v-on:click="$emit('open',m)" :name="nodes[m].name" :node="m"></node-link>
+			    <node-link v-on:click="$emit('opening',m)" :name="nodes[m].name" :node="m"></node-link>
 			</li>
 		    </ul>
 		</li>
@@ -107,7 +113,7 @@
 		    <div id="main_col">
 			<!-- home -->
 			<div id="home" v-if="mode == 'home'">
-			    <node-index :nodes="nodes" />
+			    <node-index v-on:open-snippet="open_snippet" :nodes="nodes" />
 			</div>
 			
 			<!-- list -->
@@ -131,7 +137,7 @@
 					<edge-display v-on:edgeclick="set_query" v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="nodes[node].edges"></edge-display>
 				    </div>
 				    <div v-if="nodes[node].auto == 'yes'">
-					<node-index :nodes="neighbours(node)" />
+					<node-index v-on:open-snippet="open_snippet" :nodes="neighbours(node)" />
 				    </div>
 				    
 				</div>
