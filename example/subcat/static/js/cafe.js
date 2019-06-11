@@ -61,6 +61,7 @@ window.onload = function(){
 	data() {
 	    return {
 		modes: {},
+		num_nodes: 0,
 		disconnected_nodes: [],
 		display: {}
 	    }
@@ -155,6 +156,7 @@ window.onload = function(){
 			nodes_count++;
 		    }
 		}
+		this.num_nodes = nodes_count + this.disconnected_nodes.length;
 
 		// Now we want to collect the labels we will use for
 		// indexing as well as figure out what modes to
@@ -180,7 +182,7 @@ window.onload = function(){
 		return best_labels;
 	    }
 	},
-	props: ['nodes'],
+	props: ['nodes','node','edges'],
 	methods: {
 	    sorted_nodes: sorted_nodes,
 	    opening: function(n, event) {
