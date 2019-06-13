@@ -87,11 +87,12 @@
 
 		<!-- List of all edges -->
 		<div class="node-index-list" v-if="current_label == 'all'">
-		    <h3>All edges</h3>
 		    <div v-if="node">
+			<h3>All edges</h3>
 			<edge-display v-on:click="opening" :node="node" :nodes="nodes" :edges="edges"></edge-display>
 		    </div>
 		    <div v-if="!node">
+			<h3>All nodes</h3>
 			<ul>
 			    <li v-for="(node,n) in nodes">
 				<node-link v-on:click="opening" :name="nodes[n].name" :node="n"></node-link>

@@ -357,6 +357,7 @@ window.onload = function(){
 	    open_snippet: function(node, event){
 		var self = this;
 		this.get_node(node);
+		if(this.mode == 'home' || this.mode == 'graph') this.mode = 'doc';
 		this.main_doc = node;
 		idx = this.working_set.indexOf(node);
 		if(idx < 0) this.working_set.unshift(node);
