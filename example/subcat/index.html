@@ -66,31 +66,51 @@
 	   - "lattice" if the graph is very dense and can be used to compute an approximate ordering (e.g. numbers and "successor"--this hard, not yet implemented)
 	   -->
 	<script type="text/x-template" id="node-index">
-	    <div>
-		<div v-for="l in labels">
-		    <a href="#" v-on:click="toggle_display(l)"><h3>{{display[l] ? '[-]' : '[+]'}} {{modes[l] == 'by' ? 'by '+l : l + ' menu'}}</h3></a>
-		    <label-index v-if="display[l]" v-on:opening="opening" :nodes="nodes" :label="l" :mode="modes[l]" />
-		    <hr />
+	    <div class="node-index-container">
+		<div class="node-index-menu">
+		    <div v-on:click="toggle_display('all')" v-bind:class="'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')">
+			(all)
+		    </div>
+		    <div v-on:click="toggle_display(l)" v-bind:class="'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')" v-for="l in labels">
+			{{l}}
+		    </div>
+		    <div v-on:click="toggle_display('unlinked')" v-bind:class="'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')" v-if="disconnected_nodes.length > 0 && disconnected_nodes.length < num_nodes">
+			(unlinked)
+		    </div>
 		</div>
-		<div v-if="disconnected_nodes.length > 0 && disconnected_nodes.length < num_nodes">
-		<h3>Unlinked</h3>
-		<ul>
-		    <li v-for="n in disconnected_nodes">
-			<node-link v-on:click="$emit('open-snippet',n)" :name="nodes[n].name" :node="n"></node-link>
-		    </li>
-		</ul>
+
+		<!-- List of edges associated with current_label -->
+		<div class="node-index-list" v-if="current_label != 'all' && current_label != 'unlinked'">
+		    <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style="cursor:pointer;font-size:.5em;" v-on:click="swap_mode(current_label)"><span class="fas fa-random"></span></span></h3>
+		    <label-index v-on:opening="opening" :nodes="nodes" :label="current_label" :mode="modes[current_label]" />
 		</div>
-		<h3>All</h3>
-		<div v-if="node">
-		    <edge-display v-on:click="open_snippet" :node="node" :nodes="nodes" :edges="edges"></edge-display>
+
+		<!-- List of all edges -->
+		<div class="node-index-list" v-if="current_label == 'all'">
+		    <h3>All edges</h3>
+		    <div v-if="node">
+			<edge-display v-on:click="opening" :node="node" :nodes="nodes" :edges="edges"></edge-display>
+		    </div>
+		    <div v-if="!node">
+			<ul>
+			    <li v-for="(node,n) in nodes">
+				<node-link v-on:click="opening" :name="nodes[n].name" :node="n"></node-link>
+			    </li>
+			</ul>
+		    </div>
 		</div>
-		<div v-if="!node">
+
+		<!-- List of unlinked nodes -->
+		<div class="node-index-list" v-if="current_label == 'unlinked'">
+		    <h3>Unlinked</h3>
 		    <ul>
-			<li v-for="(node,n) in nodes">
-			    <node-link v-on:click="$emit('open-snippet',n)" :name="nodes[n].name" :node="n"></node-link>
+			<li v-for="n in disconnected_nodes">
+			    <node-link v-on:click="opening" :name="nodes[n].name" :node="n"></node-link>
 			</li>
 		    </ul>
 		</div>
+		
+		<div class="spacer" style="clear: both;"></div>
 	    </div>
 	</script>
 	

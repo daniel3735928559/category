@@ -61,9 +61,9 @@ window.onload = function(){
 	data() {
 	    return {
 		modes: {},
+		current_label: 'all',
 		num_nodes: 0,
 		disconnected_nodes: [],
-		display: {}
 	    }
 	},
 	computed: {
@@ -114,7 +114,6 @@ window.onload = function(){
 		for(var l in all_labels){
 		    if(all_labels[l].count == 0) continue;
 		    this.modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';
-		    this.display[l] = false;
 		    sorted_labels.push(l);
 		}
 		var discriminitivity = function(l){
@@ -178,7 +177,8 @@ window.onload = function(){
 		}
 
 		// Now we are done!
-		if(best_labels.length == 1) this.display[best_labels[0]] = true;
+		if(best_labels.length == 1) this.current_label = best_labels[0];
+		else this.current_label = 'all';
 		return best_labels;
 	    }
 	},
@@ -189,7 +189,11 @@ window.onload = function(){
 		this.$emit('open-snippet',n);
 	    },
 	    toggle_display: function(l) {
-		this.display[l] = !this.display[l];
+		this.current_label = l;
+		this.$forceUpdate();
+	    },
+	    swap_mode: function(l) {
+		this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');
 		this.$forceUpdate();
 	    }
 	}

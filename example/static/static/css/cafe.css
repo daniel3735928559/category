@@ -88,3 +88,27 @@
 .expanded_content img {
     max-width: 100%;
 }
+
+.node-index-menu {
+    width: 24%;
+    float:left;
+}
+
+.node-index-menu-item {
+    width: 90%;
+    border-radius:8px;
+    padding:5px;
+    margin:2px;
+    cursor:pointer;
+    background-color: #ccf !important;
+}
+
+
+.node-index-menu-selected {
+    background-color: #99c !important;
+}
+
+.node-index-list {
+    width: 72%;
+    float:left;
+}
