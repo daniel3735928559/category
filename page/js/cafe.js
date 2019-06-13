@@ -238,7 +238,7 @@ window.onload = function(){
 	el: '#cafeapp',
 	data() {
 	    return {
-		mode: 'list',
+		mode: 'home',
 		query: '',
 		node_data: {},
 		nodes: {},
