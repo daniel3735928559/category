@@ -3,4 +3,5 @@ class VideoPlugin:
     pass
 
   def get_files(self, elem, get_file):
-    elem.text = get_file(elem.text)
+    lines = elem.text.split("\n")
+    elem.text = "\n".join([get_file(lines[0])] + lines[1:])

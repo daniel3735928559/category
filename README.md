@@ -1,9 +1,38 @@
 # Category
 
-A system for taking some markdown documents, each annotated with its
-relationships to the others (when applicable), and displaying them in
-a way that lets you navigate among the documents using those
-relationships.
+## Goals
+
+Easily create and store rich snippets of information in a way that makes
+them discoverable, shareable,
+
+Specifically: 
+
+* *Snippets*: We want to be able to make these documents in whatever
+  form is most convenient. Currently, this means markdown (since it is
+  easily written) and XML (since it is easily manipulated).
+
+* *Rich*: We want the documents to be able to easily express content
+  in a way that it will be easy to consume. For example, it should be
+  easy to incorporate into documents such elements as: 
+  
+  * Annotated mathematical formulas
+  
+  * Slideshows for images
+  
+  * Video with captions at specified timestamps
+  
+* *Discoverable*: Content needs to be tagged in some way to make it
+  findable. We make it easy to tag documents by their relationships to
+  other documents, and to search based on these relationships using a
+  graph-based query language.
+
+* *Shareable*: We want to be able to take a sub-collection of
+  documents (say, specified by a search query) and pull out exactly
+  that content so it can be separately published. 
+  
+  This way, no complex per-document access-control mechanism is
+  required; simply use a query to airlift out exactly the files
+  relevant for publication.
 
 ## Example
 

@@ -47,7 +47,9 @@ class cat_builder:
                 fn = os.path.join(dirname, fn)
                 ending = fn[fn.rfind('.'):]
                 if ending in self.endings:
-                    if fn in srcs and os.path.getmtime(fn) < self.md_time:
+                    common_prefix = os.path.commonprefix([input_dir, fn])
+                    src_path = os.path.relpath(fn, common_prefix)
+                    if src_path in srcs and os.path.getmtime(fn) < self.md_time:
                         print("Already up-to-date: ",fn)
                         continue
                     print("PROCESSING",fn)
@@ -63,8 +65,7 @@ class cat_builder:
                         print("WARNING: No name found in",fn)
                         continue
                     self.metadata[builder.ID] = builder.node
-                    common_prefix = os.path.commonprefix([input_dir, fn])
-                    self.metadata[builder.ID]['src'] = os.path.relpath(fn, common_prefix)
+                    self.metadata[builder.ID]['src'] = src_path
                     if not 'edges' in self.metadata[builder.ID]: self.metadata[builder.ID]['edges'] = {'has':{},'is':{}}
                     edges = self.metadata[builder.ID]['edges']
                     add_edges(self.config_edges, edges)
