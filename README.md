@@ -3,7 +3,7 @@
 ## Goals
 
 Easily create and store rich snippets of information in a way that makes
-them discoverable, shareable,
+them discoverable and shareable.
 
 Specifically: 
 
