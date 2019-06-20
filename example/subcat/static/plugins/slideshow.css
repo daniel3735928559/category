@@ -1,5 +1,7 @@
 .category-slideshow {
     text-align:center;
+    width:100%;
+    overflow-x:scroll;
 }
 
 .category-slideshow-slide {
