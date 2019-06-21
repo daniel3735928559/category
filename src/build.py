@@ -29,6 +29,13 @@ class cat_builder:
 
         # Save off all the source paths so we can check if a file has been compiled already
         srcs = {x.get('src','') for x in self.metadata.values()}
+
+        # If we're not rebuilding, iterate through the metadata
+        # elements and remove those whose source files no longer exist
+        if not force_rebuild:
+            for node_id in self.metadata:
+                if 'src' in self.metedata[node_id] and not os.path.exists(os.path.join(input_dir, self.metadata[node_id]['src'])):
+                    del self.metadata[node_id]
         
         for dirname,dirs,files in os.walk(input_dir):
             # Skip the OLD directory
