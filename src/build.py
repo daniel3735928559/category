@@ -34,7 +34,7 @@ class cat_builder:
         # elements and remove those whose source files no longer exist
         if not force_rebuild:
             for node_id in self.metadata:
-                if 'src' in self.metedata[node_id] and not os.path.exists(os.path.join(input_dir, self.metadata[node_id]['src'])):
+                if 'src' in self.metadata[node_id] and not os.path.exists(os.path.join(input_dir, self.metadata[node_id]['src'])):
                     del self.metadata[node_id]
         
         for dirname,dirs,files in os.walk(input_dir):
