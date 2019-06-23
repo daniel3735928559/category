@@ -22,9 +22,7 @@ class md_builder:
 
     def extract_metadata(self, elem, doc):
         if (isinstance(elem, pf.Code) or isinstance(elem, pf.CodeBlock)):
-            print(elem.classes)
             if 'info' in elem.classes:
-                print("info")
                 data,new_edges = parse_config(elem.text)
                 if not 'name' in data:
                     sys.stderr.write("WARNING: 'name' required in info\n")

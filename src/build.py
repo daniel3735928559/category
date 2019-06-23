@@ -15,9 +15,6 @@ class cat_builder:
             self.metadata = import_metadata(md_file)
             self.md_time = os.path.getmtime(md_file)
 
-        # We will remove IDs from this list as we go, leaving only the ones which no longer exist which will then be removed
-        self.stale = {x for x in self.metadata}
-
         # The endings we understand and the classes that can read these files
         self.endings = {".md":md_builder, ".xml":xml_builder}
 
@@ -67,10 +64,13 @@ class cat_builder:
                     if not builder.OK:
                         print("WARNING: There was a problem building",fn)
                         continue
-                    if builder.ID in self.stale: self.stale.remove(builder.ID)
                     if not 'name' in builder.node:
                         print("WARNING: No name found in",fn)
                         continue
+                    if builder.ID in self.metadata:
+                        es = "ERROR: Two nodes with the same name: {}\nSrc: {}\nSrc: {}\n"
+                        print(es.format(builder.node['name'], self.metadata[builder.ID]['src'], src_path))
+                        return
                     self.metadata[builder.ID] = builder.node
                     self.metadata[builder.ID]['src'] = src_path
                     if not 'edges' in self.metadata[builder.ID]: self.metadata[builder.ID]['edges'] = {'has':{},'is':{}}

@@ -122,7 +122,6 @@ def complete_metadata(metadata):
 
     # Start with the explicit ones:
     for node in metadata.values():
-        print("NN",node.get('id',node.get('name',False)))
         node_id = node.get('id',get_id(node['name']))
         name_to_id[node['name']] = node_id
         ans[node_id] = {x:node[x] for x in node}
