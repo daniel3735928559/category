@@ -356,6 +356,10 @@ window.onload = function(){
 	    },
 	    open_snippet: function(node, event){
 		var self = this;
+		if(!this.nodes[node]){
+		    console.log("WARNING: Attempted to open non-existent node: ",node);
+		    return;
+		}
 		this.get_node(node);
 		if(this.mode == 'home' || this.mode == 'graph') this.mode = 'doc';
 		this.main_doc = node;

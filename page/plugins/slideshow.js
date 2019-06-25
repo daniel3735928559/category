@@ -17,7 +17,15 @@ class SlideshowPlugin {
 //    <span class="category-slideshow-caption">{{slides[current_index].caption}}</span><br />
 //    <img style="max-width:100%;" :src="slides[current_index].img"></img>
 
-	    props: ["slides","lock_index","current_index","node", "all"],
+	    props: ["slides","lock_index","init_index","node", "all"],
+	    data() {
+		return {
+		    current_index: 0,
+		};
+	    },
+	    mounted: function() {
+		this.current_index = this.init_index;
+	    },
 	    methods: {
 		tmp_set_index: function(idx){
 		    this.current_index = idx;
@@ -56,7 +64,7 @@ class SlideshowPlugin {
 	    propsData:{
 		slides:elements,
 		lock_index:0,
-		current_index:0,
+		init_index:0,
 		node:node,
 		all:false
 	    }
