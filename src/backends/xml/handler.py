@@ -1,6 +1,7 @@
 from lxml import etree
-import docopt, os
-from . util import *
+import docopt, os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+from util import *
 
 class xml_builder:
     def __init__(self, filename, output_dir):

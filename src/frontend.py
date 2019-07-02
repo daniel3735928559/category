@@ -3,11 +3,27 @@
 import docopt, os, traceback, copy
 from multiprocessing import Process, Queue
 from . util import *
-from . backends.xml.handler import xml_builder
-from . backends.md.handler import md_builder
-from . backends.md.plugins import *
+from . mdbuild import md_builder
+from . xmlbuild import xml_builder
+from . plugins import *
 
 NUM_WORKERS=20
+
+class CategoryAPI:
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
+    def rebuild(self):
+        pass
+    def build(self):
+        pass
+    def set_edges(self, node_id, edges):
+        pass
+    def add_node(self, node_id, node):
+        pass
+    def del_node(self, node_id):
+        pass
+    def search(self, query):
+        pass
 
 def build_worker(inputs, outputs):
     for input_dir, output_dir, fn, extra_edges, md_time in iter(inputs.get, 'STOP'):

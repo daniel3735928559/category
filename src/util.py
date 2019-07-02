@@ -21,6 +21,18 @@ def add_edges(src, dst):
                 if not target in dst[et][en]:
                     dst[et][en].append(target)
 
+def make_config(data, edges):
+    ans = []
+    for d in data:
+        ans.append(f"{d}: {data[d]}")
+    for e in edges.get('has',{}):
+        for t in edges['has'][e]:
+            ans.append(f"has {e}: {t}")
+    for e in edges.get('is',{}):
+        for t in edges['is'][e]:
+            ans.append(f"is {e} of: {t}")
+    return "\n".join(ans)
+
 def parse_config(text):
     edges = {'has':{}, 'is':{}}
     data = {}
