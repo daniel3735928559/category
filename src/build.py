@@ -12,32 +12,36 @@ NUM_WORKERS=20
 def build_worker(inputs, outputs):
     for input_dir, output_dir, fn, extra_edges, md_time in iter(inputs.get, 'STOP'):
         ans = {'empty':True}
-        ending = fn[fn.rfind('.'):]
-        endings = {".md":md_builder, ".xml":xml_builder}
-        if ending in endings:
-            ans['empty'] = False
-            common_prefix = os.path.commonprefix([input_dir, fn])
-            src_path = os.path.relpath(fn, common_prefix)
-            if os.path.getmtime(fn) < md_time:
-                ans['error'] = "Already up-to-date: {}".format(fn)
-            else:
-                print("PROCESSING",fn)
-                args = {}
-                if ending == ".md":
-                    args = {"plugins":{"slideshow":"md","math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt"}}
-                builder = endings[ending](fn,output_dir,**args)
-                if not builder.OK:
-                    ans['error'] = "WARNING: There was a problem building {}".format(fn)
-                elif not 'name' in builder.node:
-                    ans['error'] = "WARNING: No name found in {}".format(fn)
+        try:
+            ending = fn[fn.rfind('.'):]
+            endings = {".md":md_builder, ".xml":xml_builder}
+            if ending in endings:
+                ans['empty'] = False
+                common_prefix = os.path.commonprefix([input_dir, fn])
+                src_path = os.path.relpath(fn, common_prefix)
+                if os.path.getmtime(fn) < md_time:
+                    ans['error'] = "Already up-to-date: {}".format(fn)
                 else:
-                    if not 'edges' in builder.node:
-                        builder.node['edges'] = {'has':{},'is':{}}
-                    builder.node['src'] = src_path
-                    edges = builder.node['edges']
-                    add_edges(extra_edges, edges)
-                    ans['error'] = None
-                    ans['builder'] = builder
+                    print("PROCESSING",fn)
+                    args = {}
+                    if ending == ".md":
+                        args = {"plugins":{"slideshow":"md","math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt"}}
+                    builder = endings[ending](fn,output_dir,**args)
+                    if not builder.OK:
+                        ans['error'] = "WARNING: There was a problem building {}".format(fn)
+                    elif not 'name' in builder.node:
+                        ans['error'] = "WARNING: No name found in {}".format(fn)
+                    else:
+                        if not 'edges' in builder.node:
+                            builder.node['edges'] = {'has':{},'is':{}}
+                        builder.node['src'] = src_path
+                        edges = builder.node['edges']
+                        add_edges(extra_edges, edges)
+                        ans['error'] = None
+                        ans['builder'] = builder
+        except Exception as e:
+            ans['error'] = f"Exception building: {fn}:\n" + traceback.format_exc()
+            
         outputs.put(ans)
 
 class cat_builder:
@@ -93,20 +97,22 @@ class cat_builder:
 
         for i in range(NUM_WORKERS):
             input_queue.put('STOP')
-            
+
+        errors = []
+        
         # The results should come in output_queue
         for i in range(num_inputs):
             ans = output_queue.get()
             if ans['empty']: continue
             elif not ans['error'] is None:
-                print("E:",ans['error'])
+                errors.append(ans['error'])
                 continue
             builder = ans['builder']
             
             # Ensure no ID collisions
             if builder.ID in self.metadata:
-                es = "ERROR: Two nodes with the same name: {}\nSrc: {}\nSrc: {}\n"
-                print(es.format(builder.node['name'], self.metadata[builder.ID]['src'], src_path))
+                es = "ERROR: Two nodes with the same name: {}\nSrc: {}\n"
+                print(es.format(builder.node['name'], self.metadata[builder.ID]['src']))
                 return
 
             # Get the path of the file to write the processed document to
@@ -119,7 +125,6 @@ class cat_builder:
             # Actually write the output document
             with open(output_path,"wb") as f:
                 f.write(builder.doc)
-
         
         self.metadata = complete_metadata(self.metadata)
         for x in self.metadata:
@@ -127,6 +132,8 @@ class cat_builder:
         with open(os.path.join(output_dir,'metadata.json'),"w") as f:
             f.write(jsonenc().encode(self.metadata))
 
+        if len(errors) > 0:
+            print("ERRORS: ", "\n-----\n".join(errors))
         
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)

@@ -17,7 +17,7 @@
 "is"		       		  return 'IS'
 "of"		       		  return 'OF'
 "c"		       	      	  return 'C'
-(?!has)(?!of)[^*/;:,() ]+         return 'STR'
+(?!has)(?!of)[^*;:() ]+          return 'STR'
 <<EOF>>                	       	  return 'EOF'
 .                      		  return 'INVALID'
 
@@ -30,19 +30,9 @@
 %% /* language grammar */
 
 query
-    : qs EOF
+    : q EOF
         { return $1; }
     ;
-    
-qs
-    : q
-        { $$ = $1; }
-    | q ',' andq
-        {$$ = ["and",[$1].concat($3)];}
-    | q '/' orq
-        {$$ = ["or",[$1].concat($3)];}
-    ;
-
 
 q
     : name
@@ -55,22 +45,12 @@ q
         {$$ = ["edge",{"name":$2,"dir":"has","query":$4}];}
     | name OF ':' q
         {$$ = ["edge",{"name":$1,"dir":"is","query":$4}];}
-    | '(' qs ')'
+    | '(' q ')'
         {$$ = $2;}
-    ;
-
-andq
-    : andq ',' q
-        {$$ = $1.concat($3);}
-    | q
-        {$$ = [$1];}
-    ;
-    
-orq
-    : orq '/' q
-        {$$ = $1.concat($3);}
-    | q
-        {$$ = [$1];}
+    | q ',' q
+        {$$ = ["and",[$1, $3]];}
+    | q '/' q
+        {$$ = ["or",[$1, $3]];}
     ;
 
 name

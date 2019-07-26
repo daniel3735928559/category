@@ -86,6 +86,7 @@ def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
         readx = select.select([proc.stdout.fileno()], [], [])[0]
         if readx:
             proc_output += proc.stdout.read()
+            print("PO",proc_output)
     if proc.returncode == 0:
         subcat_nodes = json.loads(proc_output)
         src_out_path = os.path.join(src_path,"out")

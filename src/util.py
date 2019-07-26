@@ -162,7 +162,7 @@ def complete_metadata(metadata):
             category_votes = {}
             for node in metadata.values():
                 if not node_name in get_targets(node): continue
-                cat = node.get('edges',{}).get('has',{}).get('category',['uncategorized'])[0]
+                cat = node.get('edges',{}).get('has',{}).get('category',[None])[0]
                 if cat == node_name:
                     cat = None
                     break

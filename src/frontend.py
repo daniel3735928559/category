@@ -18,7 +18,9 @@ class CategoryAPI:
         pass
     def set_edges(self, node_id, edges):
         pass
-    def add_node(self, node_id, node):
+    def edit_node(self, node_id):
+        pass
+    def add_node(self, node):
         pass
     def del_node(self, node_id):
         pass
