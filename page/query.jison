@@ -17,13 +17,16 @@
 "is"		       		  return 'IS'
 "of"		       		  return 'OF'
 "c"		       	      	  return 'C'
-(?!has)(?!of)[^*;:() ]+          return 'STR'
+(?!has)(?!of)[^*;/,:() ]+         return 'STR'
 <<EOF>>                	       	  return 'EOF'
 .                      		  return 'INVALID'
 
 /lex
 
 /* operator associations and precedence */
+
+%left '/'
+%left ','
 
 %start query
 
@@ -41,10 +44,14 @@ q
         {$$ = ["edge",{"name":$2,"dir":"has"}];}
     | IS name
         {$$ = ["edge",{"name":$2,"dir":"is"}];}
-    | HAS name ':' q
-        {$$ = ["edge",{"name":$2,"dir":"has","query":$4}];}
-    | name OF ':' q
-        {$$ = ["edge",{"name":$1,"dir":"is","query":$4}];}
+    | HAS name ':' name
+        {$$ = ["edge",{"name":$2,"dir":"has","query":["name",$4]}];}
+    | name OF ':' name
+        {$$ = ["edge",{"name":$1,"dir":"is","query":["name",$4]}];}
+    | HAS name ':' '(' q ')'
+        {$$ = ["edge",{"name":$2,"dir":"has","query":$5}];}
+    | name OF ':' '(' q ')'
+        {$$ = ["edge",{"name":$1,"dir":"is","query":$5}];}
     | '(' q ')'
         {$$ = $2;}
     | q ',' q

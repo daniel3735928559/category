@@ -24,7 +24,7 @@ var union_lists = function(l1,l2){
 }
 
 var search = function(q, nodes){
-    console.log("S",q,nodes);
+    //console.log("S",q,nodes);
     var result = [];
     if(!q || q.length == 0){
 	for(var n in nodes){
