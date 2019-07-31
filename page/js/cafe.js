@@ -172,8 +172,13 @@ window.onload = function(){
 			    finished_nodes[n] = true;
 			}
 		    }
-		    if(finished_count == nodes_count)
+		    // We cut short the use of labels, but only if we
+		    // have exhausted all the nodes under some label
+		    // already _and_ only if we already have a lot of
+		    // labels (> 20)
+		    if(finished_count == nodes_count && best_labels.length > 20) {
 			break;
+		    }
 		}
 
 		// Now we are done!
