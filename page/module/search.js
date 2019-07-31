@@ -23,8 +23,23 @@ var union_lists = function(l1,l2){
     return result;
 }
 
+// removes everything in l2 from l1
+var remove_all = function(l1,l2){
+    var result = [];
+    for(var i = 0; i < l1.length; i++){
+	var found = false;
+	for(var j = 0; j < l2.length; j++){
+	    if(l1[i] == l2[j]){
+		found = true;
+		break;
+	    }
+	}
+	if(!found) result.push(l1[i]);
+    }
+    return result;
+}
+
 var search = function(q, nodes){
-    //console.log("S",q,nodes);
     var result = [];
     if(!q || q.length == 0){
 	for(var n in nodes){
@@ -42,6 +57,13 @@ var search = function(q, nodes){
 	for(var i = 0; i < q[1].length; i++){
 	    var res = search(q[1][i],nodes);
 	    result = union_lists(result,res);
+	}
+    }
+    else if(q[0] == "not"){
+	result = Object.keys(nodes);
+	for(var i = 0; i < q[1].length; i++){
+	    var res = search(q[1][i],nodes);
+	    result = remove_all(result,res);
 	}
     }
     else if(q[0] == "edge"){
@@ -71,6 +93,9 @@ var search = function(q, nodes){
 		result.push(n);
 	    }
 	}
+    }
+    else {
+	console.log("Unrecognised query type:",q[0]);
     }
     return result;
 }
