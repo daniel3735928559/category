@@ -6,3 +6,4 @@ access.log
 .gitignore
 __pycache__
 \#*\#
+node_modules
