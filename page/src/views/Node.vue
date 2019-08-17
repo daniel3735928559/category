@@ -43,7 +43,6 @@
 	 let node_id = to.params.id;
 	 this.$store.dispatch('go',node_id);
 	 var self = this;
-	 console.log("N",node_id);
 	 if (!this.nodes[node_id]) {
 	     console.log("problem:",node_id,"does not exist");
 	 }
@@ -88,10 +87,8 @@
 	     };
 	     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
 		 response.text().then(function(data){
-		     console.log("GOT",data);
 		     self.data = data;
 		     next(data);
-		     console.log("SN",self.nodes);
 		     self.$nextTick(function(){Vue.run_plugins(self);});
 		 });
 	     });

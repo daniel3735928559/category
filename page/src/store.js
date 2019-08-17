@@ -34,9 +34,7 @@ export default new Vuex.Store({
 	    state.recent = [];
 	},
 	REMOVE_FROM_HISTORY: (state, node_id) => {
-	    console.log(state.recent,node_id);
 	    var idx = state.recent.indexOf(node_id);
-	    console.log(idx);
 	    if(idx >= 0) state.recent.splice(idx,1);
 	},
 	GO: (state, node_id) => {
@@ -48,7 +46,6 @@ export default new Vuex.Store({
 	    state.recent.unshift(node_id);
 	},
 	METADATA: (state, nodes) => {
-	    console.log("NN");
 	    state.nodes = nodes;
 	    state.recent = [];
 	    state.query = "is category";
@@ -78,7 +75,6 @@ export default new Vuex.Store({
 	    };
 	    return new Promise((resolve, reject) => {
 		fetch('/out/metadata.json', fetch_params).then(function(response){
-	    	    console.log("R",response);
 	    	    response.json().then(function(data){
 	    		context.commit('METADATA', data);
 			resolve();
