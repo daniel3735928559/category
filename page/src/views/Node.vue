@@ -22,7 +22,9 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+ import Vue from 'vue'
+ 
+ import { mapState } from 'vuex'
 
 export default {
      name: 'Node',
@@ -65,9 +67,9 @@ export default {
 	     });
 	 }
      },
-     computed: mapState([
-	 'nodes', 'node_data'
-     ]),
+     computed: {
+	 ...mapState(['nodes', 'node_data'])
+     },
      methods: {
 	 getNode: function(node_id, next) {
 	     var self = this;
@@ -85,12 +87,13 @@ export default {
 		     console.log("GOT",data);
 		     self.data = data;
 		     next(data);
+		     self.$nextTick(function(){Vue.run_plugins(self);});
 		 });
 	     });
 
 	 }
      }
-}
+ }
 </script>
 
 <style scoped>

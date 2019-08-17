@@ -62,7 +62,7 @@ class md_builder:
                             inner_doc = pf.convert_text(inner_doc, input_format='panflute',output_format='html')
                         else:
                             inner_doc = elem.text
-                        return pf.RawBlock("""<script type="category/plugin" lang="{}">{}</script>""".format(p,inner_doc),format="html")
+                        return pf.RawBlock("""<cat-{pluginname}>{doc}</cat-{pluginname}>""".format(pluginname=p,doc=inner_doc),format="html")
                     
         elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
             new_url = get_file(self.ID, self.filename, elem.url, self.output_dir)

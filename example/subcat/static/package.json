@@ -1,24 +1,18 @@
 {
-  "name": "category",
-  "version": "1.0.0",
-  "description": "",
-  "main": "cafe.js",
-  "dependencies": {
-    "bootstrap": "^4.0.0",
-    "guppy-js": "^2.0.0-beta.3",
-    "http-server": "^0.11.1",
-    "vis": "^4.21.0",
-    "vue": "^2.5.15",
-    "vue-draggable": "^1.0.1",
-    "vuedraggable": "^2.16.0"
-  },
+  "name": "test",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "build": "./make.sh",
-    "serve": "./node_modules/.bin/http-server -c-1 -a 127.0.0.1 -p 3545"
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "vue": "^2.6.10",
+    "vue-router": "^3.0.3",
+    "vuex": "^3.0.1"
   },
   "devDependencies": {
-    "jison": "^0.4.18"
-  },
-  "author": "",
-  "license": "ISC"
+    "@vue/cli-service": "^3.10.0",
+    "vue-template-compiler": "^2.6.10"
+  }
 }
