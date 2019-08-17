@@ -7,7 +7,7 @@
             <div v-on:click="toggle_display(l)" v-bind:class="'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')" v-for="l in labeldata.labels">
 		{{l}}
             </div>
-            <div v-on:click="toggle_display('unlinked')" v-bind:class="'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')" v-if="labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes">
+            <div v-on:click="toggle_display('unlinked')" v-bind:class="'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')" v-if="labeldata.disconnected && labeldata.disconnected.length > 0">
 		(unlinked)
             </div>
 	</div>
@@ -27,7 +27,7 @@
             <div v-if="!node">
 		<h3>All nodes</h3>
     		<ul>
-		    <li v-for="(node,n) in nodes">
+		    <li v-for="(node,n) in nodeset">
 			<router-link :to="'/node/'+n">{{node.name}}</router-link>
 		    </li>
     		</ul>
@@ -39,7 +39,7 @@
             <h3>Unlinked</h3>
             <ul>
     		<li v-for="n in labeldata.disconnected">
-    		    <router-link :to="'node/'+node">{{nodes[n].name}}</router-link>
+    		    <router-link :to="'/node/'+n">{{nodes[n].name}}</router-link>
     		</li>
             </ul>
 	</div>

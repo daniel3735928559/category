@@ -2,14 +2,10 @@
 
 ## Goals
 
-Easily create and store rich snippets of information in a way that makes
-them discoverable and shareable.
+Easily create and store **rich** **snippets** of information in a way that makes
+them **discoverable** and **shareable**.
 
 Specifically: 
-
-* *Snippets*: We want to be able to make these documents in whatever
-  form is most convenient. Currently, this means markdown (since it is
-  easily written) and XML (since it is easily manipulated).
 
 * *Rich*: We want the documents to be able to easily express content
   in a way that it will be easy to consume. For example, it should be
@@ -17,10 +13,14 @@ Specifically:
   
   * Annotated mathematical formulas
   
-  * Slideshows for images
+  * Slideshows of images
   
   * Video with captions at specified timestamps
-  
+
+* *Snippets*: We want to be able to make these documents in whatever
+  form is most convenient. Currently, this means markdown (since it is
+  easily written) and XML (since it is easily manipulated).
+
 * *Discoverable*: Content needs to be tagged in some way to make it
   findable. We make it easy to tag documents by their relationships to
   other documents, and to search based on these relationships using a

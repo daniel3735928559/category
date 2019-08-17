@@ -5,7 +5,6 @@ import store from './store'
 
 Vue.config.productionTip = false
 
-Vue.component('search', require('./components/search/search.vue').default);
 Vue.component('nodeIndex', require('./components/nodes.vue').default);
 Vue.component('labelIndex', require('./components/labels.vue').default);
 Vue.component('historyDisplay', require('./components/history.vue').default);
@@ -18,6 +17,8 @@ Vue.category_plugins = {
     'cat-link': Vue.component('catLink', require('./plugins/link.vue').default),
     'cat-math': Vue.component('catMath', require('./plugins/math.vue').default)
 };
+
+Vue.category_search_plugin = Vue.component('search', require('./components/search/search.vue').default);
 
 Vue.category_parse = require('./components/search/module/query.js').parse;
 Vue.category_search = require('./components/search/module/search.js');

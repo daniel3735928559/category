@@ -7,12 +7,13 @@
 </template>
 <script>
  import Vue from 'vue'
- 
  import { mapState } from 'vuex'
  
  export default {
      name: 'cat-query',
      props: ['root'],
+     
+     // Need to have access to all the nodes in order to search them
      computed: {
 	 ...mapState(['nodes'])
      },
@@ -22,13 +23,10 @@
 	 };
      },
      mounted: function(){
-	 // Parse the link info
 	 var query_text = this.root.innerHTML.trim();
-	 console.log('qt',query_text);
 	 var q = Vue.category_parse(query_text);
 	 var query_result = Vue.category_search(q, this.nodes);
-	 console.log('result',this.nodes,query_result);
-	 this.result = query_result
+	 this.result = query_result;
      }
  }
 </script>

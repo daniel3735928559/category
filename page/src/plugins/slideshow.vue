@@ -23,26 +23,18 @@
 	     init_index: 0,
 	     all: false,
 	     slides: [],
-	     node: ''
 	 };
      },
      mounted: function() {
-	 // Extract the slides
 	 var doc = this.root;
 	 var elements = [];
+
+	 // Iterate through li nodes and extract these as the slides
 	 for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){
-	     console.log("nn",n,n.nodeName);
 	     if(n.nodeName.toLowerCase() == "li") elements.push(n.innerHTML);
 	 }
-	 console.log(elements);
 	 
-	 // Insert the container
 	 this.slides = elements;
-	 this.lock_index = 0;
-	 this.init_index = 0;
-	 this.all = false;
-	 
-	 console.log("el",this.$el);
      },
      methods: {
 	 tmp_set_index: function(idx){

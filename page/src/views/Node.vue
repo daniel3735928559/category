@@ -12,7 +12,7 @@
 		<edge-display :node="node"></edge-display>
 	    </div>
 	    <div v-if="nodes && nodes[node] && nodes[node].auto == 'yes'">
-		<node-index :node="node" />
+		<node-index :nodeset="neighbours(node)" />
 	    </div>
 	    <div v-if="!nodes || !nodes[node]">
 		Loading...
@@ -25,8 +25,9 @@
  import Vue from 'vue'
  
  import { mapState } from 'vuex'
+ import { mapGetters } from 'vuex'
 
-export default {
+ export default {
      name: 'Node',
      data() {
 	 return {
@@ -68,7 +69,10 @@ export default {
 	 }
      },
      computed: {
-	 ...mapState(['nodes', 'node_data'])
+	 ...mapState(['nodes', 'node_data']),
+	 ...mapGetters([
+	     'neighbours',
+	 ])
      },
      methods: {
 	 getNode: function(node_id, next) {
@@ -120,6 +124,7 @@ export default {
      border-radius: 10px;
      padding: 5px;
      width: 100%;
+     margin-bottom: 10px;
  }
 
  .snippet_title{
