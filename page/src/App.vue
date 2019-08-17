@@ -1,13 +1,13 @@
 <template>
     <div id="cafeapp" class="container-full-width">
 	<div id="main" class="row">
-	    <div class="col-md-6 offset-md-2">
+	    <div class="col-md-6 offset-md-1">
 		<div id="main_col">
 		    <router-view></router-view>
 		</div>
 	    </div>
 	    
-	    <div class="col-md-2">
+	    <div class="col-md-4">
 		<search />
 		<history-display />
 	    </div>

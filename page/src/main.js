@@ -3,25 +3,40 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 
-Vue.config.productionTip = false
+import NodeIndex from './components/nodes.vue'
+import LabelIndex from './components/labels.vue'
+import HistoryDisplay from './components/history.vue'
+import EdgeDisplay from './components/edges.vue'
+import SearchDisplay from './components/search/search.vue'
 
-Vue.component('nodeIndex', require('./components/nodes.vue').default);
-Vue.component('labelIndex', require('./components/labels.vue').default);
-Vue.component('historyDisplay', require('./components/history.vue').default);
-Vue.component('edgeDisplay', require('./components/edges.vue').default);
+import VideoPlugin from './plugins/video.vue'
+import MathPlugin from './plugins/math.vue'
+import LinkPlugin from './plugins/link.vue'
+import QueryPlugin from './plugins/query.vue'
+import SlideshowPlugin from './plugins/slideshow.vue'
+
+import Query from './components/search/module/query.js'
+import Search from './components/search/module/search.js'
+
+Vue.config.productionTip = true;
+
+Vue.component('nodeIndex', NodeIndex);
+Vue.component('labelIndex', LabelIndex);
+Vue.component('historyDisplay', HistoryDisplay);
+Vue.component('edgeDisplay', EdgeDisplay);
 
 Vue.category_plugins = {
-    'cat-slideshow': Vue.component('catSlideshow', require('./plugins/slideshow.vue').default),
-    'cat-video': Vue.component('catVideo', require('./plugins/video.vue').default),
-    'cat-query': Vue.component('catQuery', require('./plugins/query.vue').default),
-    'cat-link': Vue.component('catLink', require('./plugins/link.vue').default),
-    'cat-math': Vue.component('catMath', require('./plugins/math.vue').default)
+    'cat-slideshow': Vue.component('catSlideshow', SlideshowPlugin),
+    'cat-video': Vue.component('catVideo', VideoPlugin),
+    'cat-query': Vue.component('catQuery', QueryPlugin),
+    'cat-link': Vue.component('catLink', LinkPlugin),
+//    'cat-math': Vue.component('catMath', MathPlugin)
 };
 
-Vue.category_search_plugin = Vue.component('search', require('./components/search/search.vue').default);
+Vue.category_search_plugin = Vue.component('search', SearchDisplay);
 
-Vue.category_parse = require('./components/search/module/query.js').parse;
-Vue.category_search = require('./components/search/module/search.js');
+Vue.category_query = new Query.Parser();
+Vue.category_search = Search;
 
 Vue.run_plugins = function(comp){
     for(var p in Vue.category_plugins) {
@@ -37,7 +52,8 @@ Vue.run_plugins = function(comp){
 	}
     }
 }
-
+window.onload = function() {
+ 
 new Vue({
     router,
     store,
@@ -46,3 +62,5 @@ new Vue({
     },
     render: function (h) { return h(App) }
 }).$mount('#cafeapp')
+
+}

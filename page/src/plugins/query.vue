@@ -24,7 +24,7 @@
      },
      mounted: function(){
 	 var query_text = this.root.innerHTML.trim();
-	 var q = Vue.category_parse(query_text);
+	 var q = Vue.category_query.parse(query_text);
 	 var query_result = Vue.category_search(q, this.nodes);
 	 this.result = query_result;
      }

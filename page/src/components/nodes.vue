@@ -1,13 +1,13 @@
 <template>
     <div class="node-index-container">
 	<div class="node-index-menu">
-            <div v-on:click="toggle_display('all')" v-bind:class="'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')">
+            <div v-on:click="toggle_display('all')" v-bind:class="'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')" v-if="num_nodes > 0">
 		(all)
             </div>
             <div v-on:click="toggle_display(l)" v-bind:class="'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')" v-for="l in labeldata.labels">
 		{{l}}
             </div>
-            <div v-on:click="toggle_display('unlinked')" v-bind:class="'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')" v-if="labeldata.disconnected && labeldata.disconnected.length > 0">
+            <div v-on:click="toggle_display('unlinked')" v-bind:class="'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')" v-if="labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes">
 		(unlinked)
             </div>
 	</div>
@@ -15,11 +15,11 @@
 	<!-- List of edges associated with current_label -->
 	<div class="node-index-list" v-if="current_label != 'all' && current_label != 'unlinked'">
             <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style="cursor:pointer;font-size:.5em;" v-on:click="swap_mode(current_label)"><span class="fas fa-random"></span></span></h3>
-            <label-index :label="current_label" :mode="modes[current_label]" />
+            <label-index :label="current_label" :mode="modes[current_label]" :nodeset="nodeset" />
 	</div>
 	
 	<!-- List of all edges -->
-	<div class="node-index-list" v-if="current_label == 'all'">
+	<div class="node-index-list" v-if="current_label == 'all' && num_nodes > 0">
             <div v-if="node">
 		<h3>All edges</h3>
     		<edge-display :node="node"></edge-display>
@@ -61,6 +61,11 @@
 	 }
      },
      computed: {
+	 num_nodes: function() {
+	     var ans = 0;
+	     for(var n in this.nodeset) ans++;
+	     return ans;
+	 },
 	 labeldata: function() {
 	     // The result is:
 	     // {

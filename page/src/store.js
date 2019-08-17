@@ -15,7 +15,6 @@ export default new Vuex.Store({
 	neighbours: state => node_id => {
 	    let node = state.nodes[node_id];
 	    var ans = {};
-	    console.log(node);
 	    for(var d in node.edges) {
 		for(var l in node.edges[d]) {
 		    for(var nbr_id of node.edges[d][l]) {

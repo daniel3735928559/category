@@ -72,13 +72,13 @@ def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
 
     if static:
         # Copy page folder into subcat directory
-        index_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","cafe.html")
-        page_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
-        statics_path = os.path.join(subcat_path,"static")
+        index_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","dist","index.html")
         shutil.copy2(index_path, os.path.join(subcat_path,"index.html"))
-        shutil.copytree(page_path, statics_path)
+        static_src_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","dist","static")
+        static_dst_path = os.path.join(subcat_path,"static")
+        shutil.copytree(static_src_path,static_dst_path)
         
-    subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","module","subcat.js")
+    subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","src","components","search","module","subcat.js")
     metadata_path = os.path.join(src_path,"out","metadata.json")
     proc = subprocess.Popen(shlex.split(f"node {subcat_js_path} {metadata_path} '{query}'"),shell=False,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     proc_output = bytes()
@@ -132,11 +132,12 @@ def cat_serve(cat_path, port, bind_addr):
         
     cat_root = os.path.join(os.path.realpath(cat_path),"out")
     print(f"Serving {cat_root} on port {bind_addr}:{port}...")
-    static_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
+    page_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
+    static_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","dist","static")
     app = Flask(__name__,static_url_path='')
     
     @app.route('/static/<path:path>')
-    def send_static(path):
+    def send_static_css(path):
         return send_from_directory(static_root, path)
     
     @app.route('/edit/<node>')
@@ -159,9 +160,13 @@ def cat_serve(cat_path, port, bind_addr):
     def send_file(path):
         return send_from_directory(cat_root, path)
 
+    @app.route('/node/<path:path>')
+    def send_node(path):
+        return send_from_directory(page_root,"dist/index.html")
+    
     @app.route('/')
     def send_root():
-        return send_from_directory(static_root,"cafe.html")
+        return send_from_directory(page_root,"dist/index.html")
 
     app.run(host=bind_addr, port=port, debug=False)
     
