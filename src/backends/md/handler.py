@@ -72,14 +72,14 @@ class md_builder:
             elif elem.url[:5] == "node:":
                 target = urllib.parse.unquote(elem.url[5:])
                 print("LINK",target)
-                return pf.RawInline("""<script type="category/plugin" lang="link">{}:{}</script>""".format(get_id(target),target),format="html")
+                return pf.RawInline("""<cat-link>{}:{}</cat-link>""".format(get_id(target),target),format="html")
             elif elem.url[:6] == "query:":
                 q = urllib.parse.unquote(elem.url[6:])
                 print("QUERY",q)
-                return pf.RawInline("""<script type="category/plugin" lang="query">{}</script>""".format(q),format="html")
+                return pf.RawInline("""<cat-query>{}</cat-query>""".format(q),format="html")
         elif isinstance(elem, pf.Math):
             print("MATH",elem.text)
-            return pf.RawInline("""<script type="category/plugin" lang="math">{}</script>""".format(elem.text),format="html")
+            return pf.RawInline("""<cat-math>{}</cat-math>""".format(elem.text),format="html")
 
 if __name__ == "__main__":
     import docopt

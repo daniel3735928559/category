@@ -15,7 +15,7 @@
 <script>
  export default {
      name: 'cat-slideshow',
-     props: ['content'],
+     props: ['root'],
      data() {
 	 return {
 	     current_index: 0,
@@ -28,11 +28,7 @@
      },
      mounted: function() {
 	 // Extract the slides
-	 /* 
-	  * 	 console.log('html',this.content);
-	  * 	 var doc = new DOMParser().parseFromString(this.content, "text/xml");
-	  * 	 console.log("doc",doc);*/
-	 var doc = this.content;
+	 var doc = this.root;
 	 var elements = [];
 	 for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){
 	     console.log("nn",n,n.nodeName);

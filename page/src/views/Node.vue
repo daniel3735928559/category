@@ -87,6 +87,7 @@ export default {
 		     console.log("GOT",data);
 		     self.data = data;
 		     next(data);
+		     console.log("SN",self.nodes);
 		     self.$nextTick(function(){Vue.run_plugins(self);});
 		 });
 	     });

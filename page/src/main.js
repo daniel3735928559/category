@@ -12,27 +12,27 @@ Vue.component('historyDisplay', require('./components/history.vue').default);
 Vue.component('edgeDisplay', require('./components/edges.vue').default);
 
 Vue.category_plugins = {
-    'cat-slideshow': Vue.component('catSlideshow', require('./plugins/slideshow.vue').default)
+    'cat-slideshow': Vue.component('catSlideshow', require('./plugins/slideshow.vue').default),
+    'cat-video': Vue.component('catVideo', require('./plugins/video.vue').default),
+    'cat-query': Vue.component('catQuery', require('./plugins/query.vue').default),
+    'cat-link': Vue.component('catLink', require('./plugins/link.vue').default),
+    'cat-math': Vue.component('catMath', require('./plugins/math.vue').default)
 };
+
+Vue.category_parse = require('./components/search/module/query.js').parse;
+Vue.category_search = require('./components/search/module/search.js');
 
 Vue.run_plugins = function(comp){
     for(var p in Vue.category_plugins) {
 	var plugin = Vue.category_plugins[p];
-	console.log("plugin",p,plugin);
 	var l = comp.$el.getElementsByTagName(p);
-	for(var node of l) {
-	    console.log('hi', node);
-	    console.log('ct',node.innerHTML);
-	    // var container = document.createElement("div");
-	    // node.parentNode.insertBefore(container, node);
+	while(l.length > 0) {
+	    var node = l[0];
 	    new plugin({
 		el: node,
-		propsData: {'content': node},
+		propsData: {'root': node},
 		parent: comp
 	    });
-	}
-	while(l.length > 0){
-	    l[0].parentNode.removeChild(l[0]);
 	}
     }
 }
