@@ -26,9 +26,12 @@ export default new Vuex.Store({
 	}	
     }, 
     mutations: {
-	CACHE: (state, node_id, node_data) => {
+	CACHE: (state, nodes) => {
 	    //node_data = plugin_process(state, node_id, node_data);
-	    state.node_data[node_id] = node_data;
+	    console.log('caching',nodes);
+	    for(var node_id in nodes){
+		state.node_data[node_id] = nodes[node_id];
+	    }
 	},
 	CLEAR_HISTORY: state => {
 	    state.recent = [];
@@ -52,8 +55,8 @@ export default new Vuex.Store({
 	}
     },
     actions: {
-	cache: (context, node_id, data) => {
-	    context.commit('CACHE',node_id, data);
+	cache: (context, nodes) => {
+	    context.commit('CACHE',nodes);
 	},
 	clear_history: (context) => {
 	    context.commit('CLEAR_HISTORY');

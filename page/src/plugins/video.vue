@@ -13,17 +13,21 @@
      props: ['root'],
      data () {
 	 return {
+	     id:'',
+	     index:{},
+	     url:'',
+	     type:'',
 	     player: null
 	 };
      },
      methods: {
 	 goto: function(t){
-	     this.player.currentTime = t;
+	     document.getElementById(this.id).currentTime = t;
 	 }
      },
      mounted: function(){
 	 // Parse the link info
-	 var lines = root.innerHTML.split("\n");
+	 var lines = this.root.innerHTML.split("\n");
 	 var url = lines[0].trim();
 	 var index = [];
 	 for (var i = 1; i < lines.length; i++) {
@@ -33,6 +37,7 @@
 	     index.push({'secs':secs, 'caption':caption});
 	 }
 	 var ending = 'video/'+url.substring(url.lastIndexOf(".")+1);
+	 this.id = url.replace(new RegExp("[^0-9a-zA-Z_]","g"),"-");
 	 this.index = index;
 	 this.url = url;
 	 this.type = ending;

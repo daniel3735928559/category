@@ -281,14 +281,15 @@
   	 let node_id = to.params.id;
   	 this.$store.dispatch('go',node_id);
   	 var self = this;
-  	 console.log("N",node_id);
   	 if (!this.nodes[node_id]) {
   	     console.log("problem:",node_id,"does not exist");
   	 }
   	 else if (node_id in this.node_data) {
   	     console.log("cached");
   	     this.data = this.node_data[node_id];
+  	     console.log(this.data);
   	     this.node = node_id;
+  	     this.$nextTick(function(){Vue.run_plugins(this);});
   	     next();
   	 }
   	 else if(this.nodes[node_id].auto == "yes") {
@@ -326,10 +327,8 @@
   	     };
   	     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
   		 response.text().then(function(data){
-  		     console.log("GOT",data);
   		     self.data = data;
   		     next(data);
-  		     console.log("SN",self.nodes);
   		     self.$nextTick(function(){Vue.run_plugins(self);});
   		 });
   	     });
@@ -425,11 +424,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-fc772644_0", { source: "\n.snippet_content img[data-v-fc772644] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-fc772644] {\n    max-width: 100%;\n}\n.snippet[data-v-fc772644]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-fc772644]{\n    padding:5px;\n}\n.snippet_header[data-v-fc772644]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-fc772644]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-fc772644]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAwGA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t this.getNode(this.node, function(){});\n\t this.$store.dispatch('go',this.node);\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t console.log(\"N\",node_id);\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     this.node = node_id;\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.getNode(node_id, data => {\n\t\t self.$store.dispatch('cache',node_id,data);\n\t\t self.node = node_id;\n\t\t next();\n\t     });\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters([\n\t     'neighbours',\n\t ])\n     },\n     methods: {\n\t getNode: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(\"GOT\",data);\n\t\t     self.data = data;\n\t\t     next(data);\n\t\t     console.log(\"SN\",self.nodes);\n\t\t     self.$nextTick(function(){Vue.run_plugins(self);});\n\t\t });\n\t     });\n\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-70797d0e_0", { source: "\n.snippet_content img[data-v-70797d0e] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-70797d0e] {\n    max-width: 100%;\n}\n.snippet[data-v-70797d0e]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-70797d0e]{\n    padding:5px;\n}\n.snippet_header[data-v-70797d0e]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-70797d0e]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-70797d0e]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAuGA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t this.getNode(this.node, function(){});\n\t this.$store.dispatch('go',this.node);\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.getNode(node_id, data => {\n\t\t self.$store.dispatch('cache',node_id,data);\n\t\t self.node = node_id;\n\t\t next();\n\t     });\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters([\n\t     'neighbours',\n\t ])\n     },\n     methods: {\n\t getNode: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     self.data = data;\n\t\t     next(data);\n\t\t     self.$nextTick(function(){Vue.run_plugins(self);});\n\t\t });\n\t     });\n\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-fc772644";
+    const __vue_scope_id__$2 = "data-v-70797d0e";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -500,17 +499,18 @@
   	}	
       }, 
       mutations: {
-  	CACHE: (state, node_id, node_data) => {
+  	CACHE: (state, nodes) => {
   	    //node_data = plugin_process(state, node_id, node_data);
-  	    state.node_data[node_id] = node_data;
+  	    console.log('caching',nodes);
+  	    for(var node_id in nodes){
+  		state.node_data[node_id] = nodes[node_id];
+  	    }
   	},
   	CLEAR_HISTORY: state => {
   	    state.recent = [];
   	},
   	REMOVE_FROM_HISTORY: (state, node_id) => {
-  	    console.log(state.recent,node_id);
   	    var idx = state.recent.indexOf(node_id);
-  	    console.log(idx);
   	    if(idx >= 0) state.recent.splice(idx,1);
   	},
   	GO: (state, node_id) => {
@@ -522,15 +522,14 @@
   	    state.recent.unshift(node_id);
   	},
   	METADATA: (state, nodes) => {
-  	    console.log("NN");
   	    state.nodes = nodes;
   	    state.recent = [];
   	    state.query = "is category";
   	}
       },
       actions: {
-  	cache: (context, node_id, data) => {
-  	    context.commit('CACHE',node_id, data);
+  	cache: (context, nodes) => {
+  	    context.commit('CACHE',nodes);
   	},
   	clear_history: (context) => {
   	    context.commit('CLEAR_HISTORY');
@@ -552,7 +551,6 @@
   	    };
   	    return new Promise((resolve, reject) => {
   		fetch('/out/metadata.json', fetch_params).then(function(response){
-  	    	    console.log("R",response);
   	    	    response.json().then(function(data){
   	    		context.commit('METADATA', data);
   			resolve();
@@ -1449,29 +1447,31 @@
        props: ['root'],
        data () {
   	 return {
+  	     id:'',
+  	     index:{},
+  	     url:'',
+  	     type:'',
   	     player: null
   	 };
        },
        methods: {
   	 goto: function(t){
-  	     this.player.currentTime = t;
+  	     document.getElementById(this.id).currentTime = t;
   	 }
        },
        mounted: function(){
-  	 console.log("LINK",this.root);
   	 // Parse the link info
-  	 var lines = root.innerHTML.split("\n");
+  	 var lines = this.root.innerHTML.split("\n");
   	 var url = lines[0].trim();
-  	 console.log("U",url);
   	 var index = [];
   	 for (var i = 1; i < lines.length; i++) {
   	     var time = lines[i].split(" ")[0];
   	     var caption = lines[i].substring(lines[i].indexOf(" ")+1);
   	     var secs = 60*parseInt(time.split(":")[0])+parseInt(time.split(":")[1]);
-  	     console.log("S",secs,time);
   	     index.push({'secs':secs, 'caption':caption});
   	 }
   	 var ending = 'video/'+url.substring(url.lastIndexOf(".")+1);
+  	 this.id = url.replace(new RegExp("[^0-9a-zA-Z_]","g"),"-");
   	 this.index = index;
   	 this.url = url;
   	 this.type = ending;
@@ -2829,10 +2829,14 @@
 
   Vue.run_plugins = function(comp){
       for(var p in Vue.category_plugins) {
+  	console.log(p);
   	var plugin = Vue.category_plugins[p];
+  	console.log('ih',comp.$el.innerHTML);
   	var l = comp.$el.getElementsByTagName(p);
+  	console.log(l);
   	while(l.length > 0) {
   	    var node = l[0];
+  	    console.log(p,node);
   	    new plugin({
   		el: node,
   		propsData: {'root': node},

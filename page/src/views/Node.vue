@@ -49,7 +49,9 @@
 	 else if (node_id in this.node_data) {
 	     console.log("cached");
 	     this.data = this.node_data[node_id];
+	     console.log(this.data);
 	     this.node = node_id;
+	     this.$nextTick(function(){Vue.run_plugins(this);});
 	     next();
 	 }
 	 else if(this.nodes[node_id].auto == "yes") {
