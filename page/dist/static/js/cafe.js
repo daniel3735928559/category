@@ -274,7 +274,7 @@
   	 }
        },
        created: function() {
-  	 this.getNode(this.node, function(){});
+  	 this.get_node(this.node, function(){});
   	 this.$store.dispatch('go',this.node);
        },
        beforeRouteUpdate: function(to, fro, next) {
@@ -300,8 +300,8 @@
   	 }
   	 else {
   	     console.log("not cached");
-  	     this.getNode(node_id, data => {
-  		 self.$store.dispatch('cache',node_id,data);
+  	     this.get_node(node_id, data => {
+  		 self.$store.dispatch('cache',{node_id:data});
   		 self.node = node_id;
   		 next();
   	     });
@@ -314,7 +314,7 @@
   	 ])
        },
        methods: {
-  	 getNode: function(node_id, next) {
+  	 get_node: function(node_id, next) {
   	     var self = this;
   	     console.log("fetching",node_id);
   	     var fetch_headers = new Headers();
@@ -333,6 +333,27 @@
   		 });
   	     });
 
+  	 },
+  	 reload_node: function(node, event){
+  	     var self = this;
+  	     this.get_node(this.node, data => {
+  		 self.$store.dispatch('cache',{node:data});
+  	     });
+  	 },
+  	 edit_node: function(node, event){
+  	     var fetch_headers = new Headers();
+  	     fetch_headers.append('pragma', 'no-cache');
+  	     fetch_headers.append('cache-control', 'no-cache');
+  	     
+  	     var fetch_params = {
+  		 method: 'GET',
+  		 headers: fetch_headers,
+  	     };
+  	     fetch('/edit/'+node, fetch_params).then(function(response){
+  		 response.text().then(function(data){
+  		     console.log(data);
+  		 });
+  	     });
   	 }
        }
    };
@@ -424,11 +445,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-70797d0e_0", { source: "\n.snippet_content img[data-v-70797d0e] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-70797d0e] {\n    max-width: 100%;\n}\n.snippet[data-v-70797d0e]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-70797d0e]{\n    padding:5px;\n}\n.snippet_header[data-v-70797d0e]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-70797d0e]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-70797d0e]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAuGA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t this.getNode(this.node, function(){});\n\t this.$store.dispatch('go',this.node);\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.getNode(node_id, data => {\n\t\t self.$store.dispatch('cache',node_id,data);\n\t\t self.node = node_id;\n\t\t next();\n\t     });\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters([\n\t     'neighbours',\n\t ])\n     },\n     methods: {\n\t getNode: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     self.data = data;\n\t\t     next(data);\n\t\t     self.$nextTick(function(){Vue.run_plugins(self);});\n\t\t });\n\t     });\n\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-27677728_0", { source: "\n.snippet_content img[data-v-27677728] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-27677728] {\n    max-width: 100%;\n}\n.snippet[data-v-27677728]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-27677728]{\n    padding:5px;\n}\n.snippet_header[data-v-27677728]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-27677728]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-27677728]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AA6HA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t this.get_node(this.node, function(){});\n\t this.$store.dispatch('go',this.node);\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, data => {\n\t\t self.$store.dispatch('cache',{node_id:data});\n\t\t self.node = node_id;\n\t\t next();\n\t     });\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters([\n\t     'neighbours',\n\t ])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     self.data = data;\n\t\t     next(data);\n\t\t     self.$nextTick(function(){Vue.run_plugins(self);});\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, data => {\n\t\t self.$store.dispatch('cache',{node:data});\n\t     });\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-70797d0e";
+    const __vue_scope_id__$2 = "data-v-27677728";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -1598,8 +1619,8 @@
        mounted: function(){
   	 var doc_id = node+"-"+index;
   	 if(index == 0) this.docs[node] = {};
-  	 var content = root.innerHTML.trim();
-  	 console.log("R",root,content);
+  	 var content = this.root.innerHTML.trim();
+  	 console.log("R",this.root,content);
   	 var res = Guppy.Doc.render(content, "text");
   	 res.container.setAttribute("id","category-math-container-"+doc_id);
   	 this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());
@@ -1616,21 +1637,21 @@
   	 }
 
   	 var snippet = "";
-  	 if(root.previousSibling){
-  	     snippet += root.previousSibling.textContent.split(" ").slice(-4).join(" ");
+  	 if(this.root.previousSibling){
+  	     snippet += this.root.previousSibling.textContent.split(" ").slice(-4).join(" ");
   	 }
   	 snippet += " [formula] ";
 
-  	 if(root.nextSibling) {
-  	     snippet += root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
+  	 if(this.root.nextSibling) {
+  	     snippet += this.root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
   	 }
   	 snippet = "..." + snippet + "...";
-  	 console.log("parprev",root.parentNode.previousSibling);
-  	 console.log("parnext",root.parentNode.nextSibling);
+  	 console.log("parprev",this.root.parentNode.previousSibling);
+  	 console.log("parnext",this.root.parentNode.nextSibling);
 
   	 this.snippets[doc_id] = snippet;
   	 
-           root.parentNode.insertBefore(container, root);
+           this.root.parentNode.insertBefore(container, this.root);
 
   	 new comp.$options.components['math-plugin']({
   	     el: container,
@@ -1741,11 +1762,11 @@
     /* style */
     const __vue_inject_styles__$9 = function (inject) {
       if (!inject) return
-      inject("data-v-ae718248_0", { source: "\n.category-math-plugin-math[data-v-ae718248] {\n    cursor:pointer;\n    display:inline-block;\n}\n.category-math-plugin-vars[data-v-ae718248] {\n    background-color: #dd5;\n    padding:1ex;\n    border: 1px solid black;\n    z-index:1;\n}\n.category-math-plugin-refs[data-v-ae718248] {\n    background-color: #ff5;\n    padding:2ex 1ex;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/math.vue"],"names":[],"mappings":";AAgGA;IACA,cAAA;IACA,oBAAA;AACA;AAEA;IACA,sBAAA;IACA,WAAA;IACA,uBAAA;IACA,SAAA;AACA;AAEA;IACA,sBAAA;IACA,eAAA;AACA","file":"math.vue","sourcesContent":["<template>\n    <span class=\"category-math-plugin\">\n\t<a v-bind:name=\"'category-math-plugin-link-'+id\"></a>\n\t<div v-bind:id=\"'category-math-plugin-expr-'+id\" class=\"category-math-plugin-math\" v-on:click=\"display_syms = !display_syms\" v-html=\"rendered\"></div>\n\t<div class=\"category-math-plugin-vars\" v-bind:style=\"get_pos(id)\" v-if=\"display_syms\">\n\t    <a href=\"#\" v-on:click=\"display_syms = false; query = ''\">[x]</a>\n\t    Vars:\n\t    <ul>\n\t\t<li v-for=\"e in syms\">\n\t\t    <a href=\"#\" v-on:click=\"query = e\">{{e}}</a>\n\t\t</li>\n\t    </ul>\n\t    <div class=\"category-math-plugin-refs\" v-if=\"display_syms && query != ''\">\n\t\tUses:\n\t\t<ul>\n\t\t    <li v-for=\"x in master.index[query]\">\n\t\t\t<a v-bind:href=\"'#category-math-plugin-link-'+x\">{{master.snippets[x]}}</a>\n\t\t    </li>\n\t\t</ul>\n\t    </div>\n\t</div>\n    </span>\n</template>\n<script>\n export default {\n     name: 'cat-math',\n     props: ['root'],\n     data () {\n\t return {\n\t     player: null\n\t };\n     },\n     methods: {\n\t get_pos: function(id) {\n\t     var el = document.getElementById(\"category-math-plugin-expr-\"+id);\n\t     var top = el.getBoundingClientRect().y;\n\t     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};\n\t }\n     },\n     created: function(){\n\t Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t var doc_id = node+\"-\"+index;\n\t if(index == 0) this.docs[node] = {};\n\t var content = root.innerHTML.trim()\n\t console.log(\"R\",root,content);\n\t var res = Guppy.Doc.render(content, \"text\");\n\t res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\t var container = document.createElement(\"span\");\n\n\n\t \n\t // Put this doc ID in the index for each var and symbol in the document\n\t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t     var v = this.docs[node][index][i];\n\t     if (!this.index[v]) this.index[v] = [];\n\t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t }\n\n\t var snippet = \"\";\n\t if(root.previousSibling){\n\t     snippet += root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t }\n\t snippet += \" [formula] \"\n\n\t if(root.nextSibling) {\n\t     snippet += root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t }\n\t snippet = \"...\" + snippet + \"...\";\n\t console.log(\"parprev\",root.parentNode.previousSibling);\n\t console.log(\"parnext\",root.parentNode.nextSibling);\n\n\t this.snippets[doc_id] = snippet;\n\t \n         root.parentNode.insertBefore(container, root);\n\n\t new comp.$options.components['math-plugin']({\n\t     el: container,\n\t     parent: comp,\n\t     propsData:{\n\t\t syms:this.docs[node][index],\n\t\t rendered:rendered_content,\n\t\t display_syms:false,\n\t\t id:doc_id,\n\t\t master:this,\n\t\t query:\"\",\n\t\t node:node\n\t     }\n\t });\n     }\n }\n</script>\n<style scoped>\n .category-math-plugin-math {\n     cursor:pointer;\n     display:inline-block;\n }\n\n .category-math-plugin-vars {\n     background-color: #dd5;\n     padding:1ex;\n     border: 1px solid black;\n     z-index:1;\n }\n\n .category-math-plugin-refs {\n     background-color: #ff5;\n     padding:2ex 1ex;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-2c98a068_0", { source: "\n.category-math-plugin-math[data-v-2c98a068] {\n    cursor:pointer;\n    display:inline-block;\n}\n.category-math-plugin-vars[data-v-2c98a068] {\n    background-color: #dd5;\n    padding:1ex;\n    border: 1px solid black;\n    z-index:1;\n}\n.category-math-plugin-refs[data-v-2c98a068] {\n    background-color: #ff5;\n    padding:2ex 1ex;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/math.vue"],"names":[],"mappings":";AAgGA;IACA,cAAA;IACA,oBAAA;AACA;AAEA;IACA,sBAAA;IACA,WAAA;IACA,uBAAA;IACA,SAAA;AACA;AAEA;IACA,sBAAA;IACA,eAAA;AACA","file":"math.vue","sourcesContent":["<template>\n    <span class=\"category-math-plugin\">\n\t<a v-bind:name=\"'category-math-plugin-link-'+id\"></a>\n\t<div v-bind:id=\"'category-math-plugin-expr-'+id\" class=\"category-math-plugin-math\" v-on:click=\"display_syms = !display_syms\" v-html=\"rendered\"></div>\n\t<div class=\"category-math-plugin-vars\" v-bind:style=\"get_pos(id)\" v-if=\"display_syms\">\n\t    <a href=\"#\" v-on:click=\"display_syms = false; query = ''\">[x]</a>\n\t    Vars:\n\t    <ul>\n\t\t<li v-for=\"e in syms\">\n\t\t    <a href=\"#\" v-on:click=\"query = e\">{{e}}</a>\n\t\t</li>\n\t    </ul>\n\t    <div class=\"category-math-plugin-refs\" v-if=\"display_syms && query != ''\">\n\t\tUses:\n\t\t<ul>\n\t\t    <li v-for=\"x in master.index[query]\">\n\t\t\t<a v-bind:href=\"'#category-math-plugin-link-'+x\">{{master.snippets[x]}}</a>\n\t\t    </li>\n\t\t</ul>\n\t    </div>\n\t</div>\n    </span>\n</template>\n<script>\n export default {\n     name: 'cat-math',\n     props: ['root'],\n     data () {\n\t return {\n\t     player: null\n\t };\n     },\n     methods: {\n\t get_pos: function(id) {\n\t     var el = document.getElementById(\"category-math-plugin-expr-\"+id);\n\t     var top = el.getBoundingClientRect().y;\n\t     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};\n\t }\n     },\n     created: function(){\n\t Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t var doc_id = node+\"-\"+index;\n\t if(index == 0) this.docs[node] = {};\n\t var content = this.root.innerHTML.trim()\n\t console.log(\"R\",this.root,content);\n\t var res = Guppy.Doc.render(content, \"text\");\n\t res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\t var container = document.createElement(\"span\");\n\n\n\t \n\t // Put this doc ID in the index for each var and symbol in the document\n\t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t     var v = this.docs[node][index][i];\n\t     if (!this.index[v]) this.index[v] = [];\n\t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t }\n\n\t var snippet = \"\";\n\t if(this.root.previousSibling){\n\t     snippet += this.root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t }\n\t snippet += \" [formula] \"\n\n\t if(this.root.nextSibling) {\n\t     snippet += this.root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t }\n\t snippet = \"...\" + snippet + \"...\";\n\t console.log(\"parprev\",this.root.parentNode.previousSibling);\n\t console.log(\"parnext\",this.root.parentNode.nextSibling);\n\n\t this.snippets[doc_id] = snippet;\n\t \n         this.root.parentNode.insertBefore(container, this.root);\n\n\t new comp.$options.components['math-plugin']({\n\t     el: container,\n\t     parent: comp,\n\t     propsData:{\n\t\t syms:this.docs[node][index],\n\t\t rendered:rendered_content,\n\t\t display_syms:false,\n\t\t id:doc_id,\n\t\t master:this,\n\t\t query:\"\",\n\t\t node:node\n\t     }\n\t });\n     }\n }\n</script>\n<style scoped>\n .category-math-plugin-math {\n     cursor:pointer;\n     display:inline-block;\n }\n\n .category-math-plugin-vars {\n     background-color: #dd5;\n     padding:1ex;\n     border: 1px solid black;\n     z-index:1;\n }\n\n .category-math-plugin-refs {\n     background-color: #ff5;\n     padding:2ex 1ex;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$9 = "data-v-ae718248";
+    const __vue_scope_id__$9 = "data-v-2c98a068";
     /* module identifier */
     const __vue_module_identifier__$9 = undefined;
     /* functional template */
@@ -2829,14 +2850,10 @@
 
   Vue.run_plugins = function(comp){
       for(var p in Vue.category_plugins) {
-  	console.log(p);
   	var plugin = Vue.category_plugins[p];
-  	console.log('ih',comp.$el.innerHTML);
   	var l = comp.$el.getElementsByTagName(p);
-  	console.log(l);
   	while(l.length > 0) {
   	    var node = l[0];
-  	    console.log(p,node);
   	    new plugin({
   		el: node,
   		propsData: {'root': node},

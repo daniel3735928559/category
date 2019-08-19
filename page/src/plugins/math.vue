@@ -43,8 +43,8 @@
      mounted: function(){
 	 var doc_id = node+"-"+index;
 	 if(index == 0) this.docs[node] = {};
-	 var content = root.innerHTML.trim()
-	 console.log("R",root,content);
+	 var content = this.root.innerHTML.trim()
+	 console.log("R",this.root,content);
 	 var res = Guppy.Doc.render(content, "text");
 	 res.container.setAttribute("id","category-math-container-"+doc_id);
 	 this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());
@@ -61,21 +61,21 @@
 	 }
 
 	 var snippet = "";
-	 if(root.previousSibling){
-	     snippet += root.previousSibling.textContent.split(" ").slice(-4).join(" ");
+	 if(this.root.previousSibling){
+	     snippet += this.root.previousSibling.textContent.split(" ").slice(-4).join(" ");
 	 }
 	 snippet += " [formula] "
 
-	 if(root.nextSibling) {
-	     snippet += root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
+	 if(this.root.nextSibling) {
+	     snippet += this.root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
 	 }
 	 snippet = "..." + snippet + "...";
-	 console.log("parprev",root.parentNode.previousSibling);
-	 console.log("parnext",root.parentNode.nextSibling);
+	 console.log("parprev",this.root.parentNode.previousSibling);
+	 console.log("parnext",this.root.parentNode.nextSibling);
 
 	 this.snippets[doc_id] = snippet;
 	 
-         root.parentNode.insertBefore(container, root);
+         this.root.parentNode.insertBefore(container, this.root);
 
 	 new comp.$options.components['math-plugin']({
 	     el: container,

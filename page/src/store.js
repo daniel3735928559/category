@@ -9,7 +9,8 @@ export default new Vuex.Store({
 	current: '',
 	nodes: {},
 	recent: [],
-	node_data: {}
+	node_data: {},
+	plugin_data: {}
     },
     getters: {
 	neighbours: state => node_id => {
@@ -31,6 +32,13 @@ export default new Vuex.Store({
 	    console.log('caching',nodes);
 	    for(var node_id in nodes){
 		state.node_data[node_id] = nodes[node_id];
+	    }
+	},
+	PLUGIN_DATA_STORE: (state, data) => {
+	    //node_data = plugin_process(state, node_id, node_data);
+	    console.log('storing',data);
+	    for(var plugin_id in data){
+		state.plugin_data[plugin_id] = data[plugin_id];
 	    }
 	},
 	CLEAR_HISTORY: state => {

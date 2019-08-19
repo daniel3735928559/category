@@ -36,7 +36,7 @@
 	 }
      },
      created: function() {
-	 this.getNode(this.node, function(){});
+	 this.get_node(this.node, function(){});
 	 this.$store.dispatch('go',this.node);
      },
      beforeRouteUpdate: function(to, fro, next) {
@@ -62,8 +62,8 @@
 	 }
 	 else {
 	     console.log("not cached");
-	     this.getNode(node_id, data => {
-		 self.$store.dispatch('cache',node_id,data);
+	     this.get_node(node_id, data => {
+		 self.$store.dispatch('cache',{node_id:data});
 		 self.node = node_id;
 		 next();
 	     });
@@ -76,7 +76,7 @@
 	 ])
      },
      methods: {
-	 getNode: function(node_id, next) {
+	 get_node: function(node_id, next) {
 	     var self = this;
 	     console.log("fetching",node_id);
 	     var fetch_headers = new Headers();
@@ -95,6 +95,28 @@
 		 });
 	     });
 
+	 },
+	 reload_node: function(node, event){
+	     var self = this;
+	     this.get_node(this.node, data => {
+		 self.$store.dispatch('cache',{node:data});
+	     });
+	 },
+	 edit_node: function(node, event){
+	     var self = this;
+	     var fetch_headers = new Headers();
+	     fetch_headers.append('pragma', 'no-cache');
+	     fetch_headers.append('cache-control', 'no-cache');
+	     
+	     var fetch_params = {
+		 method: 'GET',
+		 headers: fetch_headers,
+	     };
+	     fetch('/edit/'+node, fetch_params).then(function(response){
+		 response.text().then(function(data){
+		     console.log(data);
+		 });
+	     });
 	 }
      }
  }
