@@ -1,9 +1,10 @@
-(function (Vue, Router, Vuex) {
+(function (Vue, Router, Vuex, CodeMirror) {
   'use strict';
 
   Vue = Vue && Vue.hasOwnProperty('default') ? Vue['default'] : Vue;
   Router = Router && Router.hasOwnProperty('default') ? Router['default'] : Router;
   var Vuex__default = 'default' in Vuex ? Vuex['default'] : Vuex;
+  CodeMirror = CodeMirror && CodeMirror.hasOwnProperty('default') ? CodeMirror['default'] : CodeMirror;
 
   function normalizeComponent(template, style, script, scopeId, isFunctionalTemplate, moduleIdentifier
   /* server only */
@@ -274,21 +275,23 @@
   	 }
        },
        created: function() {
-  	 this.getNode(this.node, function(){});
-  	 this.$store.dispatch('go',this.node);
+  	 console.log('cr');
+  	 this.$store.commit('GO',this.node);
+  	 this.get_node(this.node, function(){});
        },
        beforeRouteUpdate: function(to, fro, next) {
+  	 console.log("ND",this.node_data);
   	 let node_id = to.params.id;
   	 this.$store.dispatch('go',node_id);
-  	 var self = this;
-  	 console.log("N",node_id);
   	 if (!this.nodes[node_id]) {
   	     console.log("problem:",node_id,"does not exist");
   	 }
   	 else if (node_id in this.node_data) {
   	     console.log("cached");
   	     this.data = this.node_data[node_id];
+  	     console.log(this.data);
   	     this.node = node_id;
+  	     this.$nextTick(function(){Vue.run_plugins(this);});
   	     next();
   	 }
   	 else if(this.nodes[node_id].auto == "yes") {
@@ -299,21 +302,15 @@
   	 }
   	 else {
   	     console.log("not cached");
-  	     this.getNode(node_id, data => {
-  		 self.$store.dispatch('cache',node_id,data);
-  		 self.node = node_id;
-  		 next();
-  	     });
+  	     this.get_node(node_id, next);
   	 }
        },
        computed: {
   	 ...Vuex.mapState(['nodes', 'node_data']),
-  	 ...Vuex.mapGetters([
-  	     'neighbours',
-  	 ])
+  	 ...Vuex.mapGetters(['neighbours'])
        },
        methods: {
-  	 getNode: function(node_id, next) {
+  	 get_node: function(node_id, next) {
   	     var self = this;
   	     console.log("fetching",node_id);
   	     var fetch_headers = new Headers();
@@ -326,14 +323,39 @@
   	     };
   	     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
   		 response.text().then(function(data){
-  		     console.log("GOT",data);
+  		     var to_cache = {};
+  		     to_cache[node_id] = data;
+  		     self.$store.commit('CACHE',to_cache);
   		     self.data = data;
-  		     next(data);
-  		     console.log("SN",self.nodes);
-  		     self.$nextTick(function(){Vue.run_plugins(self);});
+  		     self.node = node_id;
+  		     next();
+  		     console.log("IH1",self.data,"||",self.$el.innerHTML);
+  		     self.$nextTick(function(){
+  			 console.log("IH2",self.data,"||",self.$el.innerHTML);
+  			 Vue.run_plugins(self);
+  			 console.log("IH3",self.data,"||",self.$el.innerHTML);
+  		     });
   		 });
   	     });
 
+  	 },
+  	 reload_node: function(node, event){
+  	     this.get_node(this.node, function(){});
+  	 },
+  	 edit_node: function(node, event){
+  	     var fetch_headers = new Headers();
+  	     fetch_headers.append('pragma', 'no-cache');
+  	     fetch_headers.append('cache-control', 'no-cache');
+  	     
+  	     var fetch_params = {
+  		 method: 'GET',
+  		 headers: fetch_headers,
+  	     };
+  	     fetch('/edit/'+node, fetch_params).then(function(response){
+  		 response.text().then(function(data){
+  		     console.log(data);
+  		 });
+  	     });
   	 }
        }
    };
@@ -425,11 +447,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-fc772644_0", { source: "\n.snippet_content img[data-v-fc772644] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-fc772644] {\n    max-width: 100%;\n}\n.snippet[data-v-fc772644]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-fc772644]{\n    padding:5px;\n}\n.snippet_header[data-v-fc772644]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-fc772644]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-fc772644]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAwGA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t this.getNode(this.node, function(){});\n\t this.$store.dispatch('go',this.node);\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t console.log(\"N\",node_id);\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     this.node = node_id;\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.getNode(node_id, data => {\n\t\t self.$store.dispatch('cache',node_id,data);\n\t\t self.node = node_id;\n\t\t next();\n\t     });\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters([\n\t     'neighbours',\n\t ])\n     },\n     methods: {\n\t getNode: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(\"GOT\",data);\n\t\t     self.data = data;\n\t\t     next(data);\n\t\t     console.log(\"SN\",self.nodes);\n\t\t     self.$nextTick(function(){Vue.run_plugins(self);});\n\t\t });\n\t     });\n\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-76872024_0", { source: "\n.snippet_content img[data-v-76872024] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-76872024] {\n    max-width: 100%;\n}\n.snippet[data-v-76872024]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-76872024]{\n    padding:5px;\n}\n.snippet_header[data-v-76872024]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-76872024]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-76872024]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAgIA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-fc772644";
+    const __vue_scope_id__$2 = "data-v-76872024";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -483,7 +505,8 @@
   	current: '',
   	nodes: {},
   	recent: [],
-  	node_data: {}
+  	node_data: {},
+  	plugin_data: {}
       },
       getters: {
   	neighbours: state => node_id => {
@@ -500,20 +523,29 @@
   	}	
       }, 
       mutations: {
-  	CACHE: (state, node_id, node_data) => {
+  	CACHE: (state, nodes) => {
   	    //node_data = plugin_process(state, node_id, node_data);
-  	    state.node_data[node_id] = node_data;
+  	    console.log('caching',nodes);
+  	    for(var node_id in nodes){
+  		state.node_data[node_id] = nodes[node_id];
+  	    }
+  	},
+  	PLUGIN_DATA_STORE: (state, data) => {
+  	    //node_data = plugin_process(state, node_id, node_data);
+  	    console.log('storing',data);
+  	    for(var plugin_id in data){
+  		state.plugin_data[plugin_id] = data[plugin_id];
+  	    }
   	},
   	CLEAR_HISTORY: state => {
   	    state.recent = [];
   	},
   	REMOVE_FROM_HISTORY: (state, node_id) => {
-  	    console.log(state.recent,node_id);
   	    var idx = state.recent.indexOf(node_id);
-  	    console.log(idx);
   	    if(idx >= 0) state.recent.splice(idx,1);
   	},
   	GO: (state, node_id) => {
+  	    console.log('historicising');
   	    state.current = node_id;
   	    var idx = state.recent.indexOf(node_id);
   	    if(idx >= 0) {
@@ -522,15 +554,14 @@
   	    state.recent.unshift(node_id);
   	},
   	METADATA: (state, nodes) => {
-  	    console.log("NN");
   	    state.nodes = nodes;
   	    state.recent = [];
   	    state.query = "is category";
   	}
       },
       actions: {
-  	cache: (context, node_id, data) => {
-  	    context.commit('CACHE',node_id, data);
+  	cache: (context, nodes) => {
+  	    context.commit('CACHE',nodes);
   	},
   	clear_history: (context) => {
   	    context.commit('CLEAR_HISTORY');
@@ -552,7 +583,6 @@
   	    };
   	    return new Promise((resolve, reject) => {
   		fetch('/out/metadata.json', fetch_params).then(function(response){
-  	    	    console.log("R",response);
   	    	    response.json().then(function(data){
   	    		context.commit('METADATA', data);
   			resolve();
@@ -1449,29 +1479,31 @@
        props: ['root'],
        data () {
   	 return {
+  	     id:'',
+  	     index:{},
+  	     url:'',
+  	     type:'',
   	     player: null
   	 };
        },
        methods: {
   	 goto: function(t){
-  	     this.player.currentTime = t;
+  	     document.getElementById(this.id).currentTime = t;
   	 }
        },
        mounted: function(){
-  	 console.log("LINK",this.root);
   	 // Parse the link info
-  	 var lines = root.innerHTML.split("\n");
+  	 var lines = this.root.innerHTML.split("\n");
   	 var url = lines[0].trim();
-  	 console.log("U",url);
   	 var index = [];
   	 for (var i = 1; i < lines.length; i++) {
   	     var time = lines[i].split(" ")[0];
   	     var caption = lines[i].substring(lines[i].indexOf(" ")+1);
   	     var secs = 60*parseInt(time.split(":")[0])+parseInt(time.split(":")[1]);
-  	     console.log("S",secs,time);
   	     index.push({'secs':secs, 'caption':caption});
   	 }
   	 var ending = 'video/'+url.substring(url.lastIndexOf(".")+1);
+  	 this.id = url.replace(new RegExp("[^0-9a-zA-Z_]","g"),"-");
   	 this.index = index;
   	 this.url = url;
   	 this.type = ending;
@@ -1582,30 +1614,30 @@
        props: ['root'],
        data () {
   	 return {
+  	     id: '',
+  	     rendered: '',
   	     player: null
   	 };
        },
        methods: {
-  	 get_pos: function(id) {
-  	     var el = document.getElementById("category-math-plugin-expr-"+id);
+  	 get_pos: function() {
+  	     var el = document.getElementById("category-math-plugin-expr-"+this.id);
   	     var top = el.getBoundingClientRect().y;
   	     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};
   	 }
        },
        created: function(){
-  	 Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
+  	 console.log("init");
+  	 this.$store.dispatch("RESET_PLUGIN_DATA","math");
+  	 //Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
        }, 
        mounted: function(){
+  	 var index = 0;
   	 var doc_id = node+"-"+index;
-  	 if(index == 0) this.docs[node] = {};
-  	 var content = root.innerHTML.trim();
-  	 console.log("R",root,content);
-  	 var res = Guppy.Doc.render(content, "text");
-  	 res.container.setAttribute("id","category-math-container-"+doc_id);
-  	 this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());
-  	 var rendered_content = (new XMLSerializer()).serializeToString(res.container);
-  	 var container = document.createElement("span");
-
+  	 var content = this.root.innerHTML.trim();
+  	 console.log("R",this.root,content);
+  	 //res.container.setAttribute("id","category-math-container-"+doc_id);
+  	 //var rendered_content = (new XMLSerializer()).serializeToString(res.container);
 
   	 
   	 // Put this doc ID in the index for each var and symbol in the document
@@ -1615,36 +1647,28 @@
   	     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);
   	 }
 
+  	 // Calculate the snippet that will be associated with this expression when it appears in listings
   	 var snippet = "";
-  	 if(root.previousSibling){
-  	     snippet += root.previousSibling.textContent.split(" ").slice(-4).join(" ");
+  	 if(this.root.previousSibling){
+  	     snippet += this.root.previousSibling.textContent.split(" ").slice(-4).join(" ");
   	 }
   	 snippet += " [formula] ";
 
-  	 if(root.nextSibling) {
-  	     snippet += root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
+  	 if(this.root.nextSibling) {
+  	     snippet += this.root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
   	 }
   	 snippet = "..." + snippet + "...";
-  	 console.log("parprev",root.parentNode.previousSibling);
-  	 console.log("parnext",root.parentNode.nextSibling);
-
+  	 console.log("parprev",this.root.parentNode.previousSibling);
+  	 console.log("parnext",this.root.parentNode.nextSibling);
   	 this.snippets[doc_id] = snippet;
-  	 
-           root.parentNode.insertBefore(container, root);
 
-  	 new comp.$options.components['math-plugin']({
-  	     el: container,
-  	     parent: comp,
-  	     propsData:{
-  		 syms:this.docs[node][index],
-  		 rendered:rendered_content,
-  		 display_syms:false,
-  		 id:doc_id,
-  		 master:this,
-  		 query:"",
-  		 node:node
-  	     }
-  	 });
+  	 // Finally, set up component attributes
+  	 this.syms = this.docs[node][index];
+  	 this.rendered = rendered_content;
+  	 this.display_syms = false;
+  	 this.id = doc_id;
+  	 this.query = "";
+  	 this.node = node;
        }
    };
 
@@ -1741,11 +1765,11 @@
     /* style */
     const __vue_inject_styles__$9 = function (inject) {
       if (!inject) return
-      inject("data-v-ae718248_0", { source: "\n.category-math-plugin-math[data-v-ae718248] {\n    cursor:pointer;\n    display:inline-block;\n}\n.category-math-plugin-vars[data-v-ae718248] {\n    background-color: #dd5;\n    padding:1ex;\n    border: 1px solid black;\n    z-index:1;\n}\n.category-math-plugin-refs[data-v-ae718248] {\n    background-color: #ff5;\n    padding:2ex 1ex;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/math.vue"],"names":[],"mappings":";AAgGA;IACA,cAAA;IACA,oBAAA;AACA;AAEA;IACA,sBAAA;IACA,WAAA;IACA,uBAAA;IACA,SAAA;AACA;AAEA;IACA,sBAAA;IACA,eAAA;AACA","file":"math.vue","sourcesContent":["<template>\n    <span class=\"category-math-plugin\">\n\t<a v-bind:name=\"'category-math-plugin-link-'+id\"></a>\n\t<div v-bind:id=\"'category-math-plugin-expr-'+id\" class=\"category-math-plugin-math\" v-on:click=\"display_syms = !display_syms\" v-html=\"rendered\"></div>\n\t<div class=\"category-math-plugin-vars\" v-bind:style=\"get_pos(id)\" v-if=\"display_syms\">\n\t    <a href=\"#\" v-on:click=\"display_syms = false; query = ''\">[x]</a>\n\t    Vars:\n\t    <ul>\n\t\t<li v-for=\"e in syms\">\n\t\t    <a href=\"#\" v-on:click=\"query = e\">{{e}}</a>\n\t\t</li>\n\t    </ul>\n\t    <div class=\"category-math-plugin-refs\" v-if=\"display_syms && query != ''\">\n\t\tUses:\n\t\t<ul>\n\t\t    <li v-for=\"x in master.index[query]\">\n\t\t\t<a v-bind:href=\"'#category-math-plugin-link-'+x\">{{master.snippets[x]}}</a>\n\t\t    </li>\n\t\t</ul>\n\t    </div>\n\t</div>\n    </span>\n</template>\n<script>\n export default {\n     name: 'cat-math',\n     props: ['root'],\n     data () {\n\t return {\n\t     player: null\n\t };\n     },\n     methods: {\n\t get_pos: function(id) {\n\t     var el = document.getElementById(\"category-math-plugin-expr-\"+id);\n\t     var top = el.getBoundingClientRect().y;\n\t     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};\n\t }\n     },\n     created: function(){\n\t Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t var doc_id = node+\"-\"+index;\n\t if(index == 0) this.docs[node] = {};\n\t var content = root.innerHTML.trim()\n\t console.log(\"R\",root,content);\n\t var res = Guppy.Doc.render(content, \"text\");\n\t res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\t var container = document.createElement(\"span\");\n\n\n\t \n\t // Put this doc ID in the index for each var and symbol in the document\n\t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t     var v = this.docs[node][index][i];\n\t     if (!this.index[v]) this.index[v] = [];\n\t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t }\n\n\t var snippet = \"\";\n\t if(root.previousSibling){\n\t     snippet += root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t }\n\t snippet += \" [formula] \"\n\n\t if(root.nextSibling) {\n\t     snippet += root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t }\n\t snippet = \"...\" + snippet + \"...\";\n\t console.log(\"parprev\",root.parentNode.previousSibling);\n\t console.log(\"parnext\",root.parentNode.nextSibling);\n\n\t this.snippets[doc_id] = snippet;\n\t \n         root.parentNode.insertBefore(container, root);\n\n\t new comp.$options.components['math-plugin']({\n\t     el: container,\n\t     parent: comp,\n\t     propsData:{\n\t\t syms:this.docs[node][index],\n\t\t rendered:rendered_content,\n\t\t display_syms:false,\n\t\t id:doc_id,\n\t\t master:this,\n\t\t query:\"\",\n\t\t node:node\n\t     }\n\t });\n     }\n }\n</script>\n<style scoped>\n .category-math-plugin-math {\n     cursor:pointer;\n     display:inline-block;\n }\n\n .category-math-plugin-vars {\n     background-color: #dd5;\n     padding:1ex;\n     border: 1px solid black;\n     z-index:1;\n }\n\n .category-math-plugin-refs {\n     background-color: #ff5;\n     padding:2ex 1ex;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-368015e5_0", { source: "\n.category-math-plugin-math[data-v-368015e5] {\n    cursor:pointer;\n    display:inline-block;\n}\n.category-math-plugin-vars[data-v-368015e5] {\n    background-color: #dd5;\n    padding:1ex;\n    border: 1px solid black;\n    z-index:1;\n}\n.category-math-plugin-refs[data-v-368015e5] {\n    background-color: #ff5;\n    padding:2ex 1ex;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/math.vue"],"names":[],"mappings":";AA6FA;IACA,cAAA;IACA,oBAAA;AACA;AAEA;IACA,sBAAA;IACA,WAAA;IACA,uBAAA;IACA,SAAA;AACA;AAEA;IACA,sBAAA;IACA,eAAA;AACA","file":"math.vue","sourcesContent":["<template>\n    <span class=\"category-math-plugin\">\n\t<a v-bind:name=\"'category-math-plugin-link-'+id\"></a>\n\t<div v-bind:id=\"'category-math-plugin-expr-'+id\" class=\"category-math-plugin-math\" v-on:click=\"display_syms = !display_syms\" v-html=\"rendered\"></div>\n\t<div class=\"category-math-plugin-vars\" v-bind:style=\"get_pos(id)\" v-if=\"display_syms\">\n\t    <a href=\"#\" v-on:click=\"display_syms = false; query = ''\">[x]</a>\n\t    Vars:\n\t    <ul>\n\t\t<li v-for=\"e in syms\">\n\t\t    <a href=\"#\" v-on:click=\"query = e\">{{e}}</a>\n\t\t</li>\n\t    </ul>\n\t    <div class=\"category-math-plugin-refs\" v-if=\"display_syms && query != ''\">\n\t\tUses:\n\t\t<ul>\n\t\t    <li v-for=\"x in master.index[query]\">\n\t\t\t<a v-bind:href=\"'#category-math-plugin-link-'+x\">{{master.snippets[x]}}</a>\n\t\t    </li>\n\t\t</ul>\n\t    </div>\n\t</div>\n    </span>\n</template>\n<script>\n export default {\n     name: 'cat-math',\n     props: ['root'],\n     data () {\n\t return {\n\t     id: '',\n\t     rendered: '',\n\t     player: null\n\t };\n     },\n     methods: {\n\t get_pos: function() {\n\t     var el = document.getElementById(\"category-math-plugin-expr-\"+this.id);\n\t     var top = el.getBoundingClientRect().y;\n\t     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};\n\t }\n     },\n     created: function(){\n\t console.log(\"init\");\n\t this.$store.dispatch(\"RESET_PLUGIN_DATA\",\"math\");\n\t //Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t var index = 0;\n\t var doc_id = node+\"-\"+index;\n\t var content = this.root.innerHTML.trim()\n\t console.log(\"R\",this.root,content);\n\t //var res = Guppy.Doc.render(content, \"text\");\n\t var res = {doc:content};\n\t var doc_data = {};\n\t //doc_data[index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t doc_data[index] = [\"x\"];\n\t //res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t //var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\n\t \n\t // Put this doc ID in the index for each var and symbol in the document\n\t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t     var v = this.docs[node][index][i];\n\t     if (!this.index[v]) this.index[v] = [];\n\t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t }\n\n\t // Calculate the snippet that will be associated with this expression when it appears in listings\n\t var snippet = \"\";\n\t if(this.root.previousSibling){\n\t     snippet += this.root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t }\n\t snippet += \" [formula] \"\n\n\t if(this.root.nextSibling) {\n\t     snippet += this.root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t }\n\t snippet = \"...\" + snippet + \"...\";\n\t console.log(\"parprev\",this.root.parentNode.previousSibling);\n\t console.log(\"parnext\",this.root.parentNode.nextSibling);\n\t this.snippets[doc_id] = snippet;\n\n\t // Finally, set up component attributes\n\t this.syms = this.docs[node][index];\n\t this.rendered = rendered_content;\n\t this.display_syms = false;\n\t this.id = doc_id;\n\t this.query = \"\";\n\t this.node = node;\n     }\n }\n</script>\n<style scoped>\n .category-math-plugin-math {\n     cursor:pointer;\n     display:inline-block;\n }\n\n .category-math-plugin-vars {\n     background-color: #dd5;\n     padding:1ex;\n     border: 1px solid black;\n     z-index:1;\n }\n\n .category-math-plugin-refs {\n     background-color: #ff5;\n     padding:2ex 1ex;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$9 = "data-v-ae718248";
+    const __vue_scope_id__$9 = "data-v-368015e5";
     /* module identifier */
     const __vue_module_identifier__$9 = undefined;
     /* functional template */
@@ -2048,6 +2072,1912 @@
       __vue_scope_id__$c,
       __vue_is_functional_template__$c,
       __vue_module_identifier__$c,
+      browser,
+      undefined
+    );
+
+  //
+   var script$c = {
+       name: 'cat-jsavr',
+       props: ['root','program','text','control','size','lightboard_feature','reset_feature','simid','debug_mode_feature'],
+       data () {
+  	 return {
+  	     id: '',
+  	     rendered: '',
+  	     debug_log: this.do_nothing,
+  	     status: "Ready",
+  	     running: false,
+  	     outputs: [],
+  	     io_state: {'switch_state':["OFF","OFF","OFF","OFF","OFF","OFF","OFF","OFF"]},
+  	     steps: {'count':1},
+  	     output_type: {"selection":"program"},
+  	     symbols: {},
+  	     PM_display_mode: "t",
+  	     RAM_display_mode: "d",
+  	     RF_display_mode: "d",
+  	     RAM: [],
+  	     PM: [],
+  	     RF: [],
+  	     
+  	     PIND: 0,
+  	     PORTD: 0,
+  	     DDRD: 0,
+  	     SPH: 0,
+  	     SPL: 0,
+  	     
+  	     RAM_size: 65536,
+  	     PM_size: 65536,
+  	     RF_size: 32,
+  	     updated: [],
+  	     error_line: 0,
+  	     current_ram_data: [],
+  	     display_pm_start: 0,
+  	     display_ram_start: 0,
+  	     display_pm_length: 16,
+  	     display_ram_length: 16,
+  	     directives: {
+  		 "label":{"regex":/^([a-zA-Z_][a-zA-Z0-9_]*):$/,"process":function(args){
+  		     return {"symbol":args[1],
+  			     "symbol_type":"pm",
+  		     };
+  		 }},
+  		 "word":{"regex":/^\.word ([0-9,]+)$/,"process":function(args){
+  		     var rdata = args[1].split(",");
+  		     for(var i = 0; i < rdata.length; i++){
+  			 rdata[i] = this.truncate(parseInt(rdata[i]),16,false);
+  		     }
+  		     return {"symbol":args[1],
+  			     "symbol_type":"pm",
+  			     "pm_data":rdata
+  		     };
+  		 }},
+  		 "byte_ram":{"regex":/^ *\.byte\(([a-zA-Z_][a-zA-Z0-9_]*)\) ([-0-9, ]+) *$/,"process":function(args){
+  		     var rdata = args[2].split(",");
+  		     for(var i = 0; i < rdata.length; i++){
+  			 rdata[i] = this.truncate(parseInt(rdata[i].trim()),8,false);
+  		     }
+  		     return {"symbol":args[1],
+  			     "symbol_type":"ram",
+  			     "ram_data":rdata
+  		     };
+  		 }},
+  		 "string_ram":{"regex":/^ *\.string\(([a-zA-Z_][a-zA-Z0-9_]*)\) "((?:[^"\\]|\\.)*)" *$/,"process":function(args){
+  		     var str = this.handle_string_escapes(args[2]);
+  		     var rdata = [];
+  		     for(var i = 0; i < str.length; i++){
+  			 rdata.push(this.truncate(str.charCodeAt(i),8,false));
+  		     }
+  		     rdata.push(0);
+  		     return {"symbol":args[1],
+  			     "symbol_type":"ram",
+  			     "ram_data":rdata
+  		     };
+  		     
+  		 }}
+  	     },
+  	     formats: {
+  		 "4r8i":{
+  		     "string":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+i;},
+  		     "binary":"CCCCIIIIRRRRIIII",
+  		     "i_bits":8,
+  		     "validator":function(c, r, s, i){return 16 <= r && r < 32 && -128 <= i && i < 256;}},
+  		 "5r5s":{
+  		     "string":/ *r([0-9]+), *r([0-9]+)() *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ",r"+s;},
+  		     "binary":"CCCCCCSRRRRRSSSS",
+  		     "validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},
+  		 "6s5r":{
+  		     "string":/ *r([0-9]+), *([0-9]+)() *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r + ","+s;},
+  		     "binary":"CCCCCSSRRRRRSSSS",
+  		     "validator":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},
+  		 "5r6s":{
+  		     "string":/ *([0-9]+), *r([0-9]+)() *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + r + ",r"+s;},
+  		     "binary":"CCCCCSSRRRRRSSSS",
+  		     "validator":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},
+  		 "5r":{
+  		     "string":/ *r([0-9]+)()() *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " r" + r;},
+  		     "binary":"CCCCCCCRRRRRCCCC",
+  		     "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
+  		 "5rX":{
+  		     "string":/ *r([0-9]+)(), *(-[XYZ]|[XYZ]|[XYZ]\+) *$/,
+  		     "to_string":function(mnemonic,c,r,s,i,x){return mnemonic + " r" + r + ","+i},
+  		     "binary":"CCCXCCCRRRRRXXXX",
+  		     "validator":function(c, r, s, i){return 0 <= r && r < 32;}},
+  		 "X5r":{
+  		     "string":/ *(-[XYZ]|[XYZ]|[XYZ]\+), *r([0-9]+)() *$/,
+  		     "to_string":function(mnemonic,c,r,s,i,x){return mnemonic + " " + r + ",r"+s;},
+  		     "binary":"CCCXCCCRRRRRXXXX",
+  		     "validator":function(c, r, s, i){return 0 <= s && s < 32;}},
+  		 "12i":{
+  		     "string":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
+  		     "binary":"CCCCIIIIIIIIIIII",
+  		     "i_bits":12,
+  		     "validator":function(c, r, s, i){return -2048 <= i && i < 2048;}},
+  		 "7i":{
+  		     "string":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic + " " + i;},
+  		     "binary":"CCCCCCIIIIIIICCC",
+  		     "i_bits":7,
+  		     "validator":function(c, r, s, i){return -64 <= i && i < 64;}},
+  		 "n":{
+  		     "string":/ *()()() *$/,
+  		     "to_string":function(mnemonic,c,r,s,i){return mnemonic;},
+  		     "binary":"CCCCCCCCCCCCCCCC",
+  		     "validator":function(c, r, s, i){return true;}}
+  	     },
+  	     instructions: {
+  		 "ldi":{"format":"4r8i", "c": 14, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     console.log('T',emu);
+  		     emu.RF[r] = emu.truncate(i,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "mov":{"format":"5r5s", "c": 11, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.RF[r] = emu.RF[s];
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "add":{"format":"5r5s", "c": 3, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] + emu.RF[s], true, true, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] + emu.RF[s],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "adc":{"format":"5r5s", "c": 7, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     var oldC = emu.C;
+  		     emu.update_sreg(emu.RF[r] + emu.RF[s] + oldC, true, true, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] + emu.RF[s] + oldC,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "sbc":{"format":"5r5s", "c": 2, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     var oldC = emu.C;
+  		     emu.update_sreg(emu.RF[r] - emu.RF[s] - oldC, true, true, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] - emu.RF[s] - oldC,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "sub":{"format":"5r5s", "c": 6, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] - emu.RF[s], true, true, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] - emu.RF[s],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "cp":{"format":"5r5s", "c": 5, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] - emu.RF[s], true, true, true);
+  		     emu.C = emu.truncate(emu.RF[r],8,true) < emu.truncate(emu.RF[s],8,true) ? 1 : 0; // HACK TO MATCH PRESENTATION
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC", "Z", "C", "N"];}},
+  		 "and":{"format":"5r5s", "c": 8, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] & emu.RF[s], true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] & emu.RF[s],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "or":{"format":"5r5s", "c": 10, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] | emu.RF[s], true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] | emu.RF[s],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "eor":{"format":"5r5s", "c": 9, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] ^ emu.RF[s], true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] ^ emu.RF[s],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r, "PC", "Z", "C", "N"];}},
+  		 "cpi":{"format":"4r8i", "c": 3, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] - i, true, true, true);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC","Z","C","N"];}},
+  		 "subi":{"format":"4r8i", "c": 5, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] - i, true, true, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] - i,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC","Z","C","N"];}},
+  		 "andi":{"format":"4r8i", "c": 7, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] & i, true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] & i,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC","Z","C","N"];}},
+  		 "ori":{"format":"4r8i", "c": 6, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] | i, true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] | i,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC","Z","C","N"];}},
+  		 "dec":{"format":"5r", "c": 1194, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] - 1, true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] - 1,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "inc":{"format":"5r", "c": 1187, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(emu.RF[r] + 1, true, false, true);
+  		     emu.RF[r] = emu.truncate(emu.RF[r] + 1,8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "neg":{"format":"5r", "c": 1185, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(-emu.RF[r], true, true, true);
+  		     emu.RF[r] = emu.truncate(-emu.RF[r],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "com":{"format":"5r", "c": 1184, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.update_sreg(~(emu.RF[r]), true, false, true);
+  		     emu.RF[r] = emu.truncate(~(emu.RF[r]),8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "ld":{"format":"5rX", "c": 32, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     var reg = 0;
+  		     if(i == "X" || i == "-X" || i == "X+") reg = 26;
+  		     if(i == "Y" || i == "-Y" || i == "Y+") reg = 28;
+  		     if(i == "Z" || i == "-Z" || i == "Z+") reg = 30;
+  		     if(i[0] == "-"){
+  			 emu.updated.push(reg);
+  			 emu.dec_ptr(reg);
+  		     }
+  		     var ptr = emu.truncate(emu.RF[reg],8,false)+256*emu.truncate(emu.RF[reg+1],8,false);
+  		     emu.updated = [r,"PC"];
+  		     emu.RF[r] = emu.truncate(emu.RAM[ptr],8,false);
+  		     if(i[1] == "+"){
+  			 emu.updated.push(reg);
+  			 emu.inc_ptr(reg);
+  		     }
+  		     emu.ram_updated = [];
+  		     emu.PC++;}},
+  		 "st":{"format":"X5r", "c": 33, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     i = r;
+  		     r = s;
+  		     var reg = 0;
+  		     if(i == "X" || i == "-X" || i == "X+") reg = 26;
+  		     if(i == "Y" || i == "-Y" || i == "Y+") reg = 28;
+  		     if(i == "Z" || i == "-Z" || i == "Z+") reg = 30;
+  		     if(i[0] == "-"){
+  			 emu.updated.push(reg);
+  			 emu.dec_ptr(reg);
+  		     }
+  		     var ptr = emu.truncate(emu.RF[reg],8,false)+256*emu.truncate(emu.RF[reg+1],8,false);
+  		     emu.updated = ["PC"];
+  		     emu.ram_updated = [ptr];
+  		     emu.RAM[ptr] = emu.RF[r];
+  		     emu.PC++;
+  		     if(i[1] == "+"){
+  			 emu.updated.push(reg);
+  			 emu.inc_ptr(reg);
+  		     }
+  		 }},
+  		 "rjmp":{"format":"12i", "c": 12, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC = emu.truncate(emu.PC + i + 1,16,false);
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "breq":{"format":"7i", "c": 481, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC = emu.truncate(emu.PC + 1 + (emu.Z == 1 ? (i <= 64 ? i : i-128) : 0),16,false);
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "brne":{"format":"7i", "c": 489, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC = emu.truncate(emu.PC + 1 + (emu.Z == 0 ? (i <= 64 ? i : i-128) : 0),16,false);
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "brsh":{"format":"7i", "c": 488, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC = emu.truncate(emu.PC + 1 + (emu.C == 0 ? (i <= 64 ? i : i-128) : 0),16,false);
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "brlo":{"format":"7i", "c": 480, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC = emu.truncate(emu.PC + 1 + (emu.C == 1 ? (i <= 64 ? i : i-128) : 0),16,false);
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "in":{"format":"6s5r", "c": 22, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.RF[r] = emu.truncate(emu.read_IO(s),8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "out":{"format":"5r6s", "c": 23, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     i = s;
+  		     s = r;
+  		     r = i;
+  		     emu.write_IO(s,emu.RF[r]);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "asr":{"format":"5r", "c": 1189, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     var C = emu.RF[r]%2 == 0 ? 0 : 1;
+  		     emu.RF[r] = emu.truncate(emu.truncate(emu.RF[r],8,true) >> 1,8,false);
+  		     emu.update_sreg(emu.RF[r], true, false, true);
+  		     emu.C = C;
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = [r,"PC"];}},
+  		 "push":{"format":"5r", "c": 1183, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     var SP = emu.SPH * 256 + emu.SPL;
+  		     emu.RAM[SP] = emu.RF[r];
+  		     emu.decSP();
+  		     emu.PC++;
+  		     emu.updated = ["PC","SPH","SPL"];
+  		     emu.ram_updated = [SP];}},
+  		 "pop":{"format":"5r", "c": 1167, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.incSP();
+  		     var SP = emu.SPH * 256 + emu.SPL;
+  		     emu.RF[r] = emu.truncate(emu.RAM[SP],8,false);
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC","SPH","SPL"];}},
+  		 "rcall":{"format":"12i", "c": 13, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC++;
+  		     var PCL = emu.PC % 256;
+  		     var PCH = Math.floor(emu.PC / 256);
+  		     var SP = emu.SPH * 256 + emu.SPL;
+  		     emu.RAM[SP] = PCH;
+  		     emu.decSP();
+  		     var SP = emu.SPH * 256 + emu.SPL;
+  		     emu.RAM[SP] = PCL;
+  		     emu.decSP();
+  		     emu.PC = emu.truncate(emu.PC + i,16,false);
+  		     emu.updated = ["PC","SPH","SPL"];
+  		     emu.ram_updated = [SP];}},
+  		 "ret":{"format":"n", "c": 38152, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.incSP();
+  		     var SP = emu.SPH * 256 + emu.SPL;
+  		     var PCL = emu.RAM[SP];
+  		     emu.incSP();
+  		     var SP = emu.SPH * 256 + emu.SPL;
+  		     var PCH = emu.RAM[SP];
+  		     emu.PC = PCL + 256*PCH;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC","SPH","SPL"];}},
+  		 "nop":{"format":"n", "c": 0, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.PC++;
+  		     emu.ram_updated = [];
+  		     emu.updated = ["PC"];}},
+  		 "halt":{"format":"n", "c": 1, "exec":function(c, r, s, i){
+  		     var emu = this.parent;
+  		     emu.end();}}
+  	     }
+  	 }
+       },
+       methods: {
+  	 smul: function(str, num) {
+  	     var acc = [];
+  	     for (var i = 0; (1 << i) <= num; i++) {
+  		 if ((1 << i) & num)
+  		     acc.push(str);
+  		 str += str;
+  	     }
+  	     return acc.join("");
+  	 },
+  	 do_nothing: function(a){},
+  	 cm_setup: function(){
+  	     var sim_textarea = document.getElementById("simavr"+this.simid+"_program_area");
+  	     this.debug_log(this.simid,sim_textarea);
+  	     if(sim_textarea == null) return;
+  	     this.editor = CodeMirror.fromTextArea(sim_textarea, {
+  		 lineNumbers: true,
+  		 gutters: ["breakpoints", "CodeMirror-linenumbers"]
+  	     });
+  	     if(this.size){
+  		 if(this.size == "auto"){
+  		     this.editor.setSize(null, (this.program.split("\n").length + 2)*(this.editor.defaultTextHeight()) + 10);
+  		 }
+  		 else{
+  		     this.editor.setSize(null, this.size);
+  		 }
+  	     }
+  	     else{
+  		 this.editor.setSize(null, "70%");
+  	     }
+  	     this.editor.setOption("extraKeys", {
+  		 'Ctrl-Enter': function(cm) {
+                       this.program_pm();
+                       this.$apply();
+  		 }
+  	     });
+  	     this.editor.setValue(this.program);
+  	 },
+  	 reset_program: function(){
+  	     if(this.running) return;
+  	     if(this.text){
+  		 this.debug_log("Using text");
+  		 this.program = this.text;
+  	     }
+  	     else if(this.original_program){
+  		 this.program = this.original_program;
+  	     }
+  	     this.change_program(this.program);
+  	 },
+  	 reset: function(pm_reset){
+  	     this.io_state.switch_state = ["OFF","OFF","OFF","OFF","OFF","OFF","OFF","OFF"];
+  	     this.output_type.selection = "program";
+  	     this.display_pm_start = 0;
+  	     this.display_ram_start = 0;
+  	     this.steps = {'count':1};
+  	     this.PC = 0;
+  	     this.Z = 0;
+  	     this.C = 0;
+  	     this.N = 0;
+  	     this.PIND = 0;
+  	     this.PORTD = 0;
+  	     this.DDRD = 0;
+  	     this.SPH = 0;
+  	     this.SPL = 0;
+  	     this.updated = [];
+  	     this.ram_updated = [];
+  	     this.outputs = [];
+  	     this.mux = new this.output_mux();
+  	     for(var i = 0; i < this.RF_size; i++) this.RF[i] = 0;
+  	     for(var i = 0; i < this.RAM_size; i++) this.RAM[i] = 0;
+  	     for(var i = 0; i < this.IORF_size; i++) this.IORF[i] = 0;
+  	     var nop = this.parse("nop",0);
+  	     if(pm_reset){ for(var i = 0; i < this.PM_size; i++){ nop.addr = i; this.PM[i] = nop; }}
+  	     if(!pm_reset){ for(var i = 0; i < this.current_ram_data.length; i++) this.RAM[i+1024] = this.current_ram_data[i]; }
+  	     if(this.editor) this.editor.removeLineClass(this.error_line, "background", "active_line");
+  	 },
+  	 change_program: function(prog){
+  	     this.program = prog;
+  	     if(this.editor) this.editor.setValue(prog);
+  	 },
+  	 display_ram: function(i){
+  	     if(this.RAM_display_mode == "d"){
+  		 return this.RAM[i];
+  	     }
+  	     else if(this.RAM_display_mode == "2"){
+  		 return this.truncate(this.RAM[i],8,true);
+  	     }
+  	     else if(this.RAM_display_mode == "c"){
+  		 return String.fromCharCode(this.RAM[i])
+  	     }
+  	 },
+  	 display_rf: function(i){
+  	     if(this.RF_display_mode == "d"){
+  		 return this.truncate(this.RF[i],8,false);
+  	     }
+  	     if(this.RF_display_mode == "2"){
+  		 return this.truncate(this.RF[i],8,true);
+  	     }
+  	     else if(this.RF_display_mode == "b"){
+  		 var s = this.RF[i].toString(2);
+  		 return smul("0",8-s.length)+s;
+  	     }
+  	     else if(this.RF_display_mode == "h"){
+  		 var s = this.RF[i].toString(16);
+  		 return "0x"+smul("0",2-s.length)+s;
+  	     }
+  	 },
+  	 program_pm: function(){
+  	     if(this.running) return;
+  	     this.reset(true);
+  	     this.running = true;
+  	     this.program = this.editor.getValue();
+  	     var pm_data = this.preparse(this.program);
+  	     if(!pm_data){
+  		 this.running = false;
+  		 return;
+  	     }
+  	     var pm_addr = 0;
+  	     for(var i = 0; i < pm_data.length; i++){
+  		 var datum = pm_data[i];
+  		 if(datum.inst){
+  		     var inst = this.parse(datum.inst,pm_addr);
+  		     if(!inst) continue;
+  		     if(inst.error){
+  			 this.error_on_line(datum.line, inst.error);
+  			 return;
+  		     }
+  		     this.PM[pm_addr] = inst;
+  		     pm_addr++;
+  		 }
+  		 else if(datum.word){
+  		     var inst = this.decode(datum.word,pm_addr);
+  		     if(inst.error){
+  			 this.error_on_line(datum.line, inst.error);
+  			 return;
+  		     }
+  		     this.PM[pm_addr] = inst;
+  		     pm_addr++;
+  		 }
+  	     }
+  	     this.status = "Ready";
+  	 },
+  	 error_on_line: function(linenum, err_msg){
+  	     this.running = false;
+  	     this.status = "Error on line " + linenum + ": " + err_msg;
+  	     this.error_line = linenum;
+  	     if(this.editor) this.editor.addLineClass(linenum, "background", "active_line");
+  	 },
+  	 preparse: function(){
+  	     var lines = this.program.split("\n");
+  	     var to_program = [];
+  	     var pm_offset = 0;
+  	     var ram_offset = 1024;
+  	     for(var i = 0; i < lines.length; i++){
+  		 var pieces = lines[i].match(/^((?:[^";]|';'|"(?:[^\\"]+|\\(?:\\\\)*[nt\\"])*")*)(;.*)?$/);
+  		 this.debug_log("P",pieces);
+  		 if(!pieces){
+  		     this.error_on_line(i, "Invalid line: "+i);
+  		     return;
+  		 }
+  		 if(!pieces[1]) continue;
+  		 lines[i] = pieces[1].trim();
+  		 var is_inst = true;
+  		 for(var d in this.directives){
+  		     var matches = lines[i].match(this.directives[d].regex);
+  		     this.debug_log("D",lines[i],d,matches);
+  		     if(matches){
+  			 // process needs to return:
+  			 // - What it inserts to PM (pm_data)
+  			 // - What it inserts into RAM (ram_data)
+  			 // - What symbol it wants to make (symbol)
+  			 // - What kind of symbol it is (symbol_type == "pm" | "ram")
+  			 // - Whether there was an error (error)
+  			 
+  			 var result = this.directives[d].process(matches);
+
+  			 // Handle error
+  			 if(result.error){
+  			     this.error_on_line(i, result.error);
+  			     return;
+  			 }
+
+  			 // Update symbol
+  			 if(result.symbol && result.symbol_type){
+  			     if(result.symbol_type == "pm"){
+  				 this.symbols[result.symbol] = pm_offset;
+  			     }
+  			     else if(result.symbol_type == "ram"){
+  				 this.symbols[result.symbol] = ram_offset;
+  			     }
+  			 }
+  			 
+  			 // Insert data and update offsets
+  			 if(result.pm_data){
+  			     for(var j = 0; j < result.pm_data.length; j++){
+  				 to_program.push({'word':result.pm_data[j],'line':i});
+  			     }
+  			     pm_offset += result.pm_data.length;
+  			 }
+  			 if(result.ram_data){
+  			     for(var j = 0; j < result.ram_data.length; j++){
+  				 this.RAM[ram_offset + j] = result.ram_data[j];
+  			     }
+  			     this.current_ram_data = this.current_ram_data.concat(result.ram_data);
+  			     ram_offset += result.ram_data.length;
+  			 }
+  			 is_inst = false;
+  			 break;
+  		     }
+  		 }
+  		 if(is_inst && !(/^[ \t]*$/.test(lines[i]))){
+  		     to_program.push({'inst':lines[i],'line':i});
+  		     pm_offset++;
+  		 }
+  	     }
+  	     return to_program;
+  	 },
+  	 parse: function(inst,addr){
+  	     this.debug_log(inst);
+  	     var matches = inst.match(/^[ \t]*([a-zA-Z]+)[ \t]*((?:[^;]|';')*)[ \t]*$/);
+  	     if(!matches){
+  		 return {"error":"Line does not match any directive or instruction"};
+  	     }
+  	     var mnemonic = matches[1];
+  	     var operand = matches[2];
+  	     this.debug_log(mnemonic, "|||", operand);
+  	     if(mnemonic in this.instructions){
+  		 var format = this.instructions[mnemonic].format;
+  		 var execf = this.instructions[mnemonic].exec;
+  		 var ops = operand.match(this.formats[format].string);
+  		 if(!ops){
+  		     return {"error":"Operands to instruction " + inst + " did not parse"};
+  		 }
+  		 for(var i = 0; i < 3; i++){
+  		     if(/^[0-9]+$/.test(ops[i])) ops[i] = parseInt(ops[i]);
+  		     //else if(format.sym_valid[i]) ops[i] = symbols[ops[i]];
+  		 }
+  		 var opcode = this.instructions[mnemonic].c;
+  		 this.debug_log(format, execf, ops, opcode);
+  		 var data = {"r":ops[1],"s":ops[2],"i":ops[3],"c":opcode};
+  		 var new_inst = new this.instruction(mnemonic + " " + operand, mnemonic, data, execf,addr, this);
+  		 if(new_inst.error){
+  		     return {"error":inst.error};
+  		 }
+  		 if(new_inst.check_valid()){
+  		     return new_inst;
+  		 }
+  		 else{
+  		     return {"error":"Illegal operands to instruction " + inst};
+  		 }
+  	     }
+  	     else{
+  		 return {"error":"Invalid instruction " + inst};
+  	     }
+  	     return null;
+  	 },
+  	 is_updated: function(x){
+  	     for(var i = 0; i < this.updated.length; i++){
+  		 if(this.updated[i] == x) return true;
+  	     }
+  	     return false;
+  	 },
+  	 is_ram_updated: function(x){
+  	     for(var i = 0; i < this.updated.length; i++){
+  		 if(this.ram_updated[i] == x) return true;
+  	     }
+  	     return false;
+  	 },
+  	 handle_string_escapes: function(s){
+  	     s = s.replace(/(([^\\]|)(\\\\)*)\\t/g,"$1\t");
+  	     s = s.replace(/(([^\\]|)(\\\\)*)\\n/g,"$1\n");
+  	     s = s.replace(/(([^\\]|)(\\\\)*)\\"/g,"$1\"");
+  	     s = s.replace(/\\\\/g,"\\");
+  	     return s;
+  	 },
+
+  	 // X,*:  111
+  	 // Y,"": 010
+  	 // Y,+-" 110
+  	 // Z,"": 000
+  	 // Z,+-: 100
+  	 // "":  00
+  	 // "+": 01
+  	 // "-": 10
+  	 encode_x: function(i){
+  	     var x = 0;
+  	     var ptr = i[0] == "-" ? i[1] : i[0];
+  	     var mod = i[0] == "-" ? "-" : (i[1] == "+" ? "+" : "");
+  	     if(ptr == "X") x = 7*4;
+  	     if(ptr == "Y") x = 6*4;
+  	     if(ptr == "Z") x = 4*4;
+  	     if(ptr != "X" && mod == "") x -= 16;
+  	     if(mod == "+") x += 1;
+  	     if(mod == "-") x += 2;
+  	     return x;
+  	 },
+  	 decode_x: function(x){
+  	     var ptr = "";
+  	     var mod = "";
+  	     this.debug_log("XX",x,x&3,(x>>2)&3);
+  	     if(((x >> 2)&3) == 3) ptr = "X";
+  	     if(((x >> 2)&3) == 2) ptr = "Y";
+  	     if(((x >> 2)&3) == 0) ptr = "Z";
+  	     if((x&3) == 1) mod = "+";
+  	     if((x&3) == 2) mod = "-";
+  	     this.debug_log("X=",mod,ptr);
+  	     return mod == "-" ? mod +""+ ptr : ptr +""+ mod;
+  	 },
+  	 encode: function(format, c, r, s, i){
+  	     var fmt = this.formats[format].binary;
+  	     var inst = 0;
+  	     var x = 0;
+  	     if(format == "5r6s"){
+  		 i = s;
+  		 s = r;
+  		 r = i;
+  	     }
+  	     else if(format == "5rX" || format == "X5r"){
+  		 if(format == "X5r"){
+  		     i = r;
+  		     r = s;
+  		 }
+  		 this.debug_log("Xe",i);
+  		 x = this.encode_x(i);
+  		 this.debug_log("Xd",x);
+  	     }
+  	     for(var j = 15; j >= 0; j--) {
+  		 if(fmt[j] == "C"){
+  		     inst += (c%2)<<(15-j);
+  		     c >>= 1;
+  		 }
+  		 if(fmt[j] == "R"){
+  		     inst += (r%2)<<(15-j);
+  		     r >>= 1;
+  		 }
+  		 if(fmt[j] == "S"){
+  		     inst += (s%2)<<(15-j);
+  		     s >>= 1;
+  		 }
+  		 if(fmt[j] == "I"){
+  		     inst += (i%2)<<(15-j);
+  		     i >>= 1;
+  		 }
+  		 if(fmt[j] == "X"){
+  		     inst += (x%2)<<(15-j);
+  		     x >>= 1;
+  		 }
+  	     }
+  	     return inst;
+  	 },
+  	 decode: function(x,addr){
+  	     for(var f in this.formats){
+  		 fmt = this.formats[f];
+  		 var data = {"c":0,"r":0,"s":0,"i":0,"x":0};
+  		 for(var j = 15; j >= 0; j--){
+  		     //this.debug_log("J",j,fmt.binary[15-j],(x>>j)%2);
+  		     if(fmt.binary[15-j] == "C") data.c = (data.c * 2) + ((x >> j) % 2);
+  		     if(fmt.binary[15-j] == "R") data.r = (data.r * 2) + ((x >> j) % 2);
+  		     if(fmt.binary[15-j] == "S") data.s = (data.s * 2) + ((x >> j) % 2);
+  		     if(fmt.binary[15-j] == "I") data.i = (data.i * 2) + ((x >> j) % 2);
+  		     if(fmt.binary[15-j] == "X") data.x = (data.x * 2) + ((x >> j) % 2);
+  		 }
+  		 if(f == "4r8i") data.r += 16;
+  		 if(f == "12i") data.i = this.truncate(data.i,12,true);
+  		 if(f == "7i") data.i = this.truncate(data.i,7,true);
+  		 if(f == "5rX") data.i = this.decode_x(data.x);
+  		 if(f == "X5r"){
+  		     data.s = data.r;
+  		     data.r = this.decode_x(data.x);
+  		 }
+  		 if(f == "5r6s"){
+  		     var temp = data.r;
+  		     data.r = data.s;
+  		     data.s = temp;
+  		 }
+  		 for(var mnemonic in this.instructions){
+  		     inst = this.instructions[mnemonic];
+  		     if(inst.format == f && inst.c == data.c){
+  			 return new this.instruction(x,mnemonic,data,inst.exec,addr,this);
+  		     }
+  		 }
+  	     }
+  	     return {"error":"Could not decode instruction: " + x};
+  	 },
+  	 label: function(name, addr){
+  	     this.label = true;
+  	     this.name = name;
+  	     this.addr = addr;
+  	 },
+  	 output_mux: function(){
+  	     this.SEL_ADDR = 0;
+  	     this.SEL_LEN = 255;
+  	     this.LCD_OUT = 1;
+  	     this.LB_OUT = 2;
+  	     this.target = 0;
+  	     this.len = 0;
+  	     this.state = 0;
+  	     this.input = function(val){
+  		 if(this.state == this.SEL_ADDR) {
+  		     this.target = val;
+  		     this.state = this.SEL_LEN;
+  		 }
+  		 else if(this.state == this.SEL_LEN){
+  		     this.len = val;
+  		     this.state = this.target;
+  		     this.target = 0;
+  		 }
+  		 else if(this.len > 0){
+  		     if(this.state-1 < this.output_devs.length)
+  			 this.output_devs.input(val);
+  		     this.len--;
+  		 }
+  		 else{
+  		     this.state = this.SEL_ADDR;
+  		 }
+  	     };
+  	 },
+  	 lcd: function(){
+  	     this.input = function(val){
+  		 
+  	     };
+  	 },
+  	 set_PM_display_mode: function(m){
+  	     this.PM_display_mode = m;
+  	 },
+  	 set_RAM_display_mode: function(m){
+  	     this.RAM_display_mode = m;
+  	 },
+  	 set_RF_display_mode: function(m){
+  	     this.RF_display_mode = m;
+  	 },
+  	 instruction: function(text, mnemonic, data, exec, addr, parent){
+  	     console.log(this);
+  	     this.parent = parent;
+  	     this.label = false;
+  	     this.addr = addr;
+  	     this.text = text;
+  	     this.c = data.c;
+  	     this.r = data.r;
+  	     this.s = data.s;
+  	     this.i = data.i;
+  	     this.exec = exec;
+  	     this.mnemonic = mnemonic;
+  	     console.log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
+  	     this.format = this.parent.instructions[this.mnemonic].format;
+  	     if(this.i.match){
+  		 var matches = this.i.match(/(lo|hi)8\(([a-zA-Z_][a-zA-Z0-9_]*)\)/);
+  		 if(matches){
+  		     if(matches[2] in this.parent.symbols){
+  			 if(matches[1] == "lo") this.i = this.parent.truncate(this.parent.symbols[matches[2]],8,false);
+  			 if(matches[1] == "hi") this.i = this.parent.truncate(this.parent.symbols[matches[2]]>>8,8,false);
+  		     }
+  		     else{
+  			 this.error = "Symbol not found " + matches[2];
+  		     }
+  		 }
+  		 else if(this.i in this.parent.symbols){
+  		     this.i = this.parent.symbols[this.i];
+  		     var fmt = this.parent.formats[this.format];
+  		     //this.parent.debug_log(this.parent.symbols,fmt.i_bits);
+  		     if(fmt.i_bits){
+  			 this.i = this.parent.truncate(this.i - this.addr - 1,fmt.i_bits,true);
+  		     }
+  		 }
+  		 else if(/'[^'\\]'/.test(this.i)){
+  		     this.i = this.i.charCodeAt(1);
+  		 }
+  		 else if(this.i == "'\\''"){
+  		     this.i = this.i.charCodeAt(2);
+  		 }
+  		 else if(this.i == "'\\\\'"){
+  		     this.i = this.i.charCodeAt(2);
+  		 }
+  		 else if(this.i == "'\\n'"){
+  		     this.i = 10;
+  		 }
+  		 else if(this.i == "'\\t'"){
+  		     this.i = 9;
+  		 }
+  		 else if(/^[XYZ]$|^[XYZ]\+$|^-[XYZ]$/.test(this.i)){
+  		     this.i = this.i;
+  		 }
+  		 else this.i = parseInt(this.i);
+  	     }
+  	     this.encoding = this.parent.encode(this.format, this.c, this.r, this.s, this.i < 0 ? this.parent.truncate(this.i,this.parent.formats[this.format].i_bits,false) : this.i);
+  	     //this.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);
+  	     var self = this;
+  	     this.display = function(){
+  		 if(this.parent.PM_display_mode == "t"){
+  		     return this.parent.formats[self.format].to_string(self.mnemonic,self.c,self.r,self.s,self.i);
+  		 }
+  		 else if(this.parent.PM_display_mode == "d"){
+  		     return self.encoding;
+  		 }
+  		 else if(this.parent.PM_display_mode == "h"){
+  		     var s = self.encoding.toString(16);
+  		     return "0x"+this.parent.smul("0",4 - s.length)+s;
+  		 }
+  		 else if(this.parent.PM_display_mode == "b"){
+  		     var s = self.encoding.toString(2);
+  		     return this.parent.smul("0",16 - s.length) + s;
+  		 }
+  	     };
+  	     this.check_valid = function(){
+  		 return this.parent.formats[self.format].validator(self.c, self.r, self.s, self.i);
+  	     };
+  	     this.run = function(){
+  		 self.exec(self.c, self.r, self.s, self.i);
+  	     };
+  	 },
+  	 step: function(){
+  	     if(!this.running) return;
+  	     this.debug_log(this.steps.count);
+  	     for(var k = 0; k < this.steps.count; k++){
+  		 var i = this.PM[this.PC];
+  		 this.debug_log("i",i);
+  		 i.run();
+  		 if(this.PC < this.display_pm_start || this.PC >= this.display_pm_start + this.display_pm_length){
+  		     this.display_pm_start = Math.max(0, this.PC - this.display_ram_length/2);
+  		 }
+  		 if(this.ram_updated.length > 0){
+  		     this.display_ram_start = Math.max(0, Math.min.apply(Math, this.ram_updated) - this.display_ram_length/2);
+  		 }
+  	     }
+  	 },
+  	 raise_error: function(s){
+  	     this.status = "Error: " + s;
+  	 },
+  	 truncate: function(num, bits, twos_complement){
+  	     var mod = 1<<bits;
+  	     num = ((num % mod)+mod)%mod;
+  	     return twos_complement ? (num >= 1<<(bits - 1) ? num - (1<<bits) : num) : num;
+  	 },
+  	 update_sreg: function(result, z, c, n){
+  	     this.debug_log("SREG for",result);
+  	     if(z) this.Z = this.truncate(result,8,false) == 0 ? 1 : 0;
+  	     if(c) this.C = result >= 256 || result < 0 ? 1 : 0;
+  	     if(n) this.N = this.truncate(result,8,true) <0 ? 1 : 0;
+  	 },
+  	 read_IO: function(s){
+  	     if(s == 16) return this.PIND & (~(this.DDRD));
+  	     else if(s == 17) return this.DDRD;
+  	     else if(s == 61) return this.SPL;
+  	     else if(s == 62) return this.SPH;
+  	     return 0;
+  	 },
+  	 write_IO: function(s,val){
+  	     if(s == 18){
+  		 this.PORTD = this.DDRD & val;
+  		 this.output();
+  	     }
+  	     else if(s == 17) this.DDRD = this.truncate(val,8,false);
+  	     else if(s == 61) this.SPL = this.truncate(val,8,false);
+  	     else if(s == 62) this.SPH = this.truncate(val,8,false);
+  	     if(this.output_type.selection == "simple"){
+  		 this.PIND = 0;
+  		 for(var i = 0; i < 8; i++)
+  		     this.PIND |= (this.io_state.switch_state[i] == "ON" ? 1 << i : 0);
+  		 this.PIND &= ~this.DDRD;
+  	     }
+  	 },
+  	 inc_ptr: function(reg){
+  	     if(this.RF[reg] == -1 || this.RF[reg] == 255){
+  		 this.RF[reg] = 0;
+  		 this.RF[reg+1] = this.truncate(this.RF[reg+1]+1,8,false);
+  	     }
+  	     else this.RF[reg]++;
+  	     if(this.RF[reg] == 128){
+  		 this.RF[reg] = -128;
+  	     }
+  	 },
+  	 dec_ptr: function(reg){
+  	     this.RF[reg]--;
+  	     if(this.RF[reg] == -1){
+  		 this.RF[reg+1] = this.truncate(this.RF[reg+1]-1,8,false);
+  	     }
+  	     if(this.RF[reg] < -128){
+  		 this.RF[reg] = 127;
+  	     }
+  	 },
+  	 incSP: function(){
+  	     this.SPL++;
+  	     if(this.SPL == 256){
+  		 this.SPL = 0;
+  		 this.SPH = this.truncate(this.SPH+1,8,false);
+  	     }
+  	 },
+  	 decSP: function(){
+  	     this.SPL--;
+  	     if(this.SPL == -1){
+  		 this.SPL = 255;
+  		 this.SPH = this.truncate(this.SPH-1,8,false);
+  	     }
+  	 },
+  	 io_switch: function(i){
+  	     if(this.io_state.switch_state[i] == "ON"){
+  		 this.io_state.switch_state[i] = "OFF";
+  		 this.PIND &= ~(1<<i);
+  	     }
+  	     else if(this.io_state.switch_state[i] == "OFF"){
+  		 this.io_state.switch_state[i] = "ON";
+  		 this.PIND |= 1<<i;
+  	     }
+  	     this.PIND = this.PIND & ~this.DDRD;
+  	 },
+  	 output: function(){
+  	     var out_val = this.PORTD;
+  	     this.outputs.push(out_val);
+  	     //this.outputs.push(String.fromCharCode(out_val));
+  	 },
+  	 initialize: function(){
+  	     this.reset_program();
+  	     this.cm_setup();
+  	 },
+  	 end: function(){
+  	     if(!this.running) return;
+  	     this.running = false;
+  	     setTimeout(this.cm_setup, 0);
+  	 }
+
+       },
+       created: function(){
+  	 console.log("init");
+  	 this.$store.dispatch("RESET_PLUGIN_DATA","math");
+  	 //Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
+       }, 
+       mounted: function(){
+  	 console.log("Hello JSAVR");
+  	 console.log(this.instructions);
+  	 this.program = this.root.innerHTML.trim();
+  	 this.reset(true);
+  	 this.original_program = this.program;
+  	 this.initialize();
+
+  	 this.debug_log = this.debug_mode_feature == 'yes' ? console.log.bind(console) : this.do_nothing;
+  	 if(this.control){
+  	     this.control.set_program = function(new_prog){
+  		 this.change_program(new_prog);
+  	     };
+  	     this.control.get_program = function(){
+  		 if(this.editor) this.program = this.editor.getValue();
+  		 return this.program;
+  	     };
+  	     this.control.get_PM = function(addr){
+  		 return this.PM[addr].encoding;
+  	     };
+  	     this.control.get_RF = function(){
+  		 return this.RF;
+  	     };
+  	     this.control.get_RAM = function(addr){
+  		 return this.RAM[addr];
+  	     };
+  	     this.control.get_other = function(){
+  		 return {
+  		     "PC":this.PC,
+  		     "Z":this.Z,
+  		     "C":this.C,
+  		     "N":this.N,
+  		     "DDRD":this.DDRD,
+  		     "PIND":this.PIND,
+  		     "PORTD":this.PORTD,
+  		     "SPL":this.SPL,
+  		     "SPH":this.SPH
+  		 }
+  	     };
+  	 }
+  	 /* 
+  	  * 	 
+  	  * 	 var index = 0;
+  	  * 	 var doc_id = node+"-"+index;
+  	  * 	 var content = this.root.innerHTML.trim()
+  	  * 	 console.log("R",this.root,content);
+  	  * 	 //var res = Guppy.Doc.render(content, "text");
+  	  * 	 var res = {doc:content};
+  	  * 	 var doc_data = {};
+  	  * 	 //doc_data[index] = res.doc.get_vars().concat(res.doc.get_symbols());
+  	  * 	 doc_data[index] = ["x"];
+  	  * 	 //res.container.setAttribute("id","category-math-container-"+doc_id);
+  	  * 	 //var rendered_content = (new XMLSerializer()).serializeToString(res.container);
+  	  * 
+  	  * 	 
+  	  * 	 // Put this doc ID in the index for each var and symbol in the document
+  	  * 	 for(var i = 0; i < this.docs[node][index].length; i++) {
+  	  * 	     var v = this.docs[node][index][i];
+  	  * 	     if (!this.index[v]) this.index[v] = [];
+  	  * 	     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);
+  	  * 	 }
+  	  * 
+  	  * 	 // Calculate the snippet that will be associated with this expression when it appears in listings
+  	  * 	 var snippet = "";
+  	  * 	 if(this.root.previousSibling){
+  	  * 	     snippet += this.root.previousSibling.textContent.split(" ").slice(-4).join(" ");
+  	  * 	 }
+  	  * 	 snippet += " [formula] "
+  	  * 
+  	  * 	 if(this.root.nextSibling) {
+  	  * 	     snippet += this.root.nextSibling.textContent.split(" ").slice(0,4).join(" ");
+  	  * 	 }
+  	  * 	 snippet = "..." + snippet + "...";
+  	  * 	 console.log("parprev",this.root.parentNode.previousSibling);
+  	  * 	 console.log("parnext",this.root.parentNode.nextSibling);
+  	  * 	 this.snippets[doc_id] = snippet;
+  	  * 
+  	  * 	 // Finally, set up component attributes
+  	  * 	 this.syms = this.docs[node][index];
+  	  * 	 this.rendered = rendered_content;
+  	  * 	 this.display_syms = false;
+  	  * 	 this.id = doc_id;
+  	  * 	 this.query = "";
+  	  * 	 this.node = node;*/
+       }
+   };
+
+  /* script */
+  const __vue_script__$c = script$c;
+
+  /* template */
+  var __vue_render__$d = function() {
+    var _vm = this;
+    var _h = _vm.$createElement;
+    var _c = _vm._self._c || _h;
+    return _c("div", { staticClass: "simavr" }, [
+      !_vm.running
+        ? _c("div", { staticClass: "simavr_programming" }, [
+            _c("div", { staticClass: "simavr_controls" }, [
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_button " +
+                    (_vm.running == true
+                      ? "simavr_disabled_button"
+                      : "simavr_enabled_button"),
+                  on: {
+                    click: function($event) {
+                      return _vm.program_pm()
+                    }
+                  }
+                },
+                [_vm._v("run")]
+              ),
+              _vm.reset_feature != "no"
+                ? _c(
+                    "div",
+                    {
+                      class:
+                        "simavr_button " +
+                        (_vm.running == true
+                          ? "simavr_disabled_button"
+                          : "simavr_enabled_button"),
+                      on: {
+                        click: function($event) {
+                          return _vm.reset_program()
+                        }
+                      }
+                    },
+                    [_vm._v("reset")]
+                  )
+                : _vm._e(),
+              _c("div", { staticClass: "simavr_status" }, [
+                _vm._v("Status: " + _vm._s(_vm.status))
+              ])
+            ]),
+            _c("br"),
+            _c("form", [
+              _c("textarea", {
+                attrs: { id: "simavr" + _vm.simid + "_program_area" }
+              })
+            ]),
+            _c("br")
+          ])
+        : _vm._e(),
+      _vm.running
+        ? _c("div", { staticClass: "simavr_output_container" }, [
+            _c("div", { staticClass: "simavr_controls" }, [
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_button " +
+                    (_vm.running == false
+                      ? "simavr_disabled_button"
+                      : "simavr_enabled_button"),
+                  on: {
+                    click: function($event) {
+                      return _vm.end()
+                    }
+                  }
+                },
+                [_vm._v("end")]
+              ),
+              _c(
+                "div",
+                {
+                  staticStyle: { "margin-top": "10px", display: "inline-block" }
+                },
+                [
+                  _c(
+                    "select",
+                    {
+                      directives: [
+                        {
+                          name: "model",
+                          rawName: "v-model",
+                          value: _vm.output_type.selection,
+                          expression: "output_type.selection"
+                        }
+                      ],
+                      attrs: { name: "output_select" },
+                      on: {
+                        change: function($event) {
+                          var $$selectedVal = Array.prototype.filter
+                            .call($event.target.options, function(o) {
+                              return o.selected
+                            })
+                            .map(function(o) {
+                              var val = "_value" in o ? o._value : o.value;
+                              return val
+                            });
+                          _vm.$set(
+                            _vm.output_type,
+                            "selection",
+                            $event.target.multiple
+                              ? $$selectedVal
+                              : $$selectedVal[0]
+                          );
+                        }
+                      }
+                    },
+                    [
+                      _c("option", { attrs: { value: "program" } }, [
+                        _vm._v("View Program")
+                      ]),
+                      _c("option", { attrs: { value: "simple" } }, [
+                        _vm._v("View Simple I/O")
+                      ])
+                    ]
+                  )
+                ]
+              )
+            ]),
+            _vm.output_type.selection == "program"
+              ? _c("div", { staticClass: "simavr_output" }, [
+                  _c("b", [_vm._v("Program: ")]),
+                  _c("pre", [_vm._v(_vm._s(_vm.program))])
+                ])
+              : _vm._e(),
+            _vm.output_type.selection == "simple"
+              ? _c(
+                  "div",
+                  { staticClass: "simavr_output" },
+                  [
+                    _vm._v("\n\t\tOutput LCD: "),
+                    _c("br"),
+                    _vm._v("(Connected to pins 0-7 of D)"),
+                    _c("br"),
+                    _c("div", { staticClass: "simavr_io_num" }, [
+                      _vm._v(
+                        "\n\t\t    " +
+                          _vm._s(_vm.truncate(_vm.PORTD, 8, false)) +
+                          "\n\t\t"
+                      )
+                    ]),
+                    _c("br"),
+                    _c("br"),
+                    _vm._v("\n\n\t\tToggle switches--click to toggle:"),
+                    _c("br"),
+                    _vm._v("(Connected to pins 0-7 of D): "),
+                    _c("br"),
+                    _vm._l([0, 1, 2, 3, 4, 5, 6, 7], function(i) {
+                      return _c(
+                        "div",
+                        { staticStyle: { display: "inline-block" } },
+                        [
+                          _vm._v("\n\t\t    " + _vm._s(i) + ":\n\t\t    "),
+                          _c(
+                            "div",
+                            {
+                              class:
+                                "simavr_io_switch " +
+                                (_vm.io_state.switch_state[i] == "ON"
+                                  ? "simavr_io_switch_on"
+                                  : "simavr_io_switch_off"),
+                              on: {
+                                click: function($event) {
+                                  return _vm.io_switch(i)
+                                }
+                              }
+                            },
+                            [
+                              _vm._v(
+                                "\n\t\t\t" +
+                                  _vm._s(_vm.io_state.switch_state[i]) +
+                                  "\n\t\t    "
+                              )
+                            ]
+                          ),
+                          _c("br"),
+                          _c("br")
+                        ]
+                      )
+                    })
+                  ],
+                  2
+                )
+              : _vm._e(),
+            _vm.output_type.selection == "complex"
+              ? _c("div", { staticClass: "simavr_output" }, [
+                  _vm._v("\n\t\tPaceholder for full output panel\n\t    ")
+                ])
+              : _vm._e()
+          ])
+        : _vm._e(),
+      _vm.running
+        ? _c("div", { staticClass: "simavr_simulator" }, [
+            _c("div", { staticClass: "simavr_controls" }, [
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_button " +
+                    (_vm.running == false
+                      ? "simavr_disabled_button"
+                      : "simavr_enabled_button"),
+                  on: {
+                    click: function($event) {
+                      return _vm.reset(false)
+                    }
+                  }
+                },
+                [_vm._v("reset")]
+              ),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_button " +
+                    (_vm.running == false
+                      ? "simavr_disabled_button"
+                      : "simavr_enabled_button"),
+                  on: {
+                    click: function($event) {
+                      return _vm.step()
+                    }
+                  }
+                },
+                [_vm._v("step")]
+              ),
+              _vm.running == true
+                ? _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.steps.count,
+                        expression: "steps.count"
+                      }
+                    ],
+                    staticClass: "simavr_mem_start",
+                    attrs: { type: "number" },
+                    domProps: { value: _vm.steps.count },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.$set(_vm.steps, "count", $event.target.value);
+                      }
+                    }
+                  })
+                : _vm._e()
+            ]),
+            _c("br"),
+            _c(
+              "div",
+              { attrs: { id: "simavr_pm" } },
+              [
+                _c("div", { staticClass: "simavr_title" }, [
+                  _vm._v("PM at "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.display_pm_start,
+                        expression: "display_pm_start"
+                      }
+                    ],
+                    staticClass: "simavr_mem_start",
+                    attrs: { type: "number" },
+                    domProps: { value: _vm.display_pm_start },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.display_pm_start = $event.target.value;
+                      }
+                    }
+                  })
+                ]),
+                _c("br"),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_PM_display_mode("t")
+                      }
+                    }
+                  },
+                  [_vm._v("[text]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_PM_display_mode("b")
+                      }
+                    }
+                  },
+                  [_vm._v("[bin]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_PM_display_mode("d")
+                      }
+                    }
+                  },
+                  [_vm._v("[dec]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_PM_display_mode("h")
+                      }
+                    }
+                  },
+                  [_vm._v("[hex]")]
+                ),
+                _vm._l(
+                  _vm.PM.slice(
+                    _vm.display_pm_start,
+                    _vm.display_pm_start + _vm.display_pm_length
+                  ),
+                  function(i, idx) {
+                    return _c("div", [
+                      _c(
+                        "div",
+                        {
+                          class:
+                            "simavr_pm " +
+                            (_vm.display_pm_start + idx == _vm.PC
+                              ? "simavr_active"
+                              : "simavr_normal")
+                        },
+                        [
+                          _c("span", { staticClass: "simavr_label_long" }, [
+                            _vm._v(_vm._s(_vm.display_pm_start + idx) + ": ")
+                          ]),
+                          _vm._v(
+                            _vm._s(_vm.PM[_vm.display_pm_start + idx].display()) +
+                              "\n\t\t    "
+                          )
+                        ]
+                      ),
+                      _c("br")
+                    ])
+                  }
+                ),
+                _c("br")
+              ],
+              2
+            ),
+            _c(
+              "div",
+              { attrs: { id: "simavr_rf" } },
+              [
+                _c("div", { staticClass: "simavr_title" }, [
+                  _vm._v("Register file")
+                ]),
+                _c("br"),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RF_display_mode("b")
+                      }
+                    }
+                  },
+                  [_vm._v("[bin]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RF_display_mode("d")
+                      }
+                    }
+                  },
+                  [_vm._v("[dec]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RF_display_mode("2")
+                      }
+                    }
+                  },
+                  [_vm._v("[com]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RF_display_mode("h")
+                      }
+                    }
+                  },
+                  [_vm._v("[hex]")]
+                ),
+                _c("br"),
+                _vm._l(_vm.RF, function(r, idx) {
+                  return _c("span", [
+                    _c(
+                      "div",
+                      {
+                        class:
+                          "simavr_reg " +
+                          (_vm.is_updated(idx)
+                            ? "simavr_updated"
+                            : "simavr_normal")
+                      },
+                      [
+                        _c("span", { staticClass: "simavr_label" }, [
+                          _vm._v(_vm._s(idx) + ": ")
+                        ]),
+                        _vm._v(_vm._s(_vm.display_rf(idx)))
+                      ]
+                    ),
+                    idx % 2 == 1 ? _c("br") : _vm._e()
+                  ])
+                }),
+                _c("br")
+              ],
+              2
+            ),
+            _c(
+              "div",
+              { attrs: { id: "simavr_ram" } },
+              [
+                _c("div", { staticClass: "simavr_title" }, [
+                  _vm._v("RAM at "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.display_ram_start,
+                        expression: "display_ram_start"
+                      }
+                    ],
+                    staticClass: "simavr_mem_start",
+                    attrs: { type: "number" },
+                    domProps: { value: _vm.display_ram_start },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.display_ram_start = $event.target.value;
+                      }
+                    }
+                  })
+                ]),
+                _c("br"),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RAM_display_mode("d")
+                      }
+                    }
+                  },
+                  [_vm._v("[dec]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RAM_display_mode("2")
+                      }
+                    }
+                  },
+                  [_vm._v("[com]")]
+                ),
+                _c(
+                  "div",
+                  {
+                    staticClass: "simavr_display_button",
+                    on: {
+                      click: function($event) {
+                        return _vm.set_RAM_display_mode("c")
+                      }
+                    }
+                  },
+                  [_vm._v("[txt]")]
+                ),
+                _vm._l(
+                  _vm.RAM.slice(
+                    _vm.display_ram_start,
+                    _vm.display_ram_start + _vm.display_ram_length
+                  ),
+                  function(i, idx) {
+                    return _c("div", [
+                      _c(
+                        "div",
+                        {
+                          class:
+                            "simavr_ram " +
+                            (_vm.is_ram_updated(_vm.display_ram_start + idx)
+                              ? "simavr_updated"
+                              : "simavr_normal")
+                        },
+                        [
+                          _c("span", { staticClass: "simavr_label_long" }, [
+                            _vm._v(_vm._s(_vm.display_ram_start + idx) + ": ")
+                          ]),
+                          _vm._v(
+                            _vm._s(_vm.display_ram(_vm.display_ram_start + idx)) +
+                              "\n\t\t    "
+                          )
+                        ]
+                      ),
+                      _c("br")
+                    ])
+                  }
+                ),
+                _c("br")
+              ],
+              2
+            ),
+            _c("div", { attrs: { id: "simavr_other" } }, [
+              _c("div", { staticClass: "simavr_title" }, [_vm._v("Other")]),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  staticClass: "simavr_display_button",
+                  on: { click: function($event) {} }
+                },
+                [_vm._v(" ")]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class: {
+                    simavr_reg: true,
+                    simavr_updated: _vm.is_updated("PC"),
+                    simavr_normal: !_vm.is_updated("PC")
+                  }
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("PC: ")]),
+                  _vm._v(_vm._s(_vm.PC))
+                ]
+              ),
+              _c("br"),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("Z") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("Z: ")]),
+                  _vm._v(_vm._s(_vm.Z))
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("C") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("C: ")]),
+                  _vm._v(_vm._s(_vm.C))
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("N") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("N: ")]),
+                  _vm._v(_vm._s(_vm.N))
+                ]
+              ),
+              _c("br"),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated(26) || _vm.is_updated(27)
+                      ? "simavr_updated"
+                      : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("X: ")]),
+                  _vm._v(
+                    _vm._s(
+                      _vm.truncate(_vm.RF[26], 8, false) +
+                        256 * _vm.truncate(_vm.RF[27], 8, false)
+                    )
+                  )
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated(28) || _vm.is_updated(29)
+                      ? "simavr_updated"
+                      : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("Y: ")]),
+                  _vm._v(
+                    _vm._s(
+                      _vm.truncate(_vm.RF[28], 8, false) +
+                        256 * _vm.truncate(_vm.RF[29], 8, false)
+                    )
+                  )
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated(30) || _vm.is_updated(31)
+                      ? "simavr_updated"
+                      : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label" }, [_vm._v("Z: ")]),
+                  _vm._v(
+                    _vm._s(
+                      _vm.truncate(_vm.RF[30], 8, false) +
+                        256 * _vm.truncate(_vm.RF[31], 8, false)
+                    )
+                  )
+                ]
+              ),
+              _c("br"),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("PIND") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label_long" }, [
+                    _vm._v("PIND: ")
+                  ]),
+                  _vm._v(_vm._s(_vm.PIND))
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("DDRD") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label_long" }, [
+                    _vm._v("DDRD: ")
+                  ]),
+                  _vm._v(_vm._s(_vm.DDRD))
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("PORTD") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label_long" }, [
+                    _vm._v("PORTD: ")
+                  ]),
+                  _vm._v(_vm._s(_vm.PORTD))
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("SPL") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label_long" }, [
+                    _vm._v("SPL: ")
+                  ]),
+                  _vm._v(_vm._s(_vm.SPL))
+                ]
+              ),
+              _c("br"),
+              _c(
+                "div",
+                {
+                  class:
+                    "simavr_reg " +
+                    (_vm.is_updated("SPH") ? "simavr_updated" : "simavr_normal")
+                },
+                [
+                  _c("span", { staticClass: "simavr_label_long" }, [
+                    _vm._v("SPH: ")
+                  ]),
+                  _vm._v(_vm._s(_vm.SPH))
+                ]
+              )
+            ])
+          ])
+        : _vm._e()
+    ])
+  };
+  var __vue_staticRenderFns__$d = [];
+  __vue_render__$d._withStripped = true;
+
+    /* style */
+    const __vue_inject_styles__$d = function (inject) {
+      if (!inject) return
+      inject("data-v-01dd48c1_0", { source: "\n.simavr[data-v-01dd48c1]{\n    display:inline-block;\n    width:73em;\n    /* min-height:40em; */\n    font-size:10pt;\n}\n#simavr_rf[data-v-01dd48c1]{\n    float:left;\n    width:16em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n#simavr_pm[data-v-01dd48c1]{\n    float:left;\n    width:13em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n#simavr_ram[data-v-01dd48c1]{\n    float:left;\n    width:10em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n#simavr_other[data-v-01dd48c1]{\n    float:left;\n    width:10em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n.simavr_title[data-v-01dd48c1]{\n    width:100%;\n    text-align:center;\n    display:inline-block;\n    font-size:12pt;\n    margin:auto;\n    padding-bottom:5px;\n    line-height:2.5em;\n}\n.simavr_status[data-v-01dd48c1]{\n    display:inline-block;\n    padding:5px;\n    border-left:1px solid #aaa;\n    /* border-radius:5px; */\n    margin:5px;\n    width:45%;\n    font-size:9pt;\n    float:right;\n}\n.active_line[data-v-01dd48c1]{\n    background-color:#f66;\n}\n.simavr_label[data-v-01dd48c1]{\n    font-size:10pt;\n    color:#333;\n    display:inline-block;\n    width:2em;\n}\n.simavr_label_long[data-v-01dd48c1]{\n    font-size:10pt;\n    color:#333;\n    display:inline-block;\n    margin-right:0.5ex;\n    min-width:2em;\n}\n.simavr_reg[data-v-01dd48c1]{\n    text-align:left;\n    display:inline-block;\n    padding:4px;\n    /*margin:0 2px 2px 0;*/\n    width:7em;\n}\n.simavr_pm[data-v-01dd48c1]{\n    text-align:left;\n    display:inline-block;\n    padding:4px;\n    /*margin:0 2px 2px 0;*/\n    width:12em;\n}\n.simavr_mem_start[data-v-01dd48c1]{\n    padding:4px;\n    width:4em;\n    margin:4px;\n}\n.simavr_ram[data-v-01dd48c1]{\n    text-align:left;\n    display:inline-block;\n    padding:4px;\n    /*margin:0 2px 2px 0;*/\n    width:7em;\n}\n.simavr_controls[data-v-01dd48c1]{\n    display:inline-block;\n    width:90%;\n    height:50px;\n    border: 2px solid #ccc;\n    margin:auto;\n    margin-bottom:5px;\n}\n.simavr_programming[data-v-01dd48c1]{\n    display:inline-block;\n    float:left;\n    width:70%;\n}\n.simavr_output_container[data-v-01dd48c1]{\n    display:inline-block;\n    float:left;\n    width:25%;\n}\n.simavr_simulator[data-v-01dd48c1]{\n    display:inline-block;\n    float:left;\n    width:75%;\n}\n.simavr_output[data-v-01dd48c1]{\n    display:inline-block;\n    padding:5px;\n    width:90%;\n    border:1px solid #aaa;\n    overflow-x:scroll;\n    overflow-y:scroll;\n}\n.simavr_program[data-v-01dd48c1]{\n    width:90%;\n}\n.simavr_normal[data-v-01dd48c1]{\n    background-color:#c66;\n}\n.simavr_updated[data-v-01dd48c1]{\n    background-color:#6c6;\n}\n.simavr_active[data-v-01dd48c1]{\n    background-color:#cc6;\n}\n.simavr_display_button[data-v-01dd48c1]{\n    display:inline-block;\n    padding:2px;\n}\n.simavr_enabled_button[data-v-01dd48c1]{\n    background-color:#66a;\n}\n.simavr_disabled_button[data-v-01dd48c1]{\n    background-color:#aaa;\n}\n.simavr_display_button[data-v-01dd48c1]:hover{\n    display:inline-block;\n    cursor:pointer;\n    color:#f33;\n}\n.simavr_button[data-v-01dd48c1]{\n    display:inline-block;\n    padding:8px;\n    border-radius:5px;\n    height:25px;\n    color:white;\n    margin:5px;\n    cursor:pointer;\n}\n.simavr_button[data-v-01dd48c1]:hover{\n    display:inline-block;\n    cursor:pointer;\n    color:#f33;\n}\n.simavr_io_num[data-v-01dd48c1]{\n    width:3em;\n    border:3px solid black;\n    background-color:#363;\n    color:#ff4;\n    font-size:17pt;\n    padding:5px;\n}\n.simavr_io_switch[data-v-01dd48c1]{\n    display:inline-block;\n    width:3em;\n    border:3px solid black;\n    font-size:17pt;\n    padding:5px;\n    cursor:pointer;\n}\n.simavr_io_switch_on[data-v-01dd48c1]{\n    background-color:#3f3;\n}\n.simavr_io_switch_off[data-v-01dd48c1]{\n    background-color:#f33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/jsavr.vue"],"names":[],"mappings":";AA+sCA;IACA,oBAAA;IACA,UAAA;IACA,qBAAA;IACA,cAAA;AACA;AACA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,oBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,iBAAA;AACA;AAEA;IACA,oBAAA;IACA,WAAA;IACA,0BAAA;IACA,uBAAA;IACA,UAAA;IACA,SAAA;IACA,aAAA;IACA,WAAA;AACA;AAEA;IACA,qBAAA;AACA;AACA;IACA,cAAA;IACA,UAAA;IACA,oBAAA;IACA,SAAA;AACA;AACA;IACA,cAAA;IACA,UAAA;IACA,oBAAA;IACA,kBAAA;IACA,aAAA;AACA;AAEA;IACA,eAAA;IACA,oBAAA;IACA,WAAA;IACA,sBAAA;IACA,SAAA;AACA;AACA;IACA,eAAA;IACA,oBAAA;IACA,WAAA;IACA,sBAAA;IACA,UAAA;AACA;AAEA;IACA,WAAA;IACA,SAAA;IACA,UAAA;AACA;AAEA;IACA,eAAA;IACA,oBAAA;IACA,WAAA;IACA,sBAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,SAAA;IACA,WAAA;IACA,sBAAA;IACA,WAAA;IACA,iBAAA;AACA;AAEA;IACA,oBAAA;IACA,UAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,UAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,UAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,WAAA;IACA,SAAA;IACA,qBAAA;IACA,iBAAA;IACA,iBAAA;AACA;AAEA;IACA,SAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,oBAAA;IACA,WAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,oBAAA;IACA,cAAA;IACA,UAAA;AACA;AACA;IACA,oBAAA;IACA,WAAA;IACA,iBAAA;IACA,WAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;AACA;AAEA;IACA,oBAAA;IACA,cAAA;IACA,UAAA;AACA;AAEA;IACA,SAAA;IACA,sBAAA;IACA,qBAAA;IACA,UAAA;IACA,cAAA;IACA,WAAA;AACA;AAEA;IACA,oBAAA;IACA,SAAA;IACA,sBAAA;IACA,cAAA;IACA,WAAA;IACA,cAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"jsavr.vue","sourcesContent":["<template>\n    <div class=\"simavr\">\n\t<div class=\"simavr_programming\" v-if=\"!running\">\n\t    <div class=\"simavr_controls\">\n\t\t<div v-bind:class=\"'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"program_pm()\">run</div>\n\t\t<div v-bind:class=\"'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"reset_program()\" v-if=\"reset_feature != 'no'\">reset</div>\n\t\t<div class=\"simavr_status\">Status: {{status}}</div>\n\t    </div><br />\n\t    <form><textarea v-bind:id=\"'simavr'+simid+'_program_area'\"></textarea></form>\n\t    <br />\n\t</div>\n\t<div class=\"simavr_output_container\" v-if=\"running\">\n\t    <div class=\"simavr_controls\">\n\t\t<div v-bind:class=\"'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"end()\">end</div>\n\t\t<div style=\"margin-top:10px;display:inline-block;\">\n\t\t    <select name=\"output_select\" v-model=\"output_type.selection\">\n\t\t\t<option value=\"program\">View Program</option>\n\t\t\t<option value=\"simple\">View Simple I/O</option>\n\t\t\t<!-- <option value=\"complex\">View Complex I/O</option> -->\n\t\t    </select>\n\t\t</div>\n\t    </div>\n\t    <div class=\"simavr_output\" v-if=\"output_type.selection == 'program'\">\n\t\t<b>Program: </b>\n\t\t<pre>{{program}}</pre>\n\t    </div>\n\t    <div class=\"simavr_output\" v-if=\"output_type.selection == 'simple'\">\n\t\tOutput LCD: <br />(Connected to pins 0-7 of D)<br />\n\t\t<div class=\"simavr_io_num\">\n\t\t    {{truncate(PORTD,8,false)}}\n\t\t</div>\n\n\t\t<br /><br />\n\n\t\tToggle switches--click to toggle:<br />(Connected to pins 0-7 of D): <br />\n\t\t<div style=\"display:inline-block;\" v-for=\"i in [0,1,2,3,4,5,6,7]\">\n\t\t    {{i}}:\n\t\t    <div v-bind:class=\"'simavr_io_switch ' + (io_state.switch_state[i] == 'ON' ? 'simavr_io_switch_on' : 'simavr_io_switch_off')\" v-on:click=\"io_switch(i)\">\n\t\t\t{{io_state.switch_state[i]}}\n\t\t    </div>\n\t\t    <br /><br />\n\t\t</div>\n\t    </div>\n\t    <div class=\"simavr_output\" v-if=\"output_type.selection == 'complex'\">\n\t\tPaceholder for full output panel\n\t    </div>\n\t</div>\n\t<div class=\"simavr_simulator\" v-if=\"running\">\n\t    <div class=\"simavr_controls\">\n\t\t<div v-bind:class=\"'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"reset(false)\">reset</div>\n\t\t<div v-bind:class=\"'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"step()\">step</div>\n\t\t<input class=\"simavr_mem_start\" type=\"number\" v-model=\"steps.count\" v-if=\"running == true\"></input>\n\t    </div><br />\n\t    <div id=\"simavr_pm\">\n\t\t<div class=\"simavr_title\">PM at <input class=\"simavr_mem_start\" type=\"number\" v-model=\"display_pm_start\"></input></div><br />\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('t')\">[text]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('b')\">[bin]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('d')\">[dec]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('h')\">[hex]</div>\n\t\t<div v-for=\"(i,idx) in PM.slice(display_pm_start,display_pm_start+display_pm_length)\">\n\t\t    <div v-bind:class=\"'simavr_pm '+ (display_pm_start+idx == PC ? 'simavr_active' : 'simavr_normal')\">\n\t\t\t<span class=\"simavr_label_long\">{{display_pm_start+idx}}: </span>{{ PM[display_pm_start+idx].display() }}\n\t\t    </div>\n\t\t    <br />\n\t\t</div>\n\t\t<br />\n\t    </div>\n\t    <div id=\"simavr_rf\">\n\t\t<div class=\"simavr_title\">Register file</div><br />\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('b')\">[bin]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('d')\">[dec]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('2')\">[com]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('h')\">[hex]</div>\n\t\t<br />\n\t\t\n\t\t<span v-for=\"(r,idx) in RF\"><div v-bind:class=\"'simavr_reg '+ (is_updated(idx) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">{{idx}}: </span>{{display_rf(idx)}}</div><br v-if=\"(idx)%2 == 1\" /></span><br />\n\t    </div>\n\t    <div id=\"simavr_ram\">\n\t\t<div class=\"simavr_title\">RAM at <input class=\"simavr_mem_start\" type=\"number\" v-model=\"display_ram_start\"></input></div><br />\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RAM_display_mode('d')\">[dec]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RAM_display_mode('2')\">[com]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RAM_display_mode('c')\">[txt]</div>\n\t\t<div v-for=\"(i,idx) in RAM.slice(display_ram_start,display_ram_start+display_ram_length)\">\n\t\t    <div v-bind:class=\"'simavr_ram '+ (is_ram_updated(display_ram_start+idx) ? 'simavr_updated' : 'simavr_normal')\">\n\t\t\t<span class=\"simavr_label_long\">{{display_ram_start+idx}}: </span>{{display_ram(display_ram_start+idx)}}\n\t\t    </div>\n\t\t    <br />\n\t\t</div>\n\t\t<br />\n\t    </div>\n\t    <div id=\"simavr_other\">\n\t\t<div class=\"simavr_title\">Other</div><br /><div class=\"simavr_display_button\" v-on:click=\"\">&nbsp;</div><br />\n\t\t<div v-bind:class=\"{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}\"><span class=\"simavr_label\">PC: </span>{{PC}}</div><br />\n\t\t<br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">Z: </span>{{Z}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">C: </span>{{C}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">N: </span>{{N}}</div><br />\n\t\t<br />\n\t\t\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">X: </span>{{truncate(RF[26],8,false)+256*truncate(RF[27],8,false)}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">Y: </span>{{truncate(RF[28],8,false)+256*truncate(RF[29],8,false)}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">Z: </span>{{truncate(RF[30],8,false)+256*truncate(RF[31],8,false)}}</div><br />\n\t\t<br />\n\t\t\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">PIND: </span>{{PIND}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('DDRD') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">DDRD: </span>{{DDRD}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">PORTD: </span>{{PORTD}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">SPL: </span>{{SPL}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">SPH: </span>{{SPH}}</div>\n\t    </div>\n\t</div>\n    </div>\n</template>\n<script>\n import CodeMirror from 'codemirror'\n export default {\n     name: 'cat-jsavr',\n     props: ['root','program','text','control','size','lightboard_feature','reset_feature','simid','debug_mode_feature'],\n     data () {\n\t return {\n\t     id: '',\n\t     rendered: '',\n\t     debug_log: this.do_nothing,\n\t     status: \"Ready\",\n\t     running: false,\n\t     outputs: [],\n\t     io_state: {'switch_state':[\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\"]},\n\t     steps: {'count':1},\n\t     output_type: {\"selection\":\"program\"},\n\t     symbols: {},\n\t     PM_display_mode: \"t\",\n\t     RAM_display_mode: \"d\",\n\t     RF_display_mode: \"d\",\n\t     RAM: [],\n\t     PM: [],\n\t     RF: [],\n\t     \n\t     PIND: 0,\n\t     PORTD: 0,\n\t     DDRD: 0,\n\t     SPH: 0,\n\t     SPL: 0,\n\t     \n\t     RAM_size: 65536,\n\t     PM_size: 65536,\n\t     RF_size: 32,\n\t     updated: [],\n\t     error_line: 0,\n\t     current_ram_data: [],\n\t     display_pm_start: 0,\n\t     display_ram_start: 0,\n\t     display_pm_length: 16,\n\t     display_ram_length: 16,\n\t     directives: {\n\t\t \"label\":{\"regex\":/^([a-zA-Z_][a-zA-Z0-9_]*):$/,\"process\":function(args){\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"pm\",\n\t\t     };\n\t\t }},\n\t\t \"word\":{\"regex\":/^\\.word ([0-9,]+)$/,\"process\":function(args){\n\t\t     var rdata = args[1].split(\",\");\n\t\t     for(var i = 0; i < rdata.length; i++){\n\t\t\t rdata[i] = this.truncate(parseInt(rdata[i]),16,false);\n\t\t     }\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"pm\",\n\t\t\t     \"pm_data\":rdata\n\t\t     };\n\t\t }},\n\t\t \"byte_ram\":{\"regex\":/^ *\\.byte\\(([a-zA-Z_][a-zA-Z0-9_]*)\\) ([-0-9, ]+) *$/,\"process\":function(args){\n\t\t     var rdata = args[2].split(\",\");\n\t\t     for(var i = 0; i < rdata.length; i++){\n\t\t\t rdata[i] = this.truncate(parseInt(rdata[i].trim()),8,false);\n\t\t     }\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"ram\",\n\t\t\t     \"ram_data\":rdata\n\t\t     };\n\t\t }},\n\t\t \"string_ram\":{\"regex\":/^ *\\.string\\(([a-zA-Z_][a-zA-Z0-9_]*)\\) \"((?:[^\"\\\\]|\\\\.)*)\" *$/,\"process\":function(args){\n\t\t     var str = this.handle_string_escapes(args[2]);\n\t\t     var rdata = []\n\t\t     for(var i = 0; i < str.length; i++){\n\t\t\t rdata.push(this.truncate(str.charCodeAt(i),8,false));\n\t\t     }\n\t\t     rdata.push(0);\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"ram\",\n\t\t\t     \"ram_data\":rdata\n\t\t     };\n\t\t     \n\t\t }}\n\t     },\n\t     formats: {\n\t\t \"4r8i\":{\n\t\t     \"string\":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r + \",\"+i;},\n\t\t     \"binary\":\"CCCCIIIIRRRRIIII\",\n\t\t     \"i_bits\":8,\n\t\t     \"validator\":function(c, r, s, i){return 16 <= r && r < 32 && -128 <= i && i < 256;}},\n\t\t \"5r5s\":{\n\t\t     \"string\":/ *r([0-9]+), *r([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r + \",r\"+s;},\n\t\t     \"binary\":\"CCCCCCSRRRRRSSSS\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},\n\t\t \"6s5r\":{\n\t\t     \"string\":/ *r([0-9]+), *([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r + \",\"+s;},\n\t\t     \"binary\":\"CCCCCSSRRRRRSSSS\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},\n\t\t \"5r6s\":{\n\t\t     \"string\":/ *([0-9]+), *r([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" \" + r + \",r\"+s;},\n\t\t     \"binary\":\"CCCCCSSRRRRRSSSS\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},\n\t\t \"5r\":{\n\t\t     \"string\":/ *r([0-9]+)()() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r;},\n\t\t     \"binary\":\"CCCCCCCRRRRRCCCC\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32;}},\n\t\t \"5rX\":{\n\t\t     \"string\":/ *r([0-9]+)(), *(-[XYZ]|[XYZ]|[XYZ]\\+) *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i,x){return mnemonic + \" r\" + r + \",\"+i},\n\t\t     \"binary\":\"CCCXCCCRRRRRXXXX\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32;}},\n\t\t \"X5r\":{\n\t\t     \"string\":/ *(-[XYZ]|[XYZ]|[XYZ]\\+), *r([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i,x){return mnemonic + \" \" + r + \",r\"+s;},\n\t\t     \"binary\":\"CCCXCCCRRRRRXXXX\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= s && s < 32;}},\n\t\t \"12i\":{\n\t\t     \"string\":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" \" + i;},\n\t\t     \"binary\":\"CCCCIIIIIIIIIIII\",\n\t\t     \"i_bits\":12,\n\t\t     \"validator\":function(c, r, s, i){return -2048 <= i && i < 2048;}},\n\t\t \"7i\":{\n\t\t     \"string\":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" \" + i;},\n\t\t     \"binary\":\"CCCCCCIIIIIIICCC\",\n\t\t     \"i_bits\":7,\n\t\t     \"validator\":function(c, r, s, i){return -64 <= i && i < 64;}},\n\t\t \"n\":{\n\t\t     \"string\":/ *()()() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic;},\n\t\t     \"binary\":\"CCCCCCCCCCCCCCCC\",\n\t\t     \"validator\":function(c, r, s, i){return true;}}\n\t     },\n\t     instructions: {\n\t\t \"ldi\":{\"format\":\"4r8i\", \"c\": 14, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     console.log('T',emu);\n\t\t     emu.RF[r] = emu.truncate(i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"mov\":{\"format\":\"5r5s\", \"c\": 11, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.RF[r] = emu.RF[s];\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"add\":{\"format\":\"5r5s\", \"c\": 3, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] + emu.RF[s], true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] + emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"adc\":{\"format\":\"5r5s\", \"c\": 7, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var oldC = emu.C;\n\t\t     emu.update_sreg(emu.RF[r] + emu.RF[s] + oldC, true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] + emu.RF[s] + oldC,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"sbc\":{\"format\":\"5r5s\", \"c\": 2, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var oldC = emu.C;\n\t\t     emu.update_sreg(emu.RF[r] - emu.RF[s] - oldC, true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - emu.RF[s] - oldC,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"sub\":{\"format\":\"5r5s\", \"c\": 6, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - emu.RF[s], true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"cp\":{\"format\":\"5r5s\", \"c\": 5, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - emu.RF[s], true, true, true);\n\t\t     emu.C = emu.truncate(emu.RF[r],8,true) < emu.truncate(emu.RF[s],8,true) ? 1 : 0; // HACK TO MATCH PRESENTATION\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"and\":{\"format\":\"5r5s\", \"c\": 8, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] & emu.RF[s], true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] & emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"or\":{\"format\":\"5r5s\", \"c\": 10, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] | emu.RF[s], true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] | emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"eor\":{\"format\":\"5r5s\", \"c\": 9, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] ^ emu.RF[s], true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] ^ emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"cpi\":{\"format\":\"4r8i\", \"c\": 3, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - i, true, true, true);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"subi\":{\"format\":\"4r8i\", \"c\": 5, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - i, true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"andi\":{\"format\":\"4r8i\", \"c\": 7, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] & i, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] & i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"ori\":{\"format\":\"4r8i\", \"c\": 6, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] | i, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] | i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"dec\":{\"format\":\"5r\", \"c\": 1194, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - 1, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - 1,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"inc\":{\"format\":\"5r\", \"c\": 1187, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] + 1, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] + 1,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"neg\":{\"format\":\"5r\", \"c\": 1185, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(-emu.RF[r], true, true, true);\n\t\t     emu.RF[r] = emu.truncate(-emu.RF[r],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"com\":{\"format\":\"5r\", \"c\": 1184, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(~(emu.RF[r]), true, false, true);\n\t\t     emu.RF[r] = emu.truncate(~(emu.RF[r]),8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"ld\":{\"format\":\"5rX\", \"c\": 32, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var reg = 0;\n\t\t     if(i == \"X\" || i == \"-X\" || i == \"X+\") reg = 26;\n\t\t     if(i == \"Y\" || i == \"-Y\" || i == \"Y+\") reg = 28;\n\t\t     if(i == \"Z\" || i == \"-Z\" || i == \"Z+\") reg = 30;\n\t\t     if(i[0] == \"-\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.dec_ptr(reg);\n\t\t     }\n\t\t     var ptr = emu.truncate(emu.RF[reg],8,false)+256*emu.truncate(emu.RF[reg+1],8,false);\n\t\t     emu.updated = [r,\"PC\"];\n\t\t     emu.RF[r] = emu.truncate(emu.RAM[ptr],8,false);\n\t\t     if(i[1] == \"+\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.inc_ptr(reg);\n\t\t     }\n\t\t     emu.ram_updated = [];\n\t\t     emu.PC++;}},\n\t\t \"st\":{\"format\":\"X5r\", \"c\": 33, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     i = r;\n\t\t     r = s;\n\t\t     var reg = 0;\n\t\t     if(i == \"X\" || i == \"-X\" || i == \"X+\") reg = 26;\n\t\t     if(i == \"Y\" || i == \"-Y\" || i == \"Y+\") reg = 28;\n\t\t     if(i == \"Z\" || i == \"-Z\" || i == \"Z+\") reg = 30;\n\t\t     if(i[0] == \"-\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.dec_ptr(reg);\n\t\t     }\n\t\t     var ptr = emu.truncate(emu.RF[reg],8,false)+256*emu.truncate(emu.RF[reg+1],8,false);\n\t\t     emu.updated = [\"PC\"];\n\t\t     emu.ram_updated = [ptr];\n\t\t     emu.RAM[ptr] = emu.RF[r];\n\t\t     emu.PC++;\n\t\t     if(i[1] == \"+\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.inc_ptr(reg);\n\t\t     }\n\t\t }},\n\t\t \"rjmp\":{\"format\":\"12i\", \"c\": 12, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + i + 1,16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"breq\":{\"format\":\"7i\", \"c\": 481, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.Z == 1 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"brne\":{\"format\":\"7i\", \"c\": 489, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.Z == 0 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"brsh\":{\"format\":\"7i\", \"c\": 488, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.C == 0 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"brlo\":{\"format\":\"7i\", \"c\": 480, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.C == 1 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"in\":{\"format\":\"6s5r\", \"c\": 22, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.RF[r] = emu.truncate(emu.read_IO(s),8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"out\":{\"format\":\"5r6s\", \"c\": 23, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     i = s;\n\t\t     s = r;\n\t\t     r = i;\n\t\t     emu.write_IO(s,emu.RF[r]);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"asr\":{\"format\":\"5r\", \"c\": 1189, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var C = emu.RF[r]%2 == 0 ? 0 : 1;\n\t\t     emu.RF[r] = emu.truncate(emu.truncate(emu.RF[r],8,true) >> 1,8,false);\n\t\t     emu.update_sreg(emu.RF[r], true, false, true);\n\t\t     emu.C = C;\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"push\":{\"format\":\"5r\", \"c\": 1183, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RAM[SP] = emu.RF[r];\n\t\t     emu.decSP();\n\t\t     emu.PC++;\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];\n\t\t     emu.ram_updated = [SP];}},\n\t\t \"pop\":{\"format\":\"5r\", \"c\": 1167, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.incSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RF[r] = emu.truncate(emu.RAM[SP],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];}},\n\t\t \"rcall\":{\"format\":\"12i\", \"c\": 13, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC++;\n\t\t     var PCL = emu.PC % 256;\n\t\t     var PCH = Math.floor(emu.PC / 256);\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RAM[SP] = PCH;\n\t\t     emu.decSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RAM[SP] = PCL;\n\t\t     emu.decSP();\n\t\t     emu.PC = emu.truncate(emu.PC + i,16,false);\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];\n\t\t     emu.ram_updated = [SP];}},\n\t\t \"ret\":{\"format\":\"n\", \"c\": 38152, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.incSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     var PCL = emu.RAM[SP];\n\t\t     emu.incSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     var PCH = emu.RAM[SP];\n\t\t     emu.PC = PCL + 256*PCH;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];}},\n\t\t \"nop\":{\"format\":\"n\", \"c\": 0, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"halt\":{\"format\":\"n\", \"c\": 1, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.end();}}\n\t     }\n\t }\n     },\n     methods: {\n\t smul: function(str, num) {\n\t     var acc = [];\n\t     for (var i = 0; (1 << i) <= num; i++) {\n\t\t if ((1 << i) & num)\n\t\t     acc.push(str);\n\t\t str += str;\n\t     }\n\t     return acc.join(\"\");\n\t },\n\t do_nothing: function(a){},\n\t cm_setup: function(){\n\t     var sim_textarea = document.getElementById(\"simavr\"+this.simid+\"_program_area\");\n\t     this.debug_log(this.simid,sim_textarea);\n\t     if(sim_textarea == null) return;\n\t     this.editor = CodeMirror.fromTextArea(sim_textarea, {\n\t\t lineNumbers: true,\n\t\t gutters: [\"breakpoints\", \"CodeMirror-linenumbers\"]\n\t     });\n\t     if(this.size){\n\t\t if(this.size == \"auto\"){\n\t\t     this.editor.setSize(null, (this.program.split(\"\\n\").length + 2)*(this.editor.defaultTextHeight()) + 10);\n\t\t }\n\t\t else{\n\t\t     this.editor.setSize(null, this.size);\n\t\t }\n\t     }\n\t     else{\n\t\t this.editor.setSize(null, \"70%\");\n\t     }\n\t     this.editor.setOption(\"extraKeys\", {\n\t\t 'Ctrl-Enter': function(cm) {\n                     this.program_pm();\n                     this.$apply();\n\t\t }\n\t     });\n\t     this.editor.setValue(this.program);\n\t },\n\t reset_program: function(){\n\t     if(this.running) return;\n\t     if(this.text){\n\t\t this.debug_log(\"Using text\");\n\t\t this.program = this.text;\n\t     }\n\t     else if(this.original_program){\n\t\t this.program = this.original_program;\n\t     }\n\t     this.change_program(this.program);\n\t },\n\t reset: function(pm_reset){\n\t     this.io_state.switch_state = [\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\"];\n\t     this.output_type.selection = \"program\";\n\t     this.display_pm_start = 0;\n\t     this.display_ram_start = 0;\n\t     this.steps = {'count':1};\n\t     this.PC = 0;\n\t     this.Z = 0;\n\t     this.C = 0;\n\t     this.N = 0;\n\t     this.PIND = 0;\n\t     this.PORTD = 0;\n\t     this.DDRD = 0;\n\t     this.SPH = 0;\n\t     this.SPL = 0;\n\t     this.updated = [];\n\t     this.ram_updated = [];\n\t     this.outputs = [];\n\t     this.mux = new this.output_mux();\n\t     for(var i = 0; i < this.RF_size; i++) this.RF[i] = 0;\n\t     for(var i = 0; i < this.RAM_size; i++) this.RAM[i] = 0;\n\t     for(var i = 0; i < this.IORF_size; i++) this.IORF[i] = 0;\n\t     var nop = this.parse(\"nop\",0);\n\t     if(pm_reset){ for(var i = 0; i < this.PM_size; i++){ nop.addr = i; this.PM[i] = nop; }}\n\t     if(!pm_reset){ for(var i = 0; i < this.current_ram_data.length; i++) this.RAM[i+1024] = this.current_ram_data[i]; }\n\t     if(this.editor) this.editor.removeLineClass(this.error_line, \"background\", \"active_line\");\n\t },\n\t change_program: function(prog){\n\t     this.program = prog;\n\t     if(this.editor) this.editor.setValue(prog);\n\t },\n\t display_ram: function(i){\n\t     if(this.RAM_display_mode == \"d\"){\n\t\t return this.RAM[i];\n\t     }\n\t     else if(this.RAM_display_mode == \"2\"){\n\t\t return this.truncate(this.RAM[i],8,true);\n\t     }\n\t     else if(this.RAM_display_mode == \"c\"){\n\t\t return String.fromCharCode(this.RAM[i])\n\t     }\n\t },\n\t display_rf: function(i){\n\t     if(this.RF_display_mode == \"d\"){\n\t\t return this.truncate(this.RF[i],8,false);\n\t     }\n\t     if(this.RF_display_mode == \"2\"){\n\t\t return this.truncate(this.RF[i],8,true);\n\t     }\n\t     else if(this.RF_display_mode == \"b\"){\n\t\t var s = this.RF[i].toString(2);\n\t\t return smul(\"0\",8-s.length)+s;\n\t     }\n\t     else if(this.RF_display_mode == \"h\"){\n\t\t var s = this.RF[i].toString(16);\n\t\t return \"0x\"+smul(\"0\",2-s.length)+s;\n\t     }\n\t },\n\t program_pm: function(){\n\t     if(this.running) return;\n\t     this.reset(true);\n\t     this.running = true;\n\t     this.program = this.editor.getValue();\n\t     var pm_data = this.preparse(this.program);\n\t     if(!pm_data){\n\t\t this.running = false;\n\t\t return;\n\t     }\n\t     var pm_addr = 0;\n\t     for(var i = 0; i < pm_data.length; i++){\n\t\t var datum = pm_data[i];\n\t\t if(datum.inst){\n\t\t     var inst = this.parse(datum.inst,pm_addr);\n\t\t     if(!inst) continue;\n\t\t     if(inst.error){\n\t\t\t this.error_on_line(datum.line, inst.error);\n\t\t\t return;\n\t\t     }\n\t\t     this.PM[pm_addr] = inst;\n\t\t     pm_addr++;\n\t\t }\n\t\t else if(datum.word){\n\t\t     var inst = this.decode(datum.word,pm_addr);\n\t\t     if(inst.error){\n\t\t\t this.error_on_line(datum.line, inst.error);\n\t\t\t return;\n\t\t     }\n\t\t     this.PM[pm_addr] = inst;\n\t\t     pm_addr++;\n\t\t }\n\t     }\n\t     this.status = \"Ready\";\n\t },\n\t error_on_line: function(linenum, err_msg){\n\t     this.running = false;\n\t     this.status = \"Error on line \" + linenum + \": \" + err_msg;\n\t     this.error_line = linenum;\n\t     if(this.editor) this.editor.addLineClass(linenum, \"background\", \"active_line\");\n\t },\n\t preparse: function(){\n\t     var lines = this.program.split(\"\\n\");\n\t     var to_program = [];\n\t     var pm_offset = 0;\n\t     var ram_offset = 1024;\n\t     for(var i = 0; i < lines.length; i++){\n\t\t var pieces = lines[i].match(/^((?:[^\";]|';'|\"(?:[^\\\\\"]+|\\\\(?:\\\\\\\\)*[nt\\\\\"])*\")*)(;.*)?$/)\n\t\t this.debug_log(\"P\",pieces);\n\t\t if(!pieces){\n\t\t     this.error_on_line(i, \"Invalid line: \"+i);\n\t\t     return;\n\t\t }\n\t\t if(!pieces[1]) continue;\n\t\t lines[i] = pieces[1].trim();\n\t\t var is_inst = true;\n\t\t for(var d in this.directives){\n\t\t     var matches = lines[i].match(this.directives[d].regex)\n\t\t     this.debug_log(\"D\",lines[i],d,matches);\n\t\t     if(matches){\n\t\t\t // process needs to return:\n\t\t\t // - What it inserts to PM (pm_data)\n\t\t\t // - What it inserts into RAM (ram_data)\n\t\t\t // - What symbol it wants to make (symbol)\n\t\t\t // - What kind of symbol it is (symbol_type == \"pm\" | \"ram\")\n\t\t\t // - Whether there was an error (error)\n\t\t\t \n\t\t\t var result = this.directives[d].process(matches);\n\n\t\t\t // Handle error\n\t\t\t if(result.error){\n\t\t\t     this.error_on_line(i, result.error);\n\t\t\t     return;\n\t\t\t }\n\n\t\t\t // Update symbol\n\t\t\t if(result.symbol && result.symbol_type){\n\t\t\t     if(result.symbol_type == \"pm\"){\n\t\t\t\t this.symbols[result.symbol] = pm_offset;\n\t\t\t     }\n\t\t\t     else if(result.symbol_type == \"ram\"){\n\t\t\t\t this.symbols[result.symbol] = ram_offset;\n\t\t\t     }\n\t\t\t }\n\t\t\t \n\t\t\t // Insert data and update offsets\n\t\t\t if(result.pm_data){\n\t\t\t     for(var j = 0; j < result.pm_data.length; j++){\n\t\t\t\t to_program.push({'word':result.pm_data[j],'line':i});\n\t\t\t     }\n\t\t\t     pm_offset += result.pm_data.length;\n\t\t\t }\n\t\t\t if(result.ram_data){\n\t\t\t     for(var j = 0; j < result.ram_data.length; j++){\n\t\t\t\t this.RAM[ram_offset + j] = result.ram_data[j];\n\t\t\t     }\n\t\t\t     this.current_ram_data = this.current_ram_data.concat(result.ram_data);\n\t\t\t     ram_offset += result.ram_data.length;\n\t\t\t }\n\t\t\t is_inst = false;\n\t\t\t break;\n\t\t     }\n\t\t }\n\t\t if(is_inst && !(/^[ \\t]*$/.test(lines[i]))){\n\t\t     to_program.push({'inst':lines[i],'line':i});\n\t\t     pm_offset++;\n\t\t }\n\t     }\n\t     return to_program;\n\t },\n\t parse: function(inst,addr){\n\t     this.debug_log(inst)\n\t     var matches = inst.match(/^[ \\t]*([a-zA-Z]+)[ \\t]*((?:[^;]|';')*)[ \\t]*$/)\n\t     if(!matches){\n\t\t return {\"error\":\"Line does not match any directive or instruction\"};\n\t     }\n\t     var mnemonic = matches[1];\n\t     var operand = matches[2];\n\t     this.debug_log(mnemonic, \"|||\", operand);\n\t     if(mnemonic in this.instructions){\n\t\t var format = this.instructions[mnemonic].format;\n\t\t var execf = this.instructions[mnemonic].exec;\n\t\t var ops = operand.match(this.formats[format].string);\n\t\t if(!ops){\n\t\t     return {\"error\":\"Operands to instruction \" + inst + \" did not parse\"};\n\t\t }\n\t\t for(var i = 0; i < 3; i++){\n\t\t     if(/^[0-9]+$/.test(ops[i])) ops[i] = parseInt(ops[i]);\n\t\t     //else if(format.sym_valid[i]) ops[i] = symbols[ops[i]];\n\t\t }\n\t\t var opcode = this.instructions[mnemonic].c;\n\t\t this.debug_log(format, execf, ops, opcode);\n\t\t var data = {\"r\":ops[1],\"s\":ops[2],\"i\":ops[3],\"c\":opcode};\n\t\t var new_inst = new this.instruction(mnemonic + \" \" + operand, mnemonic, data, execf,addr, this);\n\t\t if(new_inst.error){\n\t\t     return {\"error\":inst.error};\n\t\t }\n\t\t if(new_inst.check_valid()){\n\t\t     return new_inst;\n\t\t }\n\t\t else{\n\t\t     return {\"error\":\"Illegal operands to instruction \" + inst};\n\t\t }\n\t     }\n\t     else{\n\t\t return {\"error\":\"Invalid instruction \" + inst};\n\t     }\n\t     return null;\n\t },\n\t is_updated: function(x){\n\t     for(var i = 0; i < this.updated.length; i++){\n\t\t if(this.updated[i] == x) return true;\n\t     }\n\t     return false;\n\t },\n\t is_ram_updated: function(x){\n\t     for(var i = 0; i < this.updated.length; i++){\n\t\t if(this.ram_updated[i] == x) return true;\n\t     }\n\t     return false;\n\t },\n\t handle_string_escapes: function(s){\n\t     s = s.replace(/(([^\\\\]|)(\\\\\\\\)*)\\\\t/g,\"$1\\t\");\n\t     s = s.replace(/(([^\\\\]|)(\\\\\\\\)*)\\\\n/g,\"$1\\n\");\n\t     s = s.replace(/(([^\\\\]|)(\\\\\\\\)*)\\\\\"/g,\"$1\\\"\");\n\t     s = s.replace(/\\\\\\\\/g,\"\\\\\");\n\t     return s;\n\t },\n\n\t // X,*:  111\n\t // Y,\"\": 010\n\t // Y,+-\" 110\n\t // Z,\"\": 000\n\t // Z,+-: 100\n\t // \"\":  00\n\t // \"+\": 01\n\t // \"-\": 10\n\t encode_x: function(i){\n\t     var x = 0;\n\t     var ptr = i[0] == \"-\" ? i[1] : i[0];\n\t     var mod = i[0] == \"-\" ? \"-\" : (i[1] == \"+\" ? \"+\" : \"\");\n\t     if(ptr == \"X\") x = 7*4\n\t     if(ptr == \"Y\") x = 6*4\n\t     if(ptr == \"Z\") x = 4*4\n\t     if(ptr != \"X\" && mod == \"\") x -= 16;\n\t     if(mod == \"+\") x += 1;\n\t     if(mod == \"-\") x += 2;\n\t     return x;\n\t },\n\t decode_x: function(x){\n\t     var ptr = \"\";\n\t     var mod = \"\";\n\t     this.debug_log(\"XX\",x,x&3,(x>>2)&3)\n\t     if(((x >> 2)&3) == 3) ptr = \"X\";\n\t     if(((x >> 2)&3) == 2) ptr = \"Y\";\n\t     if(((x >> 2)&3) == 0) ptr = \"Z\";\n\t     if((x&3) == 1) mod = \"+\";\n\t     if((x&3) == 2) mod = \"-\";\n\t     this.debug_log(\"X=\",mod,ptr)\n\t     return mod == \"-\" ? mod +\"\"+ ptr : ptr +\"\"+ mod;\n\t },\n\t encode: function(format, c, r, s, i){\n\t     var fmt = this.formats[format].binary;\n\t     var inst = 0;\n\t     var x = 0;\n\t     if(format == \"5r6s\"){\n\t\t i = s;\n\t\t s = r;\n\t\t r = i;\n\t     }\n\t     else if(format == \"5rX\" || format == \"X5r\"){\n\t\t if(format == \"X5r\"){\n\t\t     i = r;\n\t\t     r = s;\n\t\t }\n\t\t this.debug_log(\"Xe\",i);\n\t\t x = this.encode_x(i);\n\t\t this.debug_log(\"Xd\",x);\n\t     }\n\t     for(var j = 15; j >= 0; j--) {\n\t\t if(fmt[j] == \"C\"){\n\t\t     inst += (c%2)<<(15-j);\n\t\t     c >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"R\"){\n\t\t     inst += (r%2)<<(15-j);\n\t\t     r >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"S\"){\n\t\t     inst += (s%2)<<(15-j);\n\t\t     s >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"I\"){\n\t\t     inst += (i%2)<<(15-j);\n\t\t     i >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"X\"){\n\t\t     inst += (x%2)<<(15-j);\n\t\t     x >>= 1;\n\t\t }\n\t     }\n\t     return inst;\n\t },\n\t decode: function(x,addr){\n\t     for(var f in this.formats){\n\t\t fmt = this.formats[f];\n\t\t var data = {\"c\":0,\"r\":0,\"s\":0,\"i\":0,\"x\":0}\n\t\t for(var j = 15; j >= 0; j--){\n\t\t     //this.debug_log(\"J\",j,fmt.binary[15-j],(x>>j)%2);\n\t\t     if(fmt.binary[15-j] == \"C\") data.c = (data.c * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"R\") data.r = (data.r * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"S\") data.s = (data.s * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"I\") data.i = (data.i * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"X\") data.x = (data.x * 2) + ((x >> j) % 2);\n\t\t }\n\t\t if(f == \"4r8i\") data.r += 16;\n\t\t if(f == \"12i\") data.i = this.truncate(data.i,12,true);\n\t\t if(f == \"7i\") data.i = this.truncate(data.i,7,true);\n\t\t if(f == \"5rX\") data.i = this.decode_x(data.x);\n\t\t if(f == \"X5r\"){\n\t\t     data.s = data.r;\n\t\t     data.r = this.decode_x(data.x);\n\t\t }\n\t\t if(f == \"5r6s\"){\n\t\t     var temp = data.r;\n\t\t     data.r = data.s;\n\t\t     data.s = temp;\n\t\t }\n\t\t for(var mnemonic in this.instructions){\n\t\t     inst = this.instructions[mnemonic];\n\t\t     if(inst.format == f && inst.c == data.c){\n\t\t\t return new this.instruction(x,mnemonic,data,inst.exec,addr,this);\n\t\t     }\n\t\t }\n\t     }\n\t     return {\"error\":\"Could not decode instruction: \" + x};\n\t },\n\t label: function(name, addr){\n\t     this.label = true;\n\t     this.name = name;\n\t     this.addr = addr;\n\t },\n\t output_mux: function(){\n\t     this.SEL_ADDR = 0;\n\t     this.SEL_LEN = 255;\n\t     this.LCD_OUT = 1;\n\t     this.LB_OUT = 2;\n\t     this.target = 0;\n\t     this.len = 0;\n\t     this.state = 0;\n\t     this.input = function(val){\n\t\t if(this.state == this.SEL_ADDR) {\n\t\t     this.target = val;\n\t\t     this.state = this.SEL_LEN;\n\t\t }\n\t\t else if(this.state == this.SEL_LEN){\n\t\t     this.len = val;\n\t\t     this.state = this.target;\n\t\t     this.target = 0;\n\t\t }\n\t\t else if(this.len > 0){\n\t\t     if(this.state-1 < this.output_devs.length)\n\t\t\t this.output_devs.input(val);\n\t\t     this.len--;\n\t\t }\n\t\t else{\n\t\t     this.state = this.SEL_ADDR;\n\t\t }\n\t     }\n\t },\n\t lcd: function(){\n\t     this.input = function(val){\n\t\t \n\t     }\n\t },\n\t set_PM_display_mode: function(m){\n\t     this.PM_display_mode = m;\n\t },\n\t set_RAM_display_mode: function(m){\n\t     this.RAM_display_mode = m;\n\t },\n\t set_RF_display_mode: function(m){\n\t     this.RF_display_mode = m;\n\t },\n\t instruction: function(text, mnemonic, data, exec, addr, parent){\n\t     console.log(this);\n\t     this.parent = parent;\n\t     this.label = false;\n\t     this.addr = addr;\n\t     this.text = text;\n\t     this.c = data.c;\n\t     this.r = data.r;\n\t     this.s = data.s;\n\t     this.i = data.i;\n\t     this.exec = exec;\n\t     this.mnemonic = mnemonic;\n\t     console.log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);\n\t     this.format = this.parent.instructions[this.mnemonic].format;\n\t     if(this.i.match){\n\t\t var matches = this.i.match(/(lo|hi)8\\(([a-zA-Z_][a-zA-Z0-9_]*)\\)/);\n\t\t if(matches){\n\t\t     if(matches[2] in this.parent.symbols){\n\t\t\t if(matches[1] == \"lo\") this.i = this.parent.truncate(this.parent.symbols[matches[2]],8,false);\n\t\t\t if(matches[1] == \"hi\") this.i = this.parent.truncate(this.parent.symbols[matches[2]]>>8,8,false);\n\t\t     }\n\t\t     else{\n\t\t\t this.error = \"Symbol not found \" + matches[2];\n\t\t     }\n\t\t }\n\t\t else if(this.i in this.parent.symbols){\n\t\t     this.i = this.parent.symbols[this.i];\n\t\t     var fmt = this.parent.formats[this.format];\n\t\t     //this.parent.debug_log(this.parent.symbols,fmt.i_bits);\n\t\t     if(fmt.i_bits){\n\t\t\t this.i = this.parent.truncate(this.i - this.addr - 1,fmt.i_bits,true);\n\t\t     }\n\t\t }\n\t\t else if(/'[^'\\\\]'/.test(this.i)){\n\t\t     this.i = this.i.charCodeAt(1);\n\t\t }\n\t\t else if(this.i == \"'\\\\''\"){\n\t\t     this.i = this.i.charCodeAt(2);\n\t\t }\n\t\t else if(this.i == \"'\\\\\\\\'\"){\n\t\t     this.i = this.i.charCodeAt(2);\n\t\t }\n\t\t else if(this.i == \"'\\\\n'\"){\n\t\t     this.i = 10;\n\t\t }\n\t\t else if(this.i == \"'\\\\t'\"){\n\t\t     this.i = 9;\n\t\t }\n\t\t else if(/^[XYZ]$|^[XYZ]\\+$|^-[XYZ]$/.test(this.i)){\n\t\t     this.i = this.i;\n\t\t }\n\t\t else this.i = parseInt(this.i);\n\t     }\n\t     this.encoding = this.parent.encode(this.format, this.c, this.r, this.s, this.i < 0 ? this.parent.truncate(this.i,this.parent.formats[this.format].i_bits,false) : this.i);\n\t     //this.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);\n\t     var self = this;\n\t     this.display = function(){\n\t\t if(this.parent.PM_display_mode == \"t\"){\n\t\t     return this.parent.formats[self.format].to_string(self.mnemonic,self.c,self.r,self.s,self.i);\n\t\t }\n\t\t else if(this.parent.PM_display_mode == \"d\"){\n\t\t     return self.encoding;\n\t\t }\n\t\t else if(this.parent.PM_display_mode == \"h\"){\n\t\t     var s = self.encoding.toString(16);\n\t\t     return \"0x\"+this.parent.smul(\"0\",4 - s.length)+s;\n\t\t }\n\t\t else if(this.parent.PM_display_mode == \"b\"){\n\t\t     var s = self.encoding.toString(2);\n\t\t     return this.parent.smul(\"0\",16 - s.length) + s;\n\t\t }\n\t     }\n\t     this.check_valid = function(){\n\t\t return this.parent.formats[self.format].validator(self.c, self.r, self.s, self.i);\n\t     }\n\t     this.run = function(){\n\t\t self.exec(self.c, self.r, self.s, self.i);\n\t     }\n\t },\n\t step: function(){\n\t     if(!this.running) return;\n\t     this.debug_log(this.steps.count);\n\t     for(var k = 0; k < this.steps.count; k++){\n\t\t var i = this.PM[this.PC];\n\t\t this.debug_log(\"i\",i);\n\t\t i.run();\n\t\t if(this.PC < this.display_pm_start || this.PC >= this.display_pm_start + this.display_pm_length){\n\t\t     this.display_pm_start = Math.max(0, this.PC - this.display_ram_length/2);\n\t\t }\n\t\t if(this.ram_updated.length > 0){\n\t\t     this.display_ram_start = Math.max(0, Math.min.apply(Math, this.ram_updated) - this.display_ram_length/2);\n\t\t }\n\t     }\n\t },\n\t raise_error: function(s){\n\t     this.status = \"Error: \" + s;\n\t },\n\t truncate: function(num, bits, twos_complement){\n\t     var mod = 1<<bits;\n\t     num = ((num % mod)+mod)%mod;\n\t     return twos_complement ? (num >= 1<<(bits - 1) ? num - (1<<bits) : num) : num;\n\t },\n\t update_sreg: function(result, z, c, n){\n\t     this.debug_log(\"SREG for\",result);\n\t     if(z) this.Z = this.truncate(result,8,false) == 0 ? 1 : 0;\n\t     if(c) this.C = result >= 256 || result < 0 ? 1 : 0;\n\t     if(n) this.N = this.truncate(result,8,true) <0 ? 1 : 0;\n\t },\n\t read_IO: function(s){\n\t     if(s == 16) return this.PIND & (~(this.DDRD));\n\t     else if(s == 17) return this.DDRD;\n\t     else if(s == 61) return this.SPL;\n\t     else if(s == 62) return this.SPH;\n\t     return 0;\n\t },\n\t write_IO: function(s,val){\n\t     if(s == 18){\n\t\t this.PORTD = this.DDRD & val;\n\t\t this.output();\n\t     }\n\t     else if(s == 17) this.DDRD = this.truncate(val,8,false);\n\t     else if(s == 61) this.SPL = this.truncate(val,8,false);\n\t     else if(s == 62) this.SPH = this.truncate(val,8,false);\n\t     if(this.output_type.selection == \"simple\"){\n\t\t this.PIND = 0;\n\t\t for(var i = 0; i < 8; i++)\n\t\t     this.PIND |= (this.io_state.switch_state[i] == \"ON\" ? 1 << i : 0)\n\t\t this.PIND &= ~this.DDRD;\n\t     }\n\t },\n\t inc_ptr: function(reg){\n\t     if(this.RF[reg] == -1 || this.RF[reg] == 255){\n\t\t this.RF[reg] = 0\n\t\t this.RF[reg+1] = this.truncate(this.RF[reg+1]+1,8,false);\n\t     }\n\t     else this.RF[reg]++;\n\t     if(this.RF[reg] == 128){\n\t\t this.RF[reg] = -128;\n\t     }\n\t },\n\t dec_ptr: function(reg){\n\t     this.RF[reg]--;\n\t     if(this.RF[reg] == -1){\n\t\t this.RF[reg+1] = this.truncate(this.RF[reg+1]-1,8,false);\n\t     }\n\t     if(this.RF[reg] < -128){\n\t\t this.RF[reg] = 127;\n\t     }\n\t },\n\t incSP: function(){\n\t     this.SPL++;\n\t     if(this.SPL == 256){\n\t\t this.SPL = 0;\n\t\t this.SPH = this.truncate(this.SPH+1,8,false);\n\t     }\n\t },\n\t decSP: function(){\n\t     this.SPL--;\n\t     if(this.SPL == -1){\n\t\t this.SPL = 255;\n\t\t this.SPH = this.truncate(this.SPH-1,8,false);\n\t     }\n\t },\n\t io_switch: function(i){\n\t     if(this.io_state.switch_state[i] == \"ON\"){\n\t\t this.io_state.switch_state[i] = \"OFF\";\n\t\t this.PIND &= ~(1<<i);\n\t     }\n\t     else if(this.io_state.switch_state[i] == \"OFF\"){\n\t\t this.io_state.switch_state[i] = \"ON\";\n\t\t this.PIND |= 1<<i;\n\t     }\n\t     this.PIND = this.PIND & ~this.DDRD;\n\t },\n\t output: function(){\n\t     var out_val = this.PORTD;\n\t     this.outputs.push(out_val);\n\t     //this.outputs.push(String.fromCharCode(out_val));\n\t },\n\t initialize: function(){\n\t     this.reset_program();\n\t     this.cm_setup();\n\t },\n\t end: function(){\n\t     if(!this.running) return;\n\t     this.running = false;\n\t     setTimeout(this.cm_setup, 0);\n\t }\n\n     },\n     created: function(){\n\t console.log(\"init\");\n\t this.$store.dispatch(\"RESET_PLUGIN_DATA\",\"math\");\n\t //Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t console.log(\"Hello JSAVR\");\n\t console.log(this.instructions);\n\t this.program = this.root.innerHTML.trim();\n\t this.reset(true);\n\t this.original_program = this.program;\n\t this.initialize();\n\n\t this.debug_log = this.debug_mode_feature == 'yes' ? console.log.bind(console) : this.do_nothing;\n\t if(this.control){\n\t     this.control.set_program = function(new_prog){\n\t\t this.change_program(new_prog);\n\t     }\n\t     this.control.get_program = function(){\n\t\t if(this.editor) this.program = this.editor.getValue();\n\t\t return this.program;\n\t     }\n\t     this.control.get_PM = function(addr){\n\t\t return this.PM[addr].encoding;\n\t     }\n\t     this.control.get_RF = function(){\n\t\t return this.RF;\n\t     }\n\t     this.control.get_RAM = function(addr){\n\t\t return this.RAM[addr];\n\t     }\n\t     this.control.get_other = function(){\n\t\t return {\n\t\t     \"PC\":this.PC,\n\t\t     \"Z\":this.Z,\n\t\t     \"C\":this.C,\n\t\t     \"N\":this.N,\n\t\t     \"DDRD\":this.DDRD,\n\t\t     \"PIND\":this.PIND,\n\t\t     \"PORTD\":this.PORTD,\n\t\t     \"SPL\":this.SPL,\n\t\t     \"SPH\":this.SPH\n\t\t }\n\t     }\n\t }\n\t /* \n\t  * \t \n\t  * \t var index = 0;\n\t  * \t var doc_id = node+\"-\"+index;\n\t  * \t var content = this.root.innerHTML.trim()\n\t  * \t console.log(\"R\",this.root,content);\n\t  * \t //var res = Guppy.Doc.render(content, \"text\");\n\t  * \t var res = {doc:content};\n\t  * \t var doc_data = {};\n\t  * \t //doc_data[index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t  * \t doc_data[index] = [\"x\"];\n\t  * \t //res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t  * \t //var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\t  * \n\t  * \t \n\t  * \t // Put this doc ID in the index for each var and symbol in the document\n\t  * \t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t  * \t     var v = this.docs[node][index][i];\n\t  * \t     if (!this.index[v]) this.index[v] = [];\n\t  * \t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t  * \t }\n\t  * \n\t  * \t // Calculate the snippet that will be associated with this expression when it appears in listings\n\t  * \t var snippet = \"\";\n\t  * \t if(this.root.previousSibling){\n\t  * \t     snippet += this.root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t  * \t }\n\t  * \t snippet += \" [formula] \"\n\t  * \n\t  * \t if(this.root.nextSibling) {\n\t  * \t     snippet += this.root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t  * \t }\n\t  * \t snippet = \"...\" + snippet + \"...\";\n\t  * \t console.log(\"parprev\",this.root.parentNode.previousSibling);\n\t  * \t console.log(\"parnext\",this.root.parentNode.nextSibling);\n\t  * \t this.snippets[doc_id] = snippet;\n\t  * \n\t  * \t // Finally, set up component attributes\n\t  * \t this.syms = this.docs[node][index];\n\t  * \t this.rendered = rendered_content;\n\t  * \t this.display_syms = false;\n\t  * \t this.id = doc_id;\n\t  * \t this.query = \"\";\n\t  * \t this.node = node;*/\n     }\n }\n</script>\n<style scoped>\n .simavr{\n     display:inline-block;\n     width:73em;\n     /* min-height:40em; */\n     font-size:10pt;\n }\n #simavr_rf{\n     float:left;\n     width:16em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n #simavr_pm{\n     float:left;\n     width:13em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n #simavr_ram{\n     float:left;\n     width:10em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n #simavr_other{\n     float:left;\n     width:10em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n .simavr_title{\n     width:100%;\n     text-align:center;\n     display:inline-block;\n     font-size:12pt;\n     margin:auto;\n     padding-bottom:5px;\n     line-height:2.5em;\n }\n\n .simavr_status{\n     display:inline-block;\n     padding:5px;\n     border-left:1px solid #aaa;\n     /* border-radius:5px; */\n     margin:5px;\n     width:45%;\n     font-size:9pt;\n     float:right;    \n }\n\n .active_line{\n     background-color:#f66;\n }\n .simavr_label{\n     font-size:10pt;\n     color:#333;\n     display:inline-block;\n     width:2em;\n }\n .simavr_label_long{\n     font-size:10pt;\n     color:#333;\n     display:inline-block;\n     margin-right:0.5ex;\n     min-width:2em;\n }\n\n .simavr_reg{\n     text-align:left;\n     display:inline-block;\n     padding:4px;\n     /*margin:0 2px 2px 0;*/\n     width:7em;\n }\n .simavr_pm{\n     text-align:left;\n     display:inline-block;\n     padding:4px;\n     /*margin:0 2px 2px 0;*/\n     width:12em;\n }\n\n .simavr_mem_start{\n     padding:4px;\n     width:4em;\n     margin:4px;\n }\n\n .simavr_ram{\n     text-align:left;\n     display:inline-block;\n     padding:4px;\n     /*margin:0 2px 2px 0;*/\n     width:7em;\n }\n\n .simavr_controls{\n     display:inline-block;\n     width:90%;\n     height:50px;\n     border: 2px solid #ccc;\n     margin:auto;\n     margin-bottom:5px;\n }\n\n .simavr_programming{\n     display:inline-block;\n     float:left;\n     width:70%;\n }\n\n .simavr_output_container{\n     display:inline-block;\n     float:left;\n     width:25%;\n }\n\n .simavr_simulator{\n     display:inline-block;\n     float:left;\n     width:75%;\n }\n\n .simavr_output{\n     display:inline-block;\n     padding:5px;\n     width:90%;\n     border:1px solid #aaa;\n     overflow-x:scroll;\n     overflow-y:scroll;\n }\n\n .simavr_program{\n     width:90%;\n }\n\n .simavr_normal{\n     background-color:#c66;\n }\n\n .simavr_updated{\n     background-color:#6c6;\n }\n\n .simavr_active{\n     background-color:#cc6;\n }\n\n .simavr_display_button{\n     display:inline-block;\n     padding:2px;\n }\n\n .simavr_enabled_button{\n     background-color:#66a;\n }\n\n .simavr_disabled_button{\n     background-color:#aaa;\n }\n\n .simavr_display_button:hover{\n     display:inline-block;\n     cursor:pointer;\n     color:#f33;\n }\n .simavr_button{\n     display:inline-block;\n     padding:8px;\n     border-radius:5px;\n     height:25px;\n     color:white;\n     margin:5px;\n     cursor:pointer;\n }\n\n .simavr_button:hover{\n     display:inline-block;\n     cursor:pointer;\n     color:#f33;\n }\n\n .simavr_io_num{\n     width:3em;\n     border:3px solid black;\n     background-color:#363;\n     color:#ff4;\n     font-size:17pt;\n     padding:5px;\n }\n\n .simavr_io_switch{\n     display:inline-block;\n     width:3em;\n     border:3px solid black;\n     font-size:17pt;\n     padding:5px;\n     cursor:pointer;\n }\n\n .simavr_io_switch_on{\n     background-color:#3f3;\n }\n\n .simavr_io_switch_off{\n     background-color:#f33;\n }\n</style>\n"]}, media: undefined });
+
+    };
+    /* scoped */
+    const __vue_scope_id__$d = "data-v-01dd48c1";
+    /* module identifier */
+    const __vue_module_identifier__$d = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$d = false;
+    /* style inject SSR */
+    
+
+    
+    var JSAVRPlugin = normalizeComponent_1(
+      { render: __vue_render__$d, staticRenderFns: __vue_staticRenderFns__$d },
+      __vue_inject_styles__$d,
+      __vue_script__$c,
+      __vue_scope_id__$d,
+      __vue_is_functional_template__$d,
+      __vue_module_identifier__$d,
       browser,
       undefined
     );
@@ -2819,6 +4749,7 @@
       'cat-video': Vue.component('catVideo', VideoPlugin),
       'cat-query': Vue.component('catQuery', QueryPlugin),
       'cat-link': Vue.component('catLink', LinkPlugin),
+      'cat-jsavr': Vue.component('catJsavr', JSAVRPlugin),
   //    'cat-math': Vue.component('catMath', MathPlugin)
   };
 
@@ -2833,6 +4764,7 @@
   	var l = comp.$el.getElementsByTagName(p);
   	while(l.length > 0) {
   	    var node = l[0];
+  	    console.log("PL",p,node);
   	    new plugin({
   		el: node,
   		propsData: {'root': node},
@@ -2854,4 +4786,4 @@
 
   };
 
-}(Vue, VueRouter, Vuex));
+}(Vue, VueRouter, Vuex, CodeMirror));
