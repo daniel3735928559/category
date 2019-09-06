@@ -36,10 +36,12 @@
 	 }
      },
      created: function() {
+	 console.log('cr');
+	 this.$store.commit('GO',this.node);
 	 this.get_node(this.node, function(){});
-	 this.$store.dispatch('go',this.node);
      },
      beforeRouteUpdate: function(to, fro, next) {
+	 console.log("ND",this.node_data);
 	 let node_id = to.params.id;
 	 this.$store.dispatch('go',node_id);
 	 var self = this;
@@ -62,18 +64,12 @@
 	 }
 	 else {
 	     console.log("not cached");
-	     this.get_node(node_id, data => {
-		 self.$store.dispatch('cache',{node_id:data});
-		 self.node = node_id;
-		 next();
-	     });
+	     this.get_node(node_id, next);
 	 }
      },
      computed: {
 	 ...mapState(['nodes', 'node_data']),
-	 ...mapGetters([
-	     'neighbours',
-	 ])
+	 ...mapGetters(['neighbours'])
      },
      methods: {
 	 get_node: function(node_id, next) {
@@ -89,18 +85,25 @@
 	     };
 	     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
 		 response.text().then(function(data){
+		     var to_cache = {};
+		     to_cache[node_id] = data;
+		     self.$store.commit('CACHE',to_cache);
 		     self.data = data;
-		     next(data);
-		     self.$nextTick(function(){Vue.run_plugins(self);});
+		     self.node = node_id;
+		     next();
+		     console.log("IH1",self.data,"||",self.$el.innerHTML);
+		     self.$nextTick(function(){
+			 console.log("IH2",self.data,"||",self.$el.innerHTML);
+			 Vue.run_plugins(self);
+			 console.log("IH3",self.data,"||",self.$el.innerHTML);
+		     });
 		 });
 	     });
 
 	 },
 	 reload_node: function(node, event){
 	     var self = this;
-	     this.get_node(this.node, data => {
-		 self.$store.dispatch('cache',{node:data});
-	     });
+	     this.get_node(this.node, function(){});
 	 },
 	 edit_node: function(node, event){
 	     var self = this;

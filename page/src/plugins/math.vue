@@ -27,30 +27,35 @@
      props: ['root'],
      data () {
 	 return {
+	     id: '',
+	     rendered: '',
 	     player: null
 	 };
      },
      methods: {
-	 get_pos: function(id) {
-	     var el = document.getElementById("category-math-plugin-expr-"+id);
+	 get_pos: function() {
+	     var el = document.getElementById("category-math-plugin-expr-"+this.id);
 	     var top = el.getBoundingClientRect().y;
 	     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};
 	 }
      },
      created: function(){
-	 Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
+	 console.log("init");
+	 this.$store.dispatch("RESET_PLUGIN_DATA","math");
+	 //Guppy.init({"path":"/node_modules/guppy-js","symbols":"/node_modules/guppy-js/sym/symbols.json"});
      }, 
      mounted: function(){
+	 var index = 0;
 	 var doc_id = node+"-"+index;
-	 if(index == 0) this.docs[node] = {};
 	 var content = this.root.innerHTML.trim()
 	 console.log("R",this.root,content);
-	 var res = Guppy.Doc.render(content, "text");
-	 res.container.setAttribute("id","category-math-container-"+doc_id);
-	 this.docs[node][index] = res.doc.get_vars().concat(res.doc.get_symbols());
-	 var rendered_content = (new XMLSerializer()).serializeToString(res.container);
-	 var container = document.createElement("span");
-
+	 //var res = Guppy.Doc.render(content, "text");
+	 var res = {doc:content};
+	 var doc_data = {};
+	 //doc_data[index] = res.doc.get_vars().concat(res.doc.get_symbols());
+	 doc_data[index] = ["x"];
+	 //res.container.setAttribute("id","category-math-container-"+doc_id);
+	 //var rendered_content = (new XMLSerializer()).serializeToString(res.container);
 
 	 
 	 // Put this doc ID in the index for each var and symbol in the document
@@ -60,6 +65,7 @@
 	     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);
 	 }
 
+	 // Calculate the snippet that will be associated with this expression when it appears in listings
 	 var snippet = "";
 	 if(this.root.previousSibling){
 	     snippet += this.root.previousSibling.textContent.split(" ").slice(-4).join(" ");
@@ -72,24 +78,15 @@
 	 snippet = "..." + snippet + "...";
 	 console.log("parprev",this.root.parentNode.previousSibling);
 	 console.log("parnext",this.root.parentNode.nextSibling);
-
 	 this.snippets[doc_id] = snippet;
-	 
-         this.root.parentNode.insertBefore(container, this.root);
 
-	 new comp.$options.components['math-plugin']({
-	     el: container,
-	     parent: comp,
-	     propsData:{
-		 syms:this.docs[node][index],
-		 rendered:rendered_content,
-		 display_syms:false,
-		 id:doc_id,
-		 master:this,
-		 query:"",
-		 node:node
-	     }
-	 });
+	 // Finally, set up component attributes
+	 this.syms = this.docs[node][index];
+	 this.rendered = rendered_content;
+	 this.display_syms = false;
+	 this.id = doc_id;
+	 this.query = "";
+	 this.node = node;
      }
  }
 </script>

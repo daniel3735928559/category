@@ -14,6 +14,7 @@ import MathPlugin from './plugins/math.vue'
 import LinkPlugin from './plugins/link.vue'
 import QueryPlugin from './plugins/query.vue'
 import SlideshowPlugin from './plugins/slideshow.vue'
+import JSAVRPlugin from './plugins/jsavr.vue'
 
 import Query from './components/search/module/query.js'
 import Search from './components/search/module/search.js'
@@ -30,6 +31,7 @@ Vue.category_plugins = {
     'cat-video': Vue.component('catVideo', VideoPlugin),
     'cat-query': Vue.component('catQuery', QueryPlugin),
     'cat-link': Vue.component('catLink', LinkPlugin),
+    'cat-jsavr': Vue.component('catJsavr', JSAVRPlugin),
 //    'cat-math': Vue.component('catMath', MathPlugin)
 };
 
@@ -44,6 +46,7 @@ Vue.run_plugins = function(comp){
 	var l = comp.$el.getElementsByTagName(p);
 	while(l.length > 0) {
 	    var node = l[0];
+	    console.log("PL",p,node);
 	    new plugin({
 		el: node,
 		propsData: {'root': node},

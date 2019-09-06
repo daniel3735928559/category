@@ -25,7 +25,7 @@ def build_worker(inputs, outputs):
                     print("PROCESSING",fn)
                     args = {}
                     if ending == ".md":
-                        args = {"plugins":{"slideshow":"md","math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt"}}
+                        args = {"plugins":{"slideshow":"md","math":{},"video":video.VideoPlugin(),"link":"txt","query":"txt","jsavr":"txt"}}
                     builder = endings[ending](fn,output_dir,**args)
                     if not builder.OK:
                         ans['error'] = "WARNING: There was a problem building {}".format(fn)

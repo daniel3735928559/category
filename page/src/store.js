@@ -49,6 +49,7 @@ export default new Vuex.Store({
 	    if(idx >= 0) state.recent.splice(idx,1);
 	},
 	GO: (state, node_id) => {
+	    console.log('historicising');
 	    state.current = node_id;
 	    var idx = state.recent.indexOf(node_id);
 	    if(idx >= 0) {
