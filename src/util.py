@@ -73,6 +73,7 @@ def get_file(ID, filename, input_url, output_dir):
             pass
         src = os.path.join(path, input_url)
         dst = os.path.join(files_dir,input_path)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
         print("COPY", src, dst)
         copyfile(src, dst)
         return "/out/files/"+ID+"/"+input_path
