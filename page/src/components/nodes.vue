@@ -27,8 +27,8 @@
             <div v-if="!node">
 		<h3>All nodes</h3>
     		<ul>
-		    <li v-for="(node,n) in nodeset">
-			<router-link :to="'/node/'+n">{{node.name}}</router-link>
+		    <li v-for="n in sorted(nodelist)">
+			<router-link :to="'/node/'+n">{{nodes[n].name}}</router-link>
 		    </li>
     		</ul>
             </div>
@@ -38,7 +38,7 @@
 	<div class="node-index-list" v-if="current_label == 'unlinked'">
             <h3>Unlinked</h3>
             <ul>
-    		<li v-for="n in labeldata.disconnected">
+    		<li v-for="n in sorted(labeldata.disconnected)">
     		    <router-link :to="'/node/'+n">{{nodes[n].name}}</router-link>
     		</li>
             </ul>
@@ -50,6 +50,7 @@
 
 <script>
  import { mapState } from 'vuex'
+ import { mapGetters } from 'vuex'
  
  export default {
      name: 'node-index',
@@ -61,6 +62,13 @@
 	 }
      },
      computed: {
+	 nodelist: function() {
+	     var ans = [];
+	     for(var n in this.nodeset) {
+		 ans.push(n);
+	     }
+	     return ans;
+	 },
 	 num_nodes: function() {
 	     var ans = 0;
 	     for(var n in this.nodeset) ans++;
@@ -198,7 +206,8 @@
 		 'labels': best_labels
 	     };
 	 },
-	 ...mapState(['nodes'])
+	 ...mapState(['nodes']),
+	 ...mapGetters(['sorted'])
      },
      methods: {
 	 toggle_display: function(l) {

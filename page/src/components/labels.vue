@@ -1,10 +1,10 @@
 <template>
   <div class="label_index">
       <ul v-if="mode == 'by' || mode == 'menu'">
-	  <li v-for="n in headers">
+	  <li v-for="n in sorted(headers)">
 	      <router-link :to="{name:'node', params: {id: n}}">{{nodes[n].name}}</router-link>
 	      <ul>
-		  <li v-for="m in nodes[n].edges[mode == 'menu' ? 'has' : 'is'][label]" v-if="m in nodeset">
+		  <li v-for="m in sorted(label_neighbours(n, label))">
 		      <router-link :to="{name:'node', params: {id: m}}">{{nodes[m].name}}</router-link>
 		  </li>
 	      </ul>
@@ -15,6 +15,7 @@
 
 <script>
  import { mapState } from 'vuex'
+ import { mapGetters } from 'vuex'
  
  export default {
      name: 'label-index',
@@ -42,7 +43,22 @@
 	 },
 	 ...mapState([
 	     'nodes'
-	 ])
+	 ]),
+	 ...mapGetters(['sorted'])
+     },
+     methods: {
+	 label_neighbours: function(n, label) {
+	     var ans = [];
+	     console.log("NL",n,label);
+	     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];
+	     for(var i = 0; i < tgts.length; i++) {
+		 var m = tgts[i];
+		 console.log(m);
+		 if(m in this.nodeset) ans.push(m);
+	     }
+	     console.log(ans);
+	     return ans;
+	 }
      }
  }
 </script>

@@ -24,7 +24,18 @@ export default new Vuex.Store({
 		}
 	    }
 	    return ans;
-	}	
+	},
+	sorted: state => nodelist => {
+	    return nodelist.sort(function(a, b){
+		if('index' in state.nodes[a] && 'index' in state.nodes[b]) {
+		    return parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index);
+		}
+		else if('date' in state.nodes[a] && 'date' in state.nodes[b]) {
+		    return state.nodes[a].date.localeCompare(state.nodes[b].date);
+		}
+		else return state.nodes[a].name.localeCompare(state.nodes[b].name);
+	    });
+	}
     }, 
     mutations: {
 	CACHE: (state, nodes) => {

@@ -520,7 +520,18 @@
   		}
   	    }
   	    return ans;
-  	}	
+  	},
+  	sorted: state => nodelist => {
+  	    return nodelist.sort(function(a, b){
+  		if('index' in state.nodes[a] && 'index' in state.nodes[b]) {
+  		    return parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index);
+  		}
+  		else if('date' in state.nodes[a] && 'date' in state.nodes[b]) {
+  		    return state.nodes[a].date.localeCompare(state.nodes[b].date);
+  		}
+  		else return state.nodes[a].name.localeCompare(state.nodes[b].name);
+  	    });
+  	}
       }, 
       mutations: {
   	CACHE: (state, nodes) => {
@@ -612,6 +623,13 @@
   	 }
        },
        computed: {
+  	 nodelist: function() {
+  	     var ans = [];
+  	     for(var n in this.nodeset) {
+  		 ans.push(n);
+  	     }
+  	     return ans;
+  	 },
   	 num_nodes: function() {
   	     var ans = 0;
   	     for(var n in this.nodeset) ans++;
@@ -749,7 +767,8 @@
   		 'labels': best_labels
   	     };
   	 },
-  	 ...Vuex.mapState(['nodes'])
+  	 ...Vuex.mapState(['nodes']),
+  	 ...Vuex.mapGetters(['sorted'])
        },
        methods: {
   	 toggle_display: function(l) {
@@ -887,12 +906,12 @@
                   _c("h3", [_vm._v("All nodes")]),
                   _c(
                     "ul",
-                    _vm._l(_vm.nodeset, function(node, n) {
+                    _vm._l(_vm.sorted(_vm.nodelist), function(n) {
                       return _c(
                         "li",
                         [
                           _c("router-link", { attrs: { to: "/node/" + n } }, [
-                            _vm._v(_vm._s(node.name))
+                            _vm._v(_vm._s(_vm.nodes[n].name))
                           ])
                         ],
                         1
@@ -909,7 +928,7 @@
             _c("h3", [_vm._v("Unlinked")]),
             _c(
               "ul",
-              _vm._l(_vm.labeldata.disconnected, function(n) {
+              _vm._l(_vm.sorted(_vm.labeldata.disconnected), function(n) {
                 return _c(
                   "li",
                   [
@@ -933,11 +952,11 @@
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-2da31eb8_0", { source: "\n.node-index-menu[data-v-2da31eb8] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-2da31eb8] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-2da31eb8] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-2da31eb8] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AA0NA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span></h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"(node,n) in nodeset\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{node.name}}</router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in labeldata.disconnected\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodes[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {}\n\t }\n     },\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);\n\t     }\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t if(da < db) return 1; // TODO: -1 or 1 for descending order?\n\t\t if(da > db) return -1;\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['nodes'])\n     },\n     methods: {\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-ff5aa98e_0", { source: "\n.node-index-menu[data-v-ff5aa98e] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-ff5aa98e] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-ff5aa98e] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-ff5aa98e] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AAmOA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span></h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"n in sorted(nodelist)\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{nodes[n].name}}</router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in sorted(labeldata.disconnected)\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodes[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {}\n\t }\n     },\n     computed: {\n\t nodelist: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return ans;\n\t },\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);\n\t     }\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t if(da < db) return 1; // TODO: -1 or 1 for descending order?\n\t\t if(da > db) return -1;\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['nodes']),\n\t ...mapGetters(['sorted'])\n     },\n     methods: {\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-2da31eb8";
+    const __vue_scope_id__$3 = "data-v-ff5aa98e";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -985,7 +1004,22 @@
   	 },
   	 ...Vuex.mapState([
   	     'nodes'
-  	 ])
+  	 ]),
+  	 ...Vuex.mapGetters(['sorted'])
+       },
+       methods: {
+  	 label_neighbours: function(n, label) {
+  	     var ans = [];
+  	     console.log("NL",n,label);
+  	     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];
+  	     for(var i = 0; i < tgts.length; i++) {
+  		 var m = tgts[i];
+  		 console.log(m);
+  		 if(m in this.nodeset) ans.push(m);
+  	     }
+  	     console.log(ans);
+  	     return ans;
+  	 }
        }
    };
 
@@ -1001,7 +1035,7 @@
       _vm.mode == "by" || _vm.mode == "menu"
         ? _c(
             "ul",
-            _vm._l(_vm.headers, function(n) {
+            _vm._l(_vm.sorted(_vm.headers), function(n) {
               return _c(
                 "li",
                 [
@@ -1013,27 +1047,21 @@
                   _c(
                     "ul",
                     _vm._l(
-                      _vm.nodes[n].edges[_vm.mode == "menu" ? "has" : "is"][
-                        _vm.label
-                      ],
+                      _vm.sorted(_vm.label_neighbours(n, _vm.label)),
                       function(m) {
-                        return m in _vm.nodeset
-                          ? _c(
-                              "li",
-                              [
-                                _c(
-                                  "router-link",
-                                  {
-                                    attrs: {
-                                      to: { name: "node", params: { id: m } }
-                                    }
-                                  },
-                                  [_vm._v(_vm._s(_vm.nodes[m].name))]
-                                )
-                              ],
-                              1
+                        return _c(
+                          "li",
+                          [
+                            _c(
+                              "router-link",
+                              {
+                                attrs: { to: { name: "node", params: { id: m } } }
+                              },
+                              [_vm._v(_vm._s(_vm.nodes[m].name))]
                             )
-                          : _vm._e()
+                          ],
+                          1
+                        )
                       }
                     ),
                     0
@@ -1053,11 +1081,11 @@
     /* style */
     const __vue_inject_styles__$4 = function (inject) {
       if (!inject) return
-      inject("data-v-1934062d_0", { source: "\nh3[data-v-1934062d] {\n  margin: 40px 0 0;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/labels.vue"],"names":[],"mappings":";AAmDA;EACA,gBAAA;AACA","file":"labels.vue","sourcesContent":["<template>\n  <div class=\"label_index\">\n      <ul v-if=\"mode == 'by' || mode == 'menu'\">\n\t  <li v-for=\"n in headers\">\n\t      <router-link :to=\"{name:'node', params: {id: n}}\">{{nodes[n].name}}</router-link>\n\t      <ul>\n\t\t  <li v-for=\"m in nodes[n].edges[mode == 'menu' ? 'has' : 'is'][label]\" v-if=\"m in nodeset\">\n\t\t      <router-link :to=\"{name:'node', params: {id: m}}\">{{nodes[m].name}}</router-link>\n\t\t  </li>\n\t      </ul>\n\t  </li>\n      </ul>\n  </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n \n export default {\n     name: 'label-index',\n     props: ['mode','label','nodeset'],\n     computed: {\n\t headers: function() {\n\t     if(this.mode == 'menu'){\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['has'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t     else if(this.mode == 'by') {\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['is'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ])\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\nh3 {\n  margin: 40px 0 0;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-9b9627e2_0", { source: "\nh3[data-v-9b9627e2] {\n  margin: 40px 0 0;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/labels.vue"],"names":[],"mappings":";AAmEA;EACA,gBAAA;AACA","file":"labels.vue","sourcesContent":["<template>\n  <div class=\"label_index\">\n      <ul v-if=\"mode == 'by' || mode == 'menu'\">\n\t  <li v-for=\"n in sorted(headers)\">\n\t      <router-link :to=\"{name:'node', params: {id: n}}\">{{nodes[n].name}}</router-link>\n\t      <ul>\n\t\t  <li v-for=\"m in sorted(label_neighbours(n, label))\">\n\t\t      <router-link :to=\"{name:'node', params: {id: m}}\">{{nodes[m].name}}</router-link>\n\t\t  </li>\n\t      </ul>\n\t  </li>\n      </ul>\n  </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'label-index',\n     props: ['mode','label','nodeset'],\n     computed: {\n\t headers: function() {\n\t     if(this.mode == 'menu'){\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['has'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t     else if(this.mode == 'by') {\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['is'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ]),\n\t ...mapGetters(['sorted'])\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     console.log(\"NL\",n,label);\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i];\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\nh3 {\n  margin: 40px 0 0;\n}\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$4 = "data-v-1934062d";
+    const __vue_scope_id__$4 = "data-v-9b9627e2";
     /* module identifier */
     const __vue_module_identifier__$4 = undefined;
     /* functional template */
