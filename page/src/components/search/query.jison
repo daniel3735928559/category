@@ -12,13 +12,14 @@
 ";"                    		  return ';'
 ":"                    		  return ':'
 ","                    		  return ','
+"."                    		  return '.'
 "("                    		  return '('
 ")"                    		  return ')'
 "has"		       		  return 'HAS'
 "is"		       		  return 'IS'
 "of"		       		  return 'OF'
 "c"		       	      	  return 'C'
-(?!has)(?!of)[^*;/,:()! ]+        return 'STR'
+(?!has)(?!of)[^*;/,:.()! ]+       return 'STR'
 <<EOF>>                	       	  return 'EOF'
 .                      		  return 'INVALID'
 
@@ -53,6 +54,8 @@ q
         {$$ = ["edge",{"name":$2,"dir":"has","query":$5}];}
     | name OF ':' '(' q ')'
         {$$ = ["edge",{"name":$1,"dir":"is","query":$5}];}
+    | '.' name ':' name
+        {$$ = ["prop",[$2,$4]];}
     | '!' name
         {$$ = ["not",[["name",$2]]];}
     | '!' '(' q ')'

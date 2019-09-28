@@ -1886,7 +1886,8 @@
        
        // Need to have access to all the nodes in order to search them
        computed: {
-  	 ...Vuex.mapState(['nodes'])
+  	 ...Vuex.mapState(['nodes']),
+  	 ...Vuex.mapGetters(['sorted'])
        },
        data () {
   	 return {
@@ -1897,7 +1898,7 @@
   	 var query_text = this.root.innerHTML.trim();
   	 var q = Vue.category_query.parse(query_text);
   	 var query_result = Vue.category_search(q, this.nodes);
-  	 this.result = query_result;
+  	 this.result = this.$store.getters.sorted(query_result);
        }
    };
 
@@ -2080,11 +2081,11 @@
     /* style */
     const __vue_inject_styles__$c = function (inject) {
       if (!inject) return
-      inject("data-v-4a2e9466_0", { source: "\n.category-slideshow[data-v-4a2e9466] {\n    text-align:center;\n    width:100%;\n    overflow-x:scroll;\n}\n.category-slideshow-slide[data-v-4a2e9466] {\n    text-align:center;\n}\n.category-slideshow-caption[data-v-4a2e9466] {\n    text-align:center;\n    margin:auto;\n    width:80%;\n}\n.category-slideshow-button[data-v-4a2e9466] {\n    width:2em;\n    display:inline-block;\n    height:2em;\n    border:2px solid black;\n    text-align:center;\n    cursor:pointer;\n    margin:.5ex 0;\n}\n.category-slideshow-button-other[data-v-4a2e9466] {\n    background-color:#ccc;\n}\n.category-slideshow-button-current[data-v-4a2e9466] {\n    background-color:#8cf;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/slideshow.vue"],"names":[],"mappings":";AAuDA;IACA,iBAAA;IACA,UAAA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;IACA,WAAA;IACA,SAAA;AACA;AAEA;IACA,SAAA;IACA,oBAAA;IACA,UAAA;IACA,sBAAA;IACA,iBAAA;IACA,cAAA;IACA,aAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"slideshow.vue","sourcesContent":["<template>\n    <div class=\"category-slideshow\">\n\t<span :class=\"current_index == index && !all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-for=\"(s,index) in slides\" v-on:mouseover=\"tmp_set_index(index)\" v-on:mouseout=\"reset_index()\" v-on:click=\"set_index(index)\">\n\t    {{index}}\n\t</span>\n\t<span :class=\"all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-on:click=\"all=!all\">\n\t    all\n\t</span>\n\t<div class=\"category-slideshow-slide\" v-html=\"slides[current_index]\" v-if=\"!all\">\n\t</div>\n\t<div class=\"category-slideshow-slide\" v-for=\"(s,index) in slides\" v-if=\"all\" v-html=\"s\">\n\t</div>\n    </div>\n</template>\n<script>\n export default {\n     name: 'cat-slideshow',\n     props: ['root'],\n     data() {\n\t return {\n\t     current_index: 0,\n\t     lock_index: 0,\n\t     init_index: 0,\n\t     all: false,\n\t     slides: [],\n\t };\n     },\n     mounted: function() {\n\t var doc = this.root;\n\t var elements = [];\n\n\t // Iterate through li nodes and extract these as the slides\n\t for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){\n\t     if(n.nodeName.toLowerCase() == \"li\") elements.push(n.innerHTML);\n\t }\n\t \n\t this.slides = elements;\n     },\n     methods: {\n\t tmp_set_index: function(idx){\n\t     this.current_index = idx;\n\t },\n\t reset_index: function(){\n\t     this.current_index = this.lock_index;\n\t },\n\t set_index: function(idx){\n\t     this.all = false;\n\t     this.lock_index = idx;\n\t     this.current_index = idx;\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .category-slideshow {\n     text-align:center;\n     width:100%;\n     overflow-x:scroll;\n }\n\n .category-slideshow-slide {\n     text-align:center;\n }\n\n .category-slideshow-caption {\n     text-align:center;\n     margin:auto;\n     width:80%;\n }\n\n .category-slideshow-button {\n     width:2em;\n     display:inline-block;\n     height:2em;\n     border:2px solid black;\n     text-align:center;\n     cursor:pointer;\n     margin:.5ex 0;\n }\n\n .category-slideshow-button-other {\n     background-color:#ccc;\n }\n\n .category-slideshow-button-current {\n     background-color:#8cf;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-46ec8c84_0", { source: "\n.category-slideshow[data-v-46ec8c84] {\n    text-align:center;\n    width:100%;\n    overflow-x:scroll;\n}\n.category-slideshow-slide[data-v-46ec8c84] img {\n    max-width: 100% !important;\n}\n.category-slideshow-slide[data-v-46ec8c84] {\n    text-align:center;\n}\n.category-slideshow-caption[data-v-46ec8c84] {\n    text-align:center;\n    margin:auto;\n    width:80%;\n}\n.category-slideshow-button[data-v-46ec8c84] {\n    width:2em;\n    display:inline-block;\n    height:2em;\n    border:2px solid black;\n    text-align:center;\n    cursor:pointer;\n    margin:.5ex 0;\n}\n.category-slideshow-button-other[data-v-46ec8c84] {\n    background-color:#ccc;\n}\n.category-slideshow-button-current[data-v-46ec8c84] {\n    background-color:#8cf;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/slideshow.vue"],"names":[],"mappings":";AAuDA;IACA,iBAAA;IACA,UAAA;IACA,iBAAA;AACA;AAEA;IACA,0BAAA;AACA;AAEA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;IACA,WAAA;IACA,SAAA;AACA;AAEA;IACA,SAAA;IACA,oBAAA;IACA,UAAA;IACA,sBAAA;IACA,iBAAA;IACA,cAAA;IACA,aAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"slideshow.vue","sourcesContent":["<template>\n    <div class=\"category-slideshow\">\n\t<span :class=\"current_index == index && !all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-for=\"(s,index) in slides\" v-on:mouseover=\"tmp_set_index(index)\" v-on:mouseout=\"reset_index()\" v-on:click=\"set_index(index)\">\n\t    {{index}}\n\t</span>\n\t<span :class=\"all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-on:click=\"all=!all\">\n\t    all\n\t</span>\n\t<div class=\"category-slideshow-slide\" v-html=\"slides[current_index]\" v-if=\"!all\">\n\t</div>\n\t<div class=\"category-slideshow-slide\" v-for=\"(s,index) in slides\" v-if=\"all\" v-html=\"s\">\n\t</div>\n    </div>\n</template>\n<script>\n export default {\n     name: 'cat-slideshow',\n     props: ['root'],\n     data() {\n\t return {\n\t     current_index: 0,\n\t     lock_index: 0,\n\t     init_index: 0,\n\t     all: false,\n\t     slides: [],\n\t };\n     },\n     mounted: function() {\n\t var doc = this.root;\n\t var elements = [];\n\n\t // Iterate through li nodes and extract these as the slides\n\t for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){\n\t     if(n.nodeName.toLowerCase() == \"li\") elements.push(n.innerHTML);\n\t }\n\t \n\t this.slides = elements;\n     },\n     methods: {\n\t tmp_set_index: function(idx){\n\t     this.current_index = idx;\n\t },\n\t reset_index: function(){\n\t     this.current_index = this.lock_index;\n\t },\n\t set_index: function(idx){\n\t     this.all = false;\n\t     this.lock_index = idx;\n\t     this.current_index = idx;\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .category-slideshow {\n     text-align:center;\n     width:100%;\n     overflow-x:scroll;\n }\n\n .category-slideshow-slide >>> img {\n     max-width: 100% !important;\n }\n \n .category-slideshow-slide {\n     text-align:center;\n }\n\n .category-slideshow-caption {\n     text-align:center;\n     margin:auto;\n     width:80%;\n }\n\n .category-slideshow-button {\n     width:2em;\n     display:inline-block;\n     height:2em;\n     border:2px solid black;\n     text-align:center;\n     cursor:pointer;\n     margin:.5ex 0;\n }\n\n .category-slideshow-button-other {\n     background-color:#ccc;\n }\n\n .category-slideshow-button-current {\n     background-color:#8cf;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$c = "data-v-4a2e9466";
+    const __vue_scope_id__$c = "data-v-46ec8c84";
     /* module identifier */
     const __vue_module_identifier__$c = undefined;
     /* functional template */
@@ -4084,12 +4085,12 @@
     }
   */
   var query = (function(){
-  var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,5],$V2=[1,7],$V3=[1,6],$V4=[1,9],$V5=[1,10],$V6=[1,12],$V7=[1,13],$V8=[5,12,14,15],$V9=[5,9,10,12,14,15],$Va=[5,9,10,12,14,15,18];
+  var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,5],$V2=[1,8],$V3=[1,6],$V4=[1,7],$V5=[1,10],$V6=[1,11],$V7=[1,13],$V8=[1,14],$V9=[5,12,15,16],$Va=[5,9,10,12,15,16],$Vb=[5,9,10,12,15,16,19];
   var parser = {trace: function trace () { },
   yy: {},
-  symbols_: {"error":2,"query":3,"q":4,"EOF":5,"name":6,"HAS":7,"IS":8,":":9,"OF":10,"(":11,")":12,"!":13,",":14,"/":15,"words":16,"*":17,"STR":18,"$accept":0,"$end":1},
-  terminals_: {2:"error",5:"EOF",7:"HAS",8:"IS",9:":",10:"OF",11:"(",12:")",13:"!",14:",",15:"/",17:"*",18:"STR"},
-  productions_: [0,[3,2],[4,1],[4,2],[4,2],[4,4],[4,4],[4,6],[4,6],[4,2],[4,4],[4,3],[4,3],[4,3],[6,1],[6,1],[16,2],[16,1]],
+  symbols_: {"error":2,"query":3,"q":4,"EOF":5,"name":6,"HAS":7,"IS":8,":":9,"OF":10,"(":11,")":12,".":13,"!":14,",":15,"/":16,"words":17,"*":18,"STR":19,"$accept":0,"$end":1},
+  terminals_: {2:"error",5:"EOF",7:"HAS",8:"IS",9:":",10:"OF",11:"(",12:")",13:".",14:"!",15:",",16:"/",18:"*",19:"STR"},
+  productions_: [0,[3,2],[4,1],[4,2],[4,2],[4,4],[4,4],[4,6],[4,6],[4,4],[4,2],[4,4],[4,3],[4,3],[4,3],[6,1],[6,1],[17,2],[17,1]],
   performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
   /* this == yyval */
 
@@ -4120,36 +4121,39 @@
   this.$ = ["edge",{"name":$$[$0-5],"dir":"is","query":$$[$0-1]}];
   break;
   case 9:
-  this.$ = ["not",[["name",$$[$0]]]];
+  this.$ = ["prop",[$$[$0-2],$$[$0]]];
   break;
   case 10:
-  this.$ = ["not",[$$[$0-1]]];
+  this.$ = ["not",[["name",$$[$0]]]];
   break;
   case 11:
-  this.$ = $$[$0-1];
+  this.$ = ["not",[$$[$0-1]]];
   break;
   case 12:
-  this.$ = ["and",[$$[$0-2], $$[$0]]];
+  this.$ = $$[$0-1];
   break;
   case 13:
-  this.$ = ["or",[$$[$0-2], $$[$0]]];
+  this.$ = ["and",[$$[$0-2], $$[$0]]];
   break;
   case 14:
-  this.$ = $$[$0];
+  this.$ = ["or",[$$[$0-2], $$[$0]]];
   break;
   case 15:
-  this.$ = "*";
+  this.$ = $$[$0];
   break;
   case 16:
-  this.$ = $$[$0-1] +" "+ $$[$0];
+  this.$ = "*";
   break;
   case 17:
+  this.$ = $$[$0-1] +" "+ $$[$0];
+  break;
+  case 18:
   this.$ = $$[$0];
   break;
   }
   },
-  table: [{3:1,4:2,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{1:[3]},{5:[1,11],14:$V6,15:$V7},o($V8,[2,2],{10:[1,14]}),{6:15,16:8,17:$V4,18:$V5},{6:16,16:8,17:$V4,18:$V5},{6:17,11:[1,18],16:8,17:$V4,18:$V5},{4:19,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},o($V9,[2,14],{18:[1,20]}),o($V9,[2,15]),o($Va,[2,17]),{1:[2,1]},{4:21,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{4:22,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{9:[1,23]},o($V8,[2,3],{9:[1,24]}),o($V8,[2,4]),o($V8,[2,9]),{4:25,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{12:[1,26],14:$V6,15:$V7},o($Va,[2,16]),o($V8,[2,12]),o([5,12,15],[2,13],{14:$V6}),{6:27,11:[1,28],16:8,17:$V4,18:$V5},{6:29,11:[1,30],16:8,17:$V4,18:$V5},{12:[1,31],14:$V6,15:$V7},o($V8,[2,11]),o($V8,[2,6]),{4:32,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},o($V8,[2,5]),{4:33,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},o($V8,[2,10]),{12:[1,34],14:$V6,15:$V7},{12:[1,35],14:$V6,15:$V7},o($V8,[2,8]),o($V8,[2,7])],
-  defaultActions: {11:[2,1]},
+  table: [{3:1,4:2,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{1:[3]},{5:[1,12],15:$V7,16:$V8},o($V9,[2,2],{10:[1,15]}),{6:16,17:9,18:$V5,19:$V6},{6:17,17:9,18:$V5,19:$V6},{6:18,17:9,18:$V5,19:$V6},{6:19,11:[1,20],17:9,18:$V5,19:$V6},{4:21,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},o($Va,[2,15],{19:[1,22]}),o($Va,[2,16]),o($Vb,[2,18]),{1:[2,1]},{4:23,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{4:24,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{9:[1,25]},o($V9,[2,3],{9:[1,26]}),o($V9,[2,4]),{9:[1,27]},o($V9,[2,10]),{4:28,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{12:[1,29],15:$V7,16:$V8},o($Vb,[2,17]),o($V9,[2,13]),o([5,12,16],[2,14],{15:$V7}),{6:30,11:[1,31],17:9,18:$V5,19:$V6},{6:32,11:[1,33],17:9,18:$V5,19:$V6},{6:34,17:9,18:$V5,19:$V6},{12:[1,35],15:$V7,16:$V8},o($V9,[2,12]),o($V9,[2,6]),{4:36,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},o($V9,[2,5]),{4:37,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},o($V9,[2,9]),o($V9,[2,11]),{12:[1,38],15:$V7,16:$V8},{12:[1,39],15:$V7,16:$V8},o($V9,[2,8]),o($V9,[2,7])],
+  defaultActions: {12:[2,1]},
   parseError: function parseError (str, hash) {
       if (hash.recoverable) {
           this.trace(str);
@@ -4617,40 +4621,42 @@
   switch($avoiding_name_collisions) {
   case 0:/* skip whitespace */
   break;
-  case 1:return 13
+  case 1:return 14
   break;
-  case 2:return 17
+  case 2:return 18
   break;
-  case 3:return 15
+  case 3:return 16
   break;
   case 4:return ';'
   break;
   case 5:return 9
   break;
-  case 6:return 14
+  case 6:return 15
   break;
-  case 7:return 11
+  case 7:return 13
   break;
-  case 8:return 12
+  case 8:return 11
   break;
-  case 9:return 7
+  case 9:return 12
   break;
-  case 10:return 8
+  case 10:return 7
   break;
-  case 11:return 10
+  case 11:return 8
   break;
-  case 12:return 'C'
+  case 12:return 10
   break;
-  case 13:return 18
+  case 13:return 'C'
   break;
-  case 14:return 5
+  case 14:return 19
   break;
-  case 15:return 'INVALID'
+  case 15:return 5
+  break;
+  case 16:return 'INVALID'
   break;
   }
   },
-  rules: [/^(?:\s+)/,/^(?:!)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:(?!has)(?!of)[^*;\/,:()! ]+)/,/^(?:$)/,/^(?:.)/],
-  conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],"inclusive":true}}
+  rules: [/^(?:\s+)/,/^(?:!)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:\.)/,/^(?:\()/,/^(?:\))/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:(?!has)(?!of)[^*;\/,:.()! ]+)/,/^(?:$)/,/^(?:.)/],
+  conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],"inclusive":true}}
   });
   return lexer;
   })();
@@ -4754,6 +4760,15 @@
   	var name = q[1].toLowerCase();
   	for(var n in nodes){
   	    if(name == "*" || nodes[n].name.toLowerCase().indexOf(name) >= 0){
+  		result.push(n);
+  	    }
+  	}
+      }
+      else if(q[0] == "prop"){
+  	var prop_name = q[1][0].toLowerCase();
+  	var prop_val = q[1][1].toLowerCase();
+  	for(var n in nodes){
+  	    if(nodes[n][prop_name] && nodes[n][prop_name].toLowerCase().indexOf(prop_val) >= 0){
   		result.push(n);
   	    }
   	}

@@ -59,6 +59,10 @@
      overflow-x:scroll;
  }
 
+ .category-slideshow-slide >>> img {
+     max-width: 100% !important;
+ }
+ 
  .category-slideshow-slide {
      text-align:center;
  }

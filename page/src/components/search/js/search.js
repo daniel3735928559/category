@@ -94,6 +94,15 @@ var search = function(q, nodes){
 	    }
 	}
     }
+    else if(q[0] == "prop"){
+	var prop_name = q[1][0].toLowerCase();
+	var prop_val = q[1][1].toLowerCase();
+	for(var n in nodes){
+	    if(nodes[n][prop_name] && nodes[n][prop_name].toLowerCase().indexOf(prop_val) >= 0){
+		result.push(n);
+	    }
+	}
+    }
     else {
 	console.log("Unrecognised query type:",q[0]);
     }

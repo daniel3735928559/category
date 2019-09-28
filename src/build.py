@@ -69,9 +69,13 @@ class cat_builder:
         # If we're not rebuilding, iterate through the metadata
         # elements and remove those whose source files no longer exist
         if not force_rebuild:
+            to_del = []
             for node_id in self.metadata:
                 if 'src' in self.metadata[node_id] and not os.path.exists(os.path.join(input_dir, self.metadata[node_id]['src'])):
-                    del self.metadata[node_id]
+                    to_del.append(node_id)
+                    
+            for node_id in to_del:
+                del self.metadata[node_id]
         
         for dirname,dirs,files in os.walk(input_dir):
             # Skip the OLD directory
