@@ -7,6 +7,7 @@ Usage:
   category build <path>
   category rebuild <path>
   category subcat [--static] <path> <subcat_path> <subcat_name> <query>
+  category query <path> <query> [--json | --name | --src | --edit]
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
 
 Options:
@@ -86,7 +87,6 @@ def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
         readx = select.select([proc.stdout.fileno()], [], [])[0]
         if readx:
             proc_output += proc.stdout.read()
-            print("PO",proc_output)
     if proc.returncode == 0:
         subcat_nodes = json.loads(proc_output)
         src_out_path = os.path.join(src_path,"out")
@@ -118,6 +118,54 @@ def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
     elif proc.returncode == 1:
         cat_error(proc_output.decode())
 
+def cat_query(src_path, query, as_src, as_json, as_edit):
+    subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","src","components","search","module","subcat.js")
+    metadata_path = os.path.join(src_path,"out","metadata.json")
+    proc = subprocess.Popen(shlex.split(f"node {subcat_js_path} {metadata_path} '{query}'"),shell=False,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    proc_output = bytes()
+    while proc.poll() == None:
+        readx = select.select([proc.stdout.fileno()], [], [])[0]
+        if readx:
+            proc_output += proc.stdout.read()
+    if proc.returncode == 0:
+        subcat_nodes = json.loads(proc_output)
+        cat_nodes = load_metadata(src_path)
+        
+        if as_src:
+            for n in subcat_nodes:
+                if 'src' in cat_nodes[n]:
+                    node_path = os.path.join(src_path, 'src', cat_nodes[n]['src'])
+                    with open(node_path, "r") as f:
+                        print(f.read())
+        if as_edit:
+            to_edit = [n for n in subcat_nodes if 'src' in cat_nodes[n]]
+            config = load_config(src_path)
+            editor = config.get("editor","/usr/bin/emacs")
+
+            if len(to_edit) == 1:
+                node = to_edit[0]
+                node_src = os.path.join(src_path,"src",cat_nodes[node].get("src",f"""{cat_nodes[node]["name"]}.md"""))
+                if os.path.exists(node_src):
+                    print("EDIT",node_src)
+                    proc = subprocess.Popen([editor, node_src],shell=False)
+                    proc.wait()
+                    cat_build(src_path)
+                else:
+                    return f"Source file {node_src} does not exist"
+            elif len(to_edit) == 0:
+                print("No nodes found matching query")
+            elif len(to_edit) > 1:
+                print("Multiple nodes found matching query:")
+                output_names = [cat_nodes[x]['name'] for x in subcat_nodes]
+                for n in output_names:
+                    print(n)
+        elif as_json:
+            print(json.dumps({x:cat_nodes[x] for x in subcat_nodes}))
+        else: # print name is the default
+            output_names = [cat_nodes[x]['name'] for x in subcat_nodes]
+            for n in output_names:
+                print(n)
+        
 def cat_serve(cat_path, port, bind_addr):
     # Ensure we don't zombify our editors
     signal.signal(signal.SIGCHLD, signal.SIG_IGN);
@@ -184,6 +232,9 @@ if __name__ == "__main__":
                    args['<subcat_name>'],
                    args['<query>'],
                    args['--static'])
+    elif args['query']:
+        cat_query(args['<path>'],
+                  args['<query>'], as_src=args['--src'], as_json=args['--json'], as_edit=args['--edit'])
     elif args['serve']:
         cat_serve(args['<path>'],
                   args['-p'] if args['-p'] != False else 7688,
