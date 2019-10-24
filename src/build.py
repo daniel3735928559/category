@@ -21,6 +21,7 @@ def build_worker(inputs, outputs):
                 src_path = os.path.relpath(fn, common_prefix)
                 if os.path.getmtime(fn) < md_time:
                     ans['error'] = "Already up-to-date: {}".format(fn)
+                    ans['empty'] = True
                 else:
                     print("PROCESSING",fn)
                     args = {}
@@ -41,6 +42,7 @@ def build_worker(inputs, outputs):
                         ans['builder'] = builder
         except Exception as e:
             ans['error'] = f"Exception building: {fn}:\n" + traceback.format_exc()
+            ans['empty'] = False
             
         outputs.put(ans)
 
@@ -56,6 +58,10 @@ class cat_builder:
         input_queue = Queue()
         output_queue = Queue()
         num_inputs = 0
+        by_src = {self.metadata[node_id]['src']:node_id for node_id in self.metadata if 'src' in self.metadata[node_id]}
+        for x in by_src:
+            if 'quest' in x:
+                print(x)
 
         # The name of the metadata file that that will contain edges for all nodes in a subdirectory
         self.metadata_conf = "metadata.conf"
@@ -70,6 +76,8 @@ class cat_builder:
         # elements and remove those whose source files no longer exist
         if not force_rebuild:
             to_del = []
+
+            # Look for removed nodes
             for node_id in self.metadata:
                 if 'src' in self.metadata[node_id] and not os.path.exists(os.path.join(input_dir, self.metadata[node_id]['src'])):
                     to_del.append(node_id)
@@ -112,12 +120,21 @@ class cat_builder:
                 errors.append(ans['error'])
                 continue
             builder = ans['builder']
+            node_src_path = builder.node['src']
+            print("SRC",node_src_path)
             
             # Ensure no ID collisions
             if builder.ID in self.metadata:
                 es = "ERROR: Two nodes with the same name: {}\nSrc: {}\n"
-                print(es.format(builder.node['name'], self.metadata[builder.ID]['src']))
+                print(es.format(builder.node['name'], node_src_path))
                 return
+
+            # Check for name change
+            if not force_rebuild:
+                if by_src.get(node_src_path,None) != builder.ID:
+                    es = "WARNING: Node changed name: {} -> {}\n"
+                    print(es.format(self.metadata[by_src[node_src_path]]['name'], builder.node['name']))
+                    del self.metadata[by_src[node_src_path]]
 
             # Get the path of the file to write the processed document to
             output_path = os.path.join(output_dir,'{}.html'.format(builder.ID))
@@ -129,13 +146,17 @@ class cat_builder:
             # Actually write the output document
             with open(output_path,"wb") as f:
                 f.write(builder.doc)
-        
+
+        print("completing metadata")
         self.metadata = complete_metadata(self.metadata)
-        for x in self.metadata:
-            print("MD",x,self.metadata[x])
+        print("metadata complete")
+        # for x in self.metadata:
+        #     print("MD",x,self.metadata[x])
         with open(os.path.join(output_dir,'metadata.json'),"w") as f:
             f.write(jsonenc().encode(self.metadata))
 
+        print("metadata written")
+            
         if len(errors) > 0:
             print("ERRORS: ", "\n-----\n".join(errors))
         

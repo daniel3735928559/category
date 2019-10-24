@@ -20,6 +20,8 @@ import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, thread
 from src.build import cat_builder
 import src.util
 
+metadata = {}
+
 def cat_error(*args):
     print("[ERROR]:",*args)
     exit(1)
@@ -121,13 +123,19 @@ def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
 def cat_query(src_path, query, as_src, as_json, as_edit):
     subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","src","components","search","module","subcat.js")
     metadata_path = os.path.join(src_path,"out","metadata.json")
+    print(f"node {subcat_js_path} {metadata_path} '{query}'")
     proc = subprocess.Popen(shlex.split(f"node {subcat_js_path} {metadata_path} '{query}'"),shell=False,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     proc_output = bytes()
-    while proc.poll() == None:
-        readx = select.select([proc.stdout.fileno()], [], [])[0]
-        if readx:
-            proc_output += proc.stdout.read()
+    while proc.returncode is None:
+        proc.poll()
+        readx = select.select([proc.stdout], [], [])[0]
+        if proc.stdout in readx:
+            new_data = proc.stdout.read()
+            proc_output += new_data
+            print(len(new_data))
+        print("A")
     if proc.returncode == 0:
+        print(len(proc_output))
         subcat_nodes = json.loads(proc_output)
         cat_nodes = load_metadata(src_path)
         
@@ -167,6 +175,7 @@ def cat_query(src_path, query, as_src, as_json, as_edit):
                 print(n)
         
 def cat_serve(cat_path, port, bind_addr):
+    global metadata
     # Ensure we don't zombify our editors
     signal.signal(signal.SIGCHLD, signal.SIG_IGN);
 
@@ -190,12 +199,15 @@ def cat_serve(cat_path, port, bind_addr):
     
     @app.route('/edit/<node>')
     def edit_file(node):
+        global metadata
         node_src = os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
         print("EDIT",node_src)
         def edit_node(cat_path, editor, node_src):
+            global metadata
             proc = subprocess.Popen([editor, node_src],shell=False)
             proc.wait()
             cat_build(cat_path)
+            metadata = load_metadata(cat_path)
             return
         if os.path.exists(node_src):
             thread = threading.Thread(target=edit_node, args=(cat_path, editor, node_src))

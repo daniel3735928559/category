@@ -122,7 +122,7 @@ def create_subcat(metadata, node_list):
     return ans
 
 def complete_metadata(metadata):
-    print("completing",metadata)
+    #print("completing",metadata)
     duals = {'has':'is','is':'has'}
     name_to_id = {}
     ans = {}
