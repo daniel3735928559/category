@@ -15,6 +15,8 @@ def get_id(node):
 
 def add_edges(src, dst):
     for et in src:
+        if not et in dst:
+            dst[et] = {}
         for en in src[et]:
             if not en in dst[et]: dst[et][en] = []
             for target in src[et][en]:
@@ -95,6 +97,7 @@ def import_metadata(fn):
         node = data[node_id]
         name = node['name']
         metadata[name] = node
+        metadata[name]['id'] = node_id
         metadata[name]['edges'] = {'has':{en:[data[nid]['name'] for nid in node['edges']['has'][en]] for en in node['edges']['has']}}
 
     return metadata

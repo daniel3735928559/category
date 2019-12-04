@@ -356,6 +356,21 @@
   		     console.log(data);
   		 });
   	     });
+  	 },
+  	 new_node: function(node, event){
+  	     var fetch_headers = new Headers();
+  	     fetch_headers.append('pragma', 'no-cache');
+  	     fetch_headers.append('cache-control', 'no-cache');
+  	     
+  	     var fetch_params = {
+  		 method: 'GET',
+  		 headers: fetch_headers,
+  	     };
+  	     fetch('/new', fetch_params).then(function(response){
+  		 response.text().then(function(data){
+  		     console.log(data);
+  		 });
+  	     });
   	 }
        }
    };
@@ -406,6 +421,18 @@
             },
             [_c("span", { staticClass: "fas fa-sync" })]
           ),
+          _c(
+            "span",
+            {
+              staticClass: "close_x",
+              on: {
+                click: function($event) {
+                  return _vm.new_node(_vm.node)
+                }
+              }
+            },
+            [_c("span", { staticClass: "fas fa-plus" })]
+          ),
           _c("router-link", { staticClass: "close_x", attrs: { to: "/" } }, [
             _c("span", { staticClass: "fas fa-home" })
           ])
@@ -447,11 +474,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-76872024_0", { source: "\n.snippet_content img[data-v-76872024] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-76872024] {\n    max-width: 100%;\n}\n.snippet[data-v-76872024]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-76872024]{\n    padding:5px;\n}\n.snippet_header[data-v-76872024]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-76872024]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-76872024]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAgIA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-965ed268_0", { source: "\n.snippet_content img[data-v-965ed268] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-965ed268] {\n    max-width: 100%;\n}\n.snippet[data-v-965ed268]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-965ed268]{\n    padding:5px;\n}\n.snippet_header[data-v-965ed268]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-965ed268]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-965ed268]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAiJA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <span v-on:click=\"new_node(node)\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-76872024";
+    const __vue_scope_id__$2 = "data-v-965ed268";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -1393,11 +1420,22 @@
   		 return;
   	     }
   	     var query_result = Vue.category_search(q, this.nodes);
-  	     this.result = query_result;
+  	     if(query_result.length == 1) {
+  		 this.$router.push('/node/'+query_result[0]);
+  	     }
+  	     else {
+  		 this.result = query_result;
+  		 for(var i = 0; i < this.result.length; i++){
+  		     if(this.nodes[this.result[i]].name == this.query.trim()) {
+  			 this.$router.push('/node/'+this.result[i]);
+  			 break;
+  		     }
+  		 }
+  	     }
   	 }
        },
        mounted: function() {
-  	 this.query ='';
+  	 this.query = '';
   	 this.search();
        }
    };
@@ -1468,11 +1506,11 @@
     /* style */
     const __vue_inject_styles__$7 = function (inject) {
       if (!inject) return
-      inject("data-v-2473e64e_0", { source: "\n.search-error[data-v-2473e64e] {\n    color: #e33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AAoEA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n  <div class=\"searchbar\"> \n      <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n      <ul class=\"category-search-result\">\n\t  <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t  <span v-if=\"result.length == 0 && entered_query.trim().length > 0 && errormsg.length == 0\">No results</span>\n\t  <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t  <!-- <li v-for=\"node in result\">\n\t       <router-link :to=\"'./'+node\">{{nodes[node].name}}</router-link>\n\t       </li> -->\n      </ul>\n  </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     computed: { \n\t ...mapState(['nodes']),\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t }\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     errormsg: '',\n\t     result: []\n\t }\n     },\n     methods: {\n\t search: function() {\n\t     this.entered_query = this.query;\n\t     this.errormsg = \"\";\n\t     if(this.query.trim().length == 0) {\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(this.query);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     var query_result = Vue.category_search(q, this.nodes);\n\t     this.result = query_result;\n\t }\n     },\n     mounted: function() {\n\t this.query ='';\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .search-error {\n     color: #e33;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-27c93aa4_0", { source: "\n.search-error[data-v-27c93aa4] {\n    color: #e33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AA+EA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n  <div class=\"searchbar\"> \n      <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n      <ul class=\"category-search-result\">\n\t  <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t  <span v-if=\"result.length == 0 && entered_query.trim().length > 0 && errormsg.length == 0\">No results</span>\n\t  <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t  <!-- <li v-for=\"node in result\">\n\t       <router-link :to=\"'./'+node\">{{nodes[node].name}}</router-link>\n\t       </li> -->\n      </ul>\n  </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     computed: { \n\t ...mapState(['nodes']),\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t }\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     errormsg: '',\n\t     result: []\n\t }\n     },\n     methods: {\n\t search: function() {\n\t     this.entered_query = this.query;\n\t     this.errormsg = \"\";\n\t     if(this.query.trim().length == 0) {\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(this.query);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     var query_result = Vue.category_search(q, this.nodes);\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t for(var i = 0; i < this.result.length; i++){\n\t\t     if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t\t this.$router.push('/node/'+this.result[i]);\n\t\t\t break;\n\t\t     }\n\t\t }\n\t     }\n\t }\n     },\n     mounted: function() {\n\t this.query = '';\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .search-error {\n     color: #e33;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$7 = "data-v-2473e64e";
+    const __vue_scope_id__$7 = "data-v-27c93aa4";
     /* module identifier */
     const __vue_module_identifier__$7 = undefined;
     /* functional template */
@@ -2762,7 +2800,6 @@
   	     else{
   		 return {"error":"Invalid instruction " + inst};
   	     }
-  	     return null;
   	 },
   	 is_updated: function(x){
   	     for(var i = 0; i < this.updated.length; i++){
@@ -4098,7 +4135,6 @@
   switch (yystate) {
   case 1:
    return $$[$0-1]; 
-  break;
   case 2:
   this.$ = ["name",$$[$0]];
   break;
@@ -4187,7 +4223,7 @@
       } else {
           this.parseError = Object.getPrototypeOf(this).parseError;
       }
-      _token_stack:
+      
           var lex = function () {
               var token;
               token = lexer.lex() || EOF;
@@ -4622,37 +4658,21 @@
   case 0:/* skip whitespace */
   break;
   case 1:return 14
-  break;
   case 2:return 18
-  break;
   case 3:return 16
-  break;
   case 4:return ';'
-  break;
   case 5:return 9
-  break;
   case 6:return 15
-  break;
   case 7:return 13
-  break;
   case 8:return 11
-  break;
   case 9:return 12
-  break;
   case 10:return 7
-  break;
   case 11:return 8
-  break;
   case 12:return 10
-  break;
   case 13:return 'C'
-  break;
   case 14:return 19
-  break;
   case 15:return 5
-  break;
   case 16:return 'INVALID'
-  break;
   }
   },
   rules: [/^(?:\s+)/,/^(?:!)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:\.)/,/^(?:\()/,/^(?:\))/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:(?!has)(?!of)[^*;\/,:.()! ]+)/,/^(?:$)/,/^(?:.)/],

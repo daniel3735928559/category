@@ -58,17 +58,14 @@ class cat_builder:
         input_queue = Queue()
         output_queue = Queue()
         num_inputs = 0
-        by_src = {self.metadata[node_id]['src']:node_id for node_id in self.metadata if 'src' in self.metadata[node_id]}
-        for x in by_src:
-            if 'quest' in x:
-                print(x)
+        by_src = {self.metadata[node_id]['src']:self.metadata[node_id]['id'] for node_id in self.metadata if 'src' in self.metadata[node_id]}
 
         # The name of the metadata file that that will contain edges for all nodes in a subdirectory
         self.metadata_conf = "metadata.conf"
 
         # The current set of edges read from a config file
         self.config_edges = {}
-
+        
         # Save off all the source paths so we can check if a file has been compiled already
         srcs = {x.get('src','') for x in self.metadata.values()}
 
@@ -88,19 +85,26 @@ class cat_builder:
         for dirname,dirs,files in os.walk(input_dir):
             # Skip the OLD directory
             if "OLD" in dirname:
-                print("skipping OLD")
+                print("SKIPPING: {}".format(dirname))
                 continue
             
             # Read the metadata
             if self.metadata_conf in files:
-                print("found config in",dirname)
                 with open(os.path.join(dirname, self.metadata_conf),"r") as f:
-                    _,self.config_edges = parse_config(f.read())
-                    
+                    _,ce = parse_config(f.read())
+                    self.config_edges[dirname] = ce
+
+            # Assemble the config edges that are relevant to this directory
+            config_edges = self.config_edges.get(dirname,{})
+            for d in self.config_edges:
+                if os.path.abspath(dirname).startswith(os.path.abspath(d)+os.sep):
+                    add_edges(self.config_edges[d], config_edges)
+            print(dirname, config_edges)
+            
             # Now read the actual data files
             for fn in files:
                 fn = os.path.join(dirname, fn)
-                input_queue.put([input_dir, output_dir, fn, copy.deepcopy(self.config_edges), self.md_time])
+                input_queue.put([input_dir, output_dir, fn, config_edges, self.md_time])
                 num_inputs += 1
 
         # Now start the workers
@@ -121,7 +125,6 @@ class cat_builder:
                 continue
             builder = ans['builder']
             node_src_path = builder.node['src']
-            print("SRC",node_src_path)
             
             # Ensure no ID collisions
             if builder.ID in self.metadata:
@@ -131,9 +134,9 @@ class cat_builder:
 
             # Check for name change
             if not force_rebuild:
-                if by_src.get(node_src_path,None) != builder.ID:
-                    es = "WARNING: Node changed name: {} -> {}\n"
-                    print(es.format(self.metadata[by_src[node_src_path]]['name'], builder.node['name']))
+                if node_src_path in by_src and by_src[node_src_path] != builder.ID:
+                    es = "WARNING: Node changed name: {} -> {} ({} != {})\n"
+                    print(es.format(self.metadata[by_src[node_src_path]]['name'], builder.node['name'], by_src[node_src_path], builder.ID))
                     del self.metadata[by_src[node_src_path]]
 
             # Get the path of the file to write the processed document to
@@ -147,16 +150,12 @@ class cat_builder:
             with open(output_path,"wb") as f:
                 f.write(builder.doc)
 
-        print("completing metadata")
         self.metadata = complete_metadata(self.metadata)
-        print("metadata complete")
         # for x in self.metadata:
         #     print("MD",x,self.metadata[x])
         with open(os.path.join(output_dir,'metadata.json'),"w") as f:
             f.write(jsonenc().encode(self.metadata))
 
-        print("metadata written")
-            
         if len(errors) > 0:
             print("ERRORS: ", "\n-----\n".join(errors))
         

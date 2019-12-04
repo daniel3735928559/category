@@ -53,11 +53,22 @@
 		 return;
 	     }
 	     var query_result = Vue.category_search(q, this.nodes);
-	     this.result = query_result;
+	     if(query_result.length == 1) {
+		 this.$router.push('/node/'+query_result[0]);
+	     }
+	     else {
+		 this.result = query_result;
+		 for(var i = 0; i < this.result.length; i++){
+		     if(this.nodes[this.result[i]].name == this.query.trim()) {
+			 this.$router.push('/node/'+this.result[i]);
+			 break;
+		     }
+		 }
+	     }
 	 }
      },
      mounted: function() {
-	 this.query ='';
+	 this.query = '';
 	 this.search();
      }
  }

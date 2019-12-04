@@ -4,6 +4,7 @@
 	    <span class="snippet_title">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>
 	    <span v-on:click="edit_node(node)" class="close_x"><span class="fas fa-edit"></span></span>
 	    <span v-on:click="reload_node(node)" class="close_x"><span class="fas fa-sync"></span></span>
+	    <span v-on:click="new_node(node)" class="close_x"><span class="fas fa-plus"></span></span>
 	    <router-link to="/" class="close_x"><span class="fas fa-home"></span></router-link>
 	</div>
 	<div>
@@ -116,6 +117,22 @@
 		 headers: fetch_headers,
 	     };
 	     fetch('/edit/'+node, fetch_params).then(function(response){
+		 response.text().then(function(data){
+		     console.log(data);
+		 });
+	     });
+	 },
+	 new_node: function(node, event){
+	     var self = this;
+	     var fetch_headers = new Headers();
+	     fetch_headers.append('pragma', 'no-cache');
+	     fetch_headers.append('cache-control', 'no-cache');
+	     
+	     var fetch_params = {
+		 method: 'GET',
+		 headers: fetch_headers,
+	     };
+	     fetch('/new', fetch_params).then(function(response){
 		 response.text().then(function(data){
 		     console.log(data);
 		 });
