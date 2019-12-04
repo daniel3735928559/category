@@ -134,13 +134,37 @@
 		 sorted_labels.push(l);
 	     }
 	     var discriminitivity = function(l){
-		 return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);
+		 // Intuitively, we are going to arrange the |count|
+		 // nodes in a rectangle with |has| or |is| columns. This
+		 // is the most "discriminitave" if the rectangle is a
+		 // square, i.e. |has| or |is| is close to sqrt(|count|).
+		     
+		 // However, we also want to normalise for number of
+		 // nodes, to a point, and we want to penalise being too close to the useless values of 
+
+		 var N = all_labels[l].count;
+		 var tgt = Math.sqrt(N);
+		 var scores = [];
+		 var ns = [all_labels[l].has.length, all_labels[l].is.length]
+		 for(var i = 0; i < 2; i++) {
+		     var n = ns[i];
+		     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better
+		     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better
+		     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)
+		     var score = nodes_score*(tgt_score + avoid_ends_score);
+		     
+		     console.log("D",l,i,tgt_score, avoid_ends_score, nodes_score,score)   
+		     scores.push(score);
+		 }
+		 return Math.max(scores[0], scores[1]);
 	     }
+	     console.log("ALAL",all_labels);
 	     sorted_labels.sort(function(a, b){
 		 var da = discriminitivity(a);
 		 var db = discriminitivity(b);
-		 if(da < db) return 1; // TODO: -1 or 1 for descending order?
-		 if(da > db) return -1;
+		 // We want to sort in increa
+		 if(da < db) return 1; // Sort a before b
+		 if(da > db) return -1; // Sort b before a
 		 return 0;
 	     });
 	     // Prep a set of all nodes so we can mark which ones we've finished
