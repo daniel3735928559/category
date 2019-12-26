@@ -7,7 +7,7 @@ Usage:
   category build <path>
   category rebuild <path>
   category subcat [--static] <path> <subcat_path> <subcat_name> <query>
-  category query <path> <query> [--json | --name | --src | --edit]
+  category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
 
 Options:
@@ -15,7 +15,7 @@ Options:
   -a address to bind (default: 127.0.0.1)
 """
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, send_file
 import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading
 from src.build import cat_builder
 import src.util
@@ -121,7 +121,7 @@ def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
     elif proc.returncode == 1:
         cat_error(proc_output.decode())
 
-def cat_query(src_path, query, as_src, as_json, as_edit):
+def cat_query(src_path, query, as_src, as_json, as_edit, pdf_path=None):
     subcat_js_path = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","src","components","search","module","subcat.js")
     metadata_path = os.path.join(src_path,"out","metadata.json")
     #print(f"node {subcat_js_path} {metadata_path} '{query}'")
@@ -168,6 +168,22 @@ def cat_query(src_path, query, as_src, as_json, as_edit):
                     print(n)
         elif as_json:
             print(json.dumps({x:cat_nodes[x] for x in subcat_nodes}))
+        elif pdf_path != None:
+            to_print = [n for n in subcat_nodes if 'src' in cat_nodes[n]]
+            if len(to_print) == 1:
+                node = to_print[0]
+                node_src = os.path.join(src_path,"src",cat_nodes[node].get("src",f"""{cat_nodes[node]["name"]}.md"""))
+                src_folder = os.path.dirname(node_src)
+                dst_path = os.path.join(os.getcwd(), pdf_path)
+                spo = subprocess.check_output(f"pandoc {node_src} -o {dst_path}",shell=True,stderr=subprocess.STDOUT,env={e:os.environ[e] for e in os.environ},cwd=src_folder)
+                print(spo)
+            elif len(to_print) == 0:
+                print("No nodes found matching query")
+            elif len(to_print) > 1:
+                print("Multiple nodes found matching query:")
+                output_names = [cat_nodes[x]['name'] for x in subcat_nodes]
+                for n in output_names:
+                    print(n)
         else: # print name is the default
             output_names = [cat_nodes[x]['name'] for x in subcat_nodes]
             for n in output_names:
@@ -229,9 +245,28 @@ def cat_serve(cat_path, port, bind_addr):
         thread = threading.Thread(target=new_node, args=(cat_path, editor))
         thread.start()
         return f"Editor {editor} started"
+
+    @app.route('/print/<node>')
+    def print_file(node):
+        global metadata
+        print("PRINT")
+        node_src = os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+        dst_path = os.path.join(cat_path,"out","node.pdf")
+        if os.path.exists(dst_path):
+            os.remove(dst_path)
+        cmd = f"/bin/bash -c 'pandoc {node_src} -o {dst_path}'"
+        src_folder = os.path.dirname(node_src)
+        print(node_src,dst_path)
+        #pandoc_output = pypandoc.convert_file(node_src, "pdf", outputfile=dst_path)
+        pandoc_output = subprocess.check_output(shlex.split(cmd),shell=False,env={"PATH":"/usr/bin"},cwd=src_folder)
+        if os.path.exists(dst_path):
+            return send_file(dst_path, f"""{metadata[node]["name"]}.pdf""")
+        else:
+            print(pandoc_output)
+            return pandoc_output
     
     @app.route('/out/<path:path>')
-    def send_file(path):
+    def send_output_file(path):
         return send_from_directory(cat_root, path)
 
     @app.route('/node/<path:path>')
@@ -260,7 +295,7 @@ if __name__ == "__main__":
                    args['--static'])
     elif args['query']:
         cat_query(args['<path>'],
-                  args['<query>'], as_src=args['--src'], as_json=args['--json'], as_edit=args['--edit'])
+                  args['<query>'], as_src=args['--src'], as_json=args['--json'], as_edit=args['--edit'], pdf_path=args['<pdf_path>'])
     elif args['serve']:
         cat_serve(args['<path>'],
                   args['-p'] if args['-p'] != False else 7688,

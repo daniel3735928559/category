@@ -35,6 +35,29 @@ export default new Vuex.Store({
 		}
 		else return state.nodes[a].name.localeCompare(state.nodes[b].name);
 	    });
+	},
+	sortedby: state => (nodelist, key, ascending) => {
+	    var ans = nodelist.sort(function(a, b){
+		var res = 0;
+		if (key in state.nodes[a] && key in state.nodes[b]) {
+		    console.log("arr by",key);
+		    if (key == 'index') {
+			var res = parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index)
+			return ascending ? res : -res;
+		    }
+		    var res = state.nodes[a][key].localeCompare(state.nodes[b][key]);
+		    return ascending ? res : -res;
+		} // Place things without properties 
+		else if (!(key in state.nodes[a]) && key in state.nodes[b]) {
+		    return 1;
+		}
+		else if ((key in state.nodes[a]) && !(key in state.nodes[b])) {
+		    return -1;
+		}
+		return ascending ? res : -res;
+	    });
+	    console.log(ans);
+	    return ans;
 	}
     }, 
     mutations: {

@@ -14,8 +14,18 @@
 	
 	<!-- List of edges associated with current_label -->
 	<div class="node-index-list" v-if="current_label != 'all' && current_label != 'unlinked'">
-            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style="cursor:pointer;font-size:.5em;" v-on:click="swap_mode(current_label)"><span class="fas fa-random"></span></span></h3>
-            <label-index :label="current_label" :mode="modes[current_label]" :nodeset="nodeset" />
+            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style="cursor:pointer;font-size:.5em;" v-on:click="swap_mode(current_label)"><span class="fas fa-random"></span></span>
+		<span v-if="!sort_is_ascending" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortasc(true)">
+		    <span class="fas fa-long-arrow-alt-up"></span>
+		</span>
+		<span v-if="sort_is_ascending" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortasc(false)">
+		    <span class="fas fa-long-arrow-alt-down"></span>
+		</span>
+		<span v-bind:class="{'sortkey_selected': sort_method == 'name'}" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortby('name')">name</span>
+		<span v-bind:class="{'sortkey_selected': sort_method == 'date'}" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortby('date')">date</span>
+		<span style="margin-left:1em;float:right;font-size:.5em;">Sort by:</span>
+	    </h3>
+            <label-index :label="current_label" :mode="modes[current_label]" :nodeset="nodeset" v-bind:sortkey="sort_method" v-bind:sortasc="sort_is_ascending" />
 	</div>
 	
 	<!-- List of all edges -->
@@ -25,10 +35,20 @@
     		<edge-display :node="node"></edge-display>
             </div>
             <div v-if="!node">
-		<h3>All nodes</h3>
+		<h3>All nodes
+		    <span v-if="!sort_is_ascending" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortasc(true)">
+			<span class="fas fa-long-arrow-alt-up"></span>
+		    </span>
+		    <span v-if="sort_is_ascending" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortasc(false)">
+			<span class="fas fa-long-arrow-alt-down"></span>
+		    </span>
+		    <span v-bind:class="{'sortkey_selected': sort_method == 'name'}" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortby('name')">name</span>
+		    <span v-bind:class="{'sortkey_selected': sort_method == 'date'}" style="margin-left:1em;float:right;cursor:pointer;font-size:.5em;" v-on:click="sortby('date')">date</span>
+		    <span style="margin-left:1em;float:right;font-size:.5em;">Sort by:</span>
+		</h3>
     		<ul>
-		    <li v-for="n in sorted(nodelist)">
-			<router-link :to="'/node/'+n">{{nodes[n].name}}</router-link>
+		    <li v-for="n in sorted_nodes">
+			<router-link :to="'/node/'+n">{{nodes[n].name}} <span v-if="'date' in nodes[n]" style="font-size:.5em;color:#666;">{{nodes[n].date}}</span></router-link>
 		    </li>
     		</ul>
             </div>
@@ -58,10 +78,19 @@
      data() {
 	 return {
 	     'current_label': 'blah',
-	     'modes': {}
+	     'modes': {},
+	     'sort_method': 'name',
+	     'sort_is_ascending': true
 	 }
      },
      computed: {
+	 sorted_nodes: function() {
+	     var ans = [];
+	     for(var n in this.nodeset) {
+		 ans.push(n);
+	     }
+	     return this.sortedby(ans, this.sort_method, this.sort_is_ascending)
+	 },
 	 nodelist: function() {
 	     var ans = [];
 	     for(var n in this.nodeset) {
@@ -231,9 +260,15 @@
 	     };
 	 },
 	 ...mapState(['nodes']),
-	 ...mapGetters(['sorted'])
+	 ...mapGetters(['sorted','sortedby'])
      },
      methods: {
+	 sortasc: function(ascending) {
+	     Vue.set(this, 'sort_is_ascending', ascending);
+	 },
+	 sortby: function(key) {
+	     Vue.set(this, 'sort_method', key);
+	 },
 	 toggle_display: function(l) {
  	     this.current_label = l;
 	 },
@@ -249,6 +284,10 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
+ .sortkey_selected {
+     text-decoration:underline;
+ }
+ 
  .node-index-menu {
      width: 24%;
      float:left;

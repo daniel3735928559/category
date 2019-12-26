@@ -1,11 +1,11 @@
 <template>
   <div class="label_index">
       <ul v-if="mode == 'by' || mode == 'menu'">
-	  <li v-for="n in sorted(headers)">
-	      <router-link :to="{name:'node', params: {id: n}}">{{nodes[n].name}}</router-link>
+	  <li v-for="n in sortedby(headers, sortkey, sortasc)">
+	      <router-link :to="{name:'node', params: {id: n}}">{{nodes[n].name}} <span v-if="'date' in nodes[n]" style="font-size:.5em;color:#666;">{{nodes[n].date}}</span></router-link>
 	      <ul>
-		  <li v-for="m in sorted(label_neighbours(n, label))">
-		      <router-link :to="{name:'node', params: {id: m}}">{{nodes[m].name}}</router-link>
+		  <li v-for="m in sortedby(label_neighbours(n, label), sortkey, sortasc)">
+		      <router-link :to="{name:'node', params: {id: m}}">{{nodes[m].name}} <span v-if="'date' in nodes[m]" style="font-size:.5em;color:#666;">{{nodes[m].date}}</span></router-link>
 		  </li>
 	      </ul>
 	  </li>
@@ -19,7 +19,7 @@
  
  export default {
      name: 'label-index',
-     props: ['mode','label','nodeset'],
+     props: ['mode','label','nodeset','sortkey','sortasc'],
      computed: {
 	 headers: function() {
 	     if(this.mode == 'menu'){
@@ -44,7 +44,7 @@
 	 ...mapState([
 	     'nodes'
 	 ]),
-	 ...mapGetters(['sorted'])
+	 ...mapGetters(['sorted','sortedby'])
      },
      methods: {
 	 label_neighbours: function(n, label) {

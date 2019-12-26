@@ -356,6 +356,21 @@
   		     console.log(data);
   		 });
   	     });
+  	 },
+  	 new_node: function(node, event){
+  	     var fetch_headers = new Headers();
+  	     fetch_headers.append('pragma', 'no-cache');
+  	     fetch_headers.append('cache-control', 'no-cache');
+  	     
+  	     var fetch_params = {
+  		 method: 'GET',
+  		 headers: fetch_headers,
+  	     };
+  	     fetch('/new', fetch_params).then(function(response){
+  		 response.text().then(function(data){
+  		     console.log(data);
+  		 });
+  	     });
   	 }
        }
    };
@@ -406,6 +421,18 @@
             },
             [_c("span", { staticClass: "fas fa-sync" })]
           ),
+          _c(
+            "span",
+            {
+              staticClass: "close_x",
+              on: {
+                click: function($event) {
+                  return _vm.new_node(_vm.node)
+                }
+              }
+            },
+            [_c("span", { staticClass: "fas fa-plus" })]
+          ),
           _c("router-link", { staticClass: "close_x", attrs: { to: "/" } }, [
             _c("span", { staticClass: "fas fa-home" })
           ])
@@ -447,11 +474,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-76872024_0", { source: "\n.snippet_content img[data-v-76872024] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-76872024] {\n    max-width: 100%;\n}\n.snippet[data-v-76872024]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-76872024]{\n    padding:5px;\n}\n.snippet_header[data-v-76872024]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-76872024]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-76872024]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAgIA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-965ed268_0", { source: "\n.snippet_content img[data-v-965ed268] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-965ed268] {\n    max-width: 100%;\n}\n.snippet[data-v-965ed268]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-965ed268]{\n    padding:5px;\n}\n.snippet_header[data-v-965ed268]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-965ed268]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-965ed268]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAiJA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <span v-on:click=\"new_node(node)\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-76872024";
+    const __vue_scope_id__$2 = "data-v-965ed268";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -520,7 +547,38 @@
   		}
   	    }
   	    return ans;
-  	}	
+  	},
+  	sorted: state => nodelist => {
+  	    return nodelist.sort(function(a, b){
+  		if('index' in state.nodes[a] && 'index' in state.nodes[b]) {
+  		    return parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index);
+  		}
+  		else if('date' in state.nodes[a] && 'date' in state.nodes[b]) {
+  		    return state.nodes[a].date.localeCompare(state.nodes[b].date);
+  		}
+  		else return state.nodes[a].name.localeCompare(state.nodes[b].name);
+  	    });
+  	},
+  	sortedby: state => (nodelist, priorities, ascending) => {
+  	    var ans = nodelist.sort(function(a, b){
+  		for (var i = 0; i < priorities.length; i++) {
+  		    if (priorities[i] in state.nodes[a] && priorities[i] in state.nodes[b]) {
+  			console.log("arr by",priorities[i]);
+  			if (priorities[i] == 'index') {
+  			    var ans = parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index);
+  			    return ascending ? ans : -ans;
+  			}
+  			var ans = state.nodes[a][priorities[i]].localeCompare(state.nodes[b][priorities[i]]);
+  			return ascending ? ans : -ans;
+  		    }
+  		}
+  		console.log("arr by name");
+  		var ans = state.nodes[a].name.localeCompare(state.nodes[b].name);
+  		return ascending ? ans : -ans;
+  	    });
+  	    console.log(ans);
+  	    return ans;
+  	}
       }, 
       mutations: {
   	CACHE: (state, nodes) => {
@@ -608,10 +666,30 @@
        data() {
   	 return {
   	     'current_label': 'blah',
-  	     'modes': {}
+  	     'modes': {},
+  	     'sort_methods': {}
   	 }
        },
        computed: {
+  	 sort_method: function() {
+  	     if (this.current_label in this.sort_methods) {
+  		 return this.sort_methods[this.current_label][0];
+  	     }
+  	     return "name";
+  	 },
+  	 sort_is_ascending: function() {
+  	     if (this.current_label in this.sort_methods) {
+  		 return this.sort_methods[this.current_label][1];
+  	     }
+  	     return true;
+  	 },
+  	 nodelist: function() {
+  	     var ans = [];
+  	     for(var n in this.nodeset) {
+  		 ans.push(n);
+  	     }
+  	     return ans;
+  	 },
   	 num_nodes: function() {
   	     var ans = 0;
   	     for(var n in this.nodeset) ans++;
@@ -677,13 +755,37 @@
   		 sorted_labels.push(l);
   	     }
   	     var discriminitivity = function(l){
-  		 return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);
+  		 // Intuitively, we are going to arrange the |count|
+  		 // nodes in a rectangle with |has| or |is| columns. This
+  		 // is the most "discriminitave" if the rectangle is a
+  		 // square, i.e. |has| or |is| is close to sqrt(|count|).
+  		     
+  		 // However, we also want to normalise for number of
+  		 // nodes, to a point, and we want to penalise being too close to the useless values of 
+
+  		 var N = all_labels[l].count;
+  		 var tgt = Math.sqrt(N);
+  		 var scores = [];
+  		 var ns = [all_labels[l].has.length, all_labels[l].is.length];
+  		 for(var i = 0; i < 2; i++) {
+  		     var n = ns[i];
+  		     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better
+  		     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better
+  		     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)
+  		     var score = nodes_score*(tgt_score + avoid_ends_score);
+  		     
+  		     console.log("D",l,i,tgt_score, avoid_ends_score, nodes_score,score);   
+  		     scores.push(score);
+  		 }
+  		 return Math.max(scores[0], scores[1]);
   	     };
+  	     console.log("ALAL",all_labels);
   	     sorted_labels.sort(function(a, b){
   		 var da = discriminitivity(a);
   		 var db = discriminitivity(b);
-  		 if(da < db) return 1; // TODO: -1 or 1 for descending order?
-  		 if(da > db) return -1;
+  		 // We want to sort in increa
+  		 if(da < db) return 1; // Sort a before b
+  		 if(da > db) return -1; // Sort b before a
   		 return 0;
   	     });
   	     // Prep a set of all nodes so we can mark which ones we've finished
@@ -749,9 +851,29 @@
   		 'labels': best_labels
   	     };
   	 },
-  	 ...Vuex.mapState(['nodes'])
+  	 ...Vuex.mapState(['nodes']),
+  	 ...Vuex.mapGetters(['sorted','sortedby'])
        },
        methods: {
+  	 sortasc: function(ascending) {
+  	     if (!(this.current_label in this.sort_methods)) {
+  		 this.sort_methods[this.current_label] = ["name",ascending];
+  	     }
+  	     else {
+  		 this.sort_methods[this.current_label][1] = ascending;
+  	     }
+  	     this.$forceUpdate();
+  	 },
+  	 sortby: function(key) {
+  	     console.log("sorting",this.current_label," by ",key);
+  	     if (!(this.current_label in this.sort_methods)) {
+  		 this.sort_methods[this.current_label] = [key,true];
+  	     }
+  	     else {
+  		 this.sort_methods[this.current_label][0] = key;
+  	     }
+  	     this.$forceUpdate();
+  	 },
   	 toggle_display: function(l) {
    	     this.current_label = l;
   	 },
@@ -857,13 +979,78 @@
                     }
                   },
                   [_c("span", { staticClass: "fas fa-random" })]
-                )
+                ),
+                _c(
+                  "span",
+                  { staticStyle: { "margin-left": "3em", "font-size": ".5em" } },
+                  [_vm._v("Sort by:")]
+                ),
+                _c(
+                  "span",
+                  {
+                    staticStyle: { cursor: "pointer", "font-size": ".5em" },
+                    on: {
+                      click: function($event) {
+                        return _vm.sortby("date")
+                      }
+                    }
+                  },
+                  [_vm._v("date")]
+                ),
+                _c(
+                  "span",
+                  {
+                    staticStyle: { cursor: "pointer", "font-size": ".5em" },
+                    on: {
+                      click: function($event) {
+                        return _vm.sortby("name")
+                      }
+                    }
+                  },
+                  [_vm._v("name")]
+                ),
+                !_vm.sort_is_ascending
+                  ? _c(
+                      "span",
+                      {
+                        staticStyle: { cursor: "pointer", "font-size": ".5em" },
+                        on: {
+                          click: function($event) {
+                            return _vm.sortasc(true)
+                          }
+                        }
+                      },
+                      [
+                        _vm._v("a"),
+                        _c("span", { staticClass: "fas fa-long-arrow-up" })
+                      ]
+                    )
+                  : _vm._e(),
+                _vm.sort_is_ascending
+                  ? _c(
+                      "span",
+                      {
+                        staticStyle: { cursor: "pointer", "font-size": ".5em" },
+                        on: {
+                          click: function($event) {
+                            return _vm.sortasc(false)
+                          }
+                        }
+                      },
+                      [
+                        _vm._v("d"),
+                        _c("span", { staticClass: "fas fa-long-arrow-down" })
+                      ]
+                    )
+                  : _vm._e()
               ]),
               _c("label-index", {
                 attrs: {
                   label: _vm.current_label,
                   mode: _vm.modes[_vm.current_label],
-                  nodeset: _vm.nodeset
+                  nodeset: _vm.nodeset,
+                  sortkey: _vm.sort_method,
+                  sortascending: _vm.sort_is_ascending
                 }
               })
             ],
@@ -884,20 +1071,100 @@
               : _vm._e(),
             !_vm.node
               ? _c("div", [
-                  _c("h3", [_vm._v("All nodes")]),
+                  _c("h3", [
+                    _vm._v("All nodes"),
+                    _c(
+                      "span",
+                      {
+                        staticStyle: { "margin-left": "3em", "font-size": ".5em" }
+                      },
+                      [_vm._v("Sort by:")]
+                    ),
+                    _c(
+                      "span",
+                      {
+                        staticStyle: { cursor: "pointer", "font-size": ".5em" },
+                        on: {
+                          click: function($event) {
+                            return _vm.sortby("date")
+                          }
+                        }
+                      },
+                      [_vm._v("date")]
+                    ),
+                    _c(
+                      "span",
+                      {
+                        staticStyle: { cursor: "pointer", "font-size": ".5em" },
+                        on: {
+                          click: function($event) {
+                            return _vm.sortby("name")
+                          }
+                        }
+                      },
+                      [_vm._v("name")]
+                    ),
+                    !_vm.sort_is_ascending
+                      ? _c(
+                          "span",
+                          {
+                            staticStyle: {
+                              cursor: "pointer",
+                              "font-size": ".5em"
+                            },
+                            on: {
+                              click: function($event) {
+                                return _vm.sortasc(true)
+                              }
+                            }
+                          },
+                          [
+                            _vm._v("a"),
+                            _c("span", { staticClass: "fas fa-long-arrow-up" })
+                          ]
+                        )
+                      : _vm._e(),
+                    _vm.sort_is_ascending
+                      ? _c(
+                          "span",
+                          {
+                            staticStyle: {
+                              cursor: "pointer",
+                              "font-size": ".5em"
+                            },
+                            on: {
+                              click: function($event) {
+                                return _vm.sortasc(false)
+                              }
+                            }
+                          },
+                          [
+                            _vm._v("d"),
+                            _c("span", { staticClass: "fas fa-long-arrow-down" })
+                          ]
+                        )
+                      : _vm._e()
+                  ]),
                   _c(
                     "ul",
-                    _vm._l(_vm.nodeset, function(node, n) {
-                      return _c(
-                        "li",
-                        [
-                          _c("router-link", { attrs: { to: "/node/" + n } }, [
-                            _vm._v(_vm._s(node.name))
-                          ])
-                        ],
-                        1
-                      )
-                    }),
+                    _vm._l(
+                      _vm.sortedby(
+                        _vm.nodelist,
+                        [_vm.sort_method],
+                        _vm.sort_is_ascending
+                      ),
+                      function(n) {
+                        return _c(
+                          "li",
+                          [
+                            _c("router-link", { attrs: { to: "/node/" + n } }, [
+                              _vm._v(_vm._s(_vm.nodes[n].name))
+                            ])
+                          ],
+                          1
+                        )
+                      }
+                    ),
                     0
                   )
                 ])
@@ -909,7 +1176,7 @@
             _c("h3", [_vm._v("Unlinked")]),
             _c(
               "ul",
-              _vm._l(_vm.labeldata.disconnected, function(n) {
+              _vm._l(_vm.sorted(_vm.labeldata.disconnected), function(n) {
                 return _c(
                   "li",
                   [
@@ -933,11 +1200,11 @@
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-2da31eb8_0", { source: "\n.node-index-menu[data-v-2da31eb8] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-2da31eb8] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-2da31eb8] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-2da31eb8] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AA0NA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span></h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"(node,n) in nodeset\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{node.name}}</router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in labeldata.disconnected\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodes[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {}\n\t }\n     },\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t return (all_labels[l].has.length-1)*(all_labels[l].is.length-1);\n\t     }\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t if(da < db) return 1; // TODO: -1 or 1 for descending order?\n\t\t if(da > db) return -1;\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['nodes'])\n     },\n     methods: {\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-0a092bf5_0", { source: "\n.node-index-menu[data-v-0a092bf5] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-0a092bf5] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-0a092bf5] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-0a092bf5] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AA2RA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span><span style=\"margin-left:3em;font-size:.5em;\">Sort by:</span><span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span><span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span><span v-if=\"!sort_is_ascending\" style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">a<span class=\"fas fa-long-arrow-up\"></span></span><span v-if=\"sort_is_ascending\" style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">d<span class=\"fas fa-long-arrow-down\"></span></span></h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" :sortkey=\"sort_method\" :sortascending=\"sort_is_ascending\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes<span style=\"margin-left:3em;font-size:.5em;\">Sort by:</span><span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span><span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span><span v-if=\"!sort_is_ascending\" style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">a<span class=\"fas fa-long-arrow-up\"></span></span><span v-if=\"sort_is_ascending\" style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">d<span class=\"fas fa-long-arrow-down\"></span></span></h3>\n    \t\t<ul>\n\t\t    <li v-for=\"n in sortedby(nodelist, [sort_method], sort_is_ascending)\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{nodes[n].name}}</router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in sorted(labeldata.disconnected)\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodes[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {},\n\t     'sort_methods': {}\n\t }\n     },\n     computed: {\n\t sort_method: function() {\n\t     if (this.current_label in this.sort_methods) {\n\t\t return this.sort_methods[this.current_label][0];\n\t     }\n\t     return \"name\";\n\t },\n\t sort_is_ascending: function() {\n\t     if (this.current_label in this.sort_methods) {\n\t\t return this.sort_methods[this.current_label][1];\n\t     }\n\t     return true;\n\t },\n\t nodelist: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return ans;\n\t },\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t];\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t // Intuitively, we are going to arrange the |count|\n\t\t // nodes in a rectangle with |has| or |is| columns. This\n\t\t // is the most \"discriminitave\" if the rectangle is a\n\t\t // square, i.e. |has| or |is| is close to sqrt(|count|).\n\t\t     \n\t\t // However, we also want to normalise for number of\n\t\t // nodes, to a point, and we want to penalise being too close to the useless values of \n\n\t\t var N = all_labels[l].count;\n\t\t var tgt = Math.sqrt(N);\n\t\t var scores = [];\n\t\t var ns = [all_labels[l].has.length, all_labels[l].is.length]\n\t\t for(var i = 0; i < 2; i++) {\n\t\t     var n = ns[i];\n\t\t     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better\n\t\t     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better\n\t\t     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)\n\t\t     var score = nodes_score*(tgt_score + avoid_ends_score);\n\t\t     \n\t\t     console.log(\"D\",l,i,tgt_score, avoid_ends_score, nodes_score,score)   \n\t\t     scores.push(score);\n\t\t }\n\t\t return Math.max(scores[0], scores[1]);\n\t     }\n\t     console.log(\"ALAL\",all_labels);\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t // We want to sort in increa\n\t\t if(da < db) return 1; // Sort a before b\n\t\t if(da > db) return -1; // Sort b before a\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i];\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['nodes']),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t sortasc: function(ascending) {\n\t     if (!(this.current_label in this.sort_methods)) {\n\t\t this.sort_methods[this.current_label] = [\"name\",ascending];\n\t     }\n\t     else {\n\t\t this.sort_methods[this.current_label][1] = ascending;\n\t     }\n\t     this.$forceUpdate();\n\t },\n\t sortby: function(key) {\n\t     console.log(\"sorting\",this.current_label,\" by \",key);\n\t     if (!(this.current_label in this.sort_methods)) {\n\t\t this.sort_methods[this.current_label] = [key,true];\n\t     }\n\t     else {\n\t\t this.sort_methods[this.current_label][0] = key;\n\t     }\n\t     this.$forceUpdate();\n\t },\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-2da31eb8";
+    const __vue_scope_id__$3 = "data-v-0a092bf5";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -961,7 +1228,13 @@
    
    var script$3 = {
        name: 'label-index',
-       props: ['mode','label','nodeset'],
+       props: ['mode','label','nodeset','sortkey','sortascending'],
+       data: function() {
+  	 return {
+  	     sort_key:this.sortkey,
+  	     sort_asc:this.sortascending
+  	 }
+       },
        computed: {
   	 headers: function() {
   	     if(this.mode == 'menu'){
@@ -985,7 +1258,22 @@
   	 },
   	 ...Vuex.mapState([
   	     'nodes'
-  	 ])
+  	 ]),
+  	 ...Vuex.mapGetters(['sorted','sortedby'])
+       },
+       methods: {
+  	 label_neighbours: function(n, label) {
+  	     var ans = [];
+  	     console.log("NL",n,label);
+  	     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];
+  	     for(var i = 0; i < tgts.length; i++) {
+  		 var m = tgts[i];
+  		 console.log(m);
+  		 if(m in this.nodeset) ans.push(m);
+  	     }
+  	     console.log(ans);
+  	     return ans;
+  	 }
        }
    };
 
@@ -1001,47 +1289,50 @@
       _vm.mode == "by" || _vm.mode == "menu"
         ? _c(
             "ul",
-            _vm._l(_vm.headers, function(n) {
-              return _c(
-                "li",
-                [
-                  _c(
-                    "router-link",
-                    { attrs: { to: { name: "node", params: { id: n } } } },
-                    [_vm._v(_vm._s(_vm.nodes[n].name))]
-                  ),
-                  _c(
-                    "ul",
-                    _vm._l(
-                      _vm.nodes[n].edges[_vm.mode == "menu" ? "has" : "is"][
-                        _vm.label
-                      ],
-                      function(m) {
-                        return m in _vm.nodeset
-                          ? _c(
-                              "li",
-                              [
-                                _c(
-                                  "router-link",
-                                  {
-                                    attrs: {
-                                      to: { name: "node", params: { id: m } }
-                                    }
-                                  },
-                                  [_vm._v(_vm._s(_vm.nodes[m].name))]
-                                )
-                              ],
-                              1
-                            )
-                          : _vm._e()
-                      }
+            _vm._l(
+              _vm.sortedby(_vm.headers, [_vm.sort_key], _vm.sort_asc),
+              function(n) {
+                return _c(
+                  "li",
+                  [
+                    _c(
+                      "router-link",
+                      { attrs: { to: { name: "node", params: { id: n } } } },
+                      [_vm._v(_vm._s(_vm.nodes[n].name))]
                     ),
-                    0
-                  )
-                ],
-                1
-              )
-            }),
+                    _c(
+                      "ul",
+                      _vm._l(
+                        _vm.sortedby(
+                          _vm.label_neighbours(n, _vm.label),
+                          [_vm.sort_key],
+                          _vm.sort_asc
+                        ),
+                        function(m) {
+                          return _c(
+                            "li",
+                            [
+                              _c(
+                                "router-link",
+                                {
+                                  attrs: {
+                                    to: { name: "node", params: { id: m } }
+                                  }
+                                },
+                                [_vm._v(_vm._s(_vm.nodes[m].name))]
+                              )
+                            ],
+                            1
+                          )
+                        }
+                      ),
+                      0
+                    )
+                  ],
+                  1
+                )
+              }
+            ),
             0
           )
         : _vm._e()
@@ -1053,11 +1344,11 @@
     /* style */
     const __vue_inject_styles__$4 = function (inject) {
       if (!inject) return
-      inject("data-v-1934062d_0", { source: "\nh3[data-v-1934062d] {\n  margin: 40px 0 0;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/labels.vue"],"names":[],"mappings":";AAmDA;EACA,gBAAA;AACA","file":"labels.vue","sourcesContent":["<template>\n  <div class=\"label_index\">\n      <ul v-if=\"mode == 'by' || mode == 'menu'\">\n\t  <li v-for=\"n in headers\">\n\t      <router-link :to=\"{name:'node', params: {id: n}}\">{{nodes[n].name}}</router-link>\n\t      <ul>\n\t\t  <li v-for=\"m in nodes[n].edges[mode == 'menu' ? 'has' : 'is'][label]\" v-if=\"m in nodeset\">\n\t\t      <router-link :to=\"{name:'node', params: {id: m}}\">{{nodes[m].name}}</router-link>\n\t\t  </li>\n\t      </ul>\n\t  </li>\n      </ul>\n  </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n \n export default {\n     name: 'label-index',\n     props: ['mode','label','nodeset'],\n     computed: {\n\t headers: function() {\n\t     if(this.mode == 'menu'){\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['has'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t     else if(this.mode == 'by') {\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['is'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ])\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\nh3 {\n  margin: 40px 0 0;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-401e637a_0", { source: "\nh3[data-v-401e637a] {\n  margin: 40px 0 0;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/labels.vue"],"names":[],"mappings":";AAyEA;EACA,gBAAA;AACA","file":"labels.vue","sourcesContent":["<template>\n  <div class=\"label_index\">\n      <ul v-if=\"mode == 'by' || mode == 'menu'\">\n\t  <li v-for=\"n in sortedby(headers,[sort_key], sort_asc)\">\n\t      <router-link :to=\"{name:'node', params: {id: n}}\">{{nodes[n].name}}</router-link>\n\t      <ul>\n\t\t  <li v-for=\"m in sortedby(label_neighbours(n, label), [sort_key], sort_asc)\">\n\t\t      <router-link :to=\"{name:'node', params: {id: m}}\">{{nodes[m].name}}</router-link>\n\t\t  </li>\n\t      </ul>\n\t  </li>\n      </ul>\n  </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'label-index',\n     props: ['mode','label','nodeset','sortkey','sortascending'],\n     data: function() {\n\t return {\n\t     sort_key:this.sortkey,\n\t     sort_asc:this.sortascending\n\t }\n     },\n     computed: {\n\t headers: function() {\n\t     if(this.mode == 'menu'){\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['has'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t     else if(this.mode == 'by') {\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodes[n].edges['is'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     console.log(\"NL\",n,label);\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i];\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\nh3 {\n  margin: 40px 0 0;\n}\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$4 = "data-v-1934062d";
+    const __vue_scope_id__$4 = "data-v-401e637a";
     /* module identifier */
     const __vue_module_identifier__$4 = undefined;
     /* functional template */
@@ -1365,11 +1656,22 @@
   		 return;
   	     }
   	     var query_result = Vue.category_search(q, this.nodes);
-  	     this.result = query_result;
+  	     if(query_result.length == 1) {
+  		 this.$router.push('/node/'+query_result[0]);
+  	     }
+  	     else {
+  		 this.result = query_result;
+  		 for(var i = 0; i < this.result.length; i++){
+  		     if(this.nodes[this.result[i]].name == this.query.trim()) {
+  			 this.$router.push('/node/'+this.result[i]);
+  			 break;
+  		     }
+  		 }
+  	     }
   	 }
        },
        mounted: function() {
-  	 this.query ='';
+  	 this.query = '';
   	 this.search();
        }
    };
@@ -1440,11 +1742,11 @@
     /* style */
     const __vue_inject_styles__$7 = function (inject) {
       if (!inject) return
-      inject("data-v-2473e64e_0", { source: "\n.search-error[data-v-2473e64e] {\n    color: #e33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AAoEA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n  <div class=\"searchbar\"> \n      <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n      <ul class=\"category-search-result\">\n\t  <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t  <span v-if=\"result.length == 0 && entered_query.trim().length > 0 && errormsg.length == 0\">No results</span>\n\t  <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t  <!-- <li v-for=\"node in result\">\n\t       <router-link :to=\"'./'+node\">{{nodes[node].name}}</router-link>\n\t       </li> -->\n      </ul>\n  </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     computed: { \n\t ...mapState(['nodes']),\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t }\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     errormsg: '',\n\t     result: []\n\t }\n     },\n     methods: {\n\t search: function() {\n\t     this.entered_query = this.query;\n\t     this.errormsg = \"\";\n\t     if(this.query.trim().length == 0) {\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(this.query);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     var query_result = Vue.category_search(q, this.nodes);\n\t     this.result = query_result;\n\t }\n     },\n     mounted: function() {\n\t this.query ='';\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .search-error {\n     color: #e33;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-27c93aa4_0", { source: "\n.search-error[data-v-27c93aa4] {\n    color: #e33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AA+EA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n  <div class=\"searchbar\"> \n      <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n      <ul class=\"category-search-result\">\n\t  <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t  <span v-if=\"result.length == 0 && entered_query.trim().length > 0 && errormsg.length == 0\">No results</span>\n\t  <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t  <!-- <li v-for=\"node in result\">\n\t       <router-link :to=\"'./'+node\">{{nodes[node].name}}</router-link>\n\t       </li> -->\n      </ul>\n  </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     computed: { \n\t ...mapState(['nodes']),\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t }\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     errormsg: '',\n\t     result: []\n\t }\n     },\n     methods: {\n\t search: function() {\n\t     this.entered_query = this.query;\n\t     this.errormsg = \"\";\n\t     if(this.query.trim().length == 0) {\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(this.query);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t this.result = [];\n\t\t return;\n\t     }\n\t     var query_result = Vue.category_search(q, this.nodes);\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t for(var i = 0; i < this.result.length; i++){\n\t\t     if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t\t this.$router.push('/node/'+this.result[i]);\n\t\t\t break;\n\t\t     }\n\t\t }\n\t     }\n\t }\n     },\n     mounted: function() {\n\t this.query = '';\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .search-error {\n     color: #e33;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$7 = "data-v-2473e64e";
+    const __vue_scope_id__$7 = "data-v-27c93aa4";
     /* module identifier */
     const __vue_module_identifier__$7 = undefined;
     /* functional template */
@@ -1858,7 +2160,8 @@
        
        // Need to have access to all the nodes in order to search them
        computed: {
-  	 ...Vuex.mapState(['nodes'])
+  	 ...Vuex.mapState(['nodes']),
+  	 ...Vuex.mapGetters(['sorted'])
        },
        data () {
   	 return {
@@ -1869,7 +2172,7 @@
   	 var query_text = this.root.innerHTML.trim();
   	 var q = Vue.category_query.parse(query_text);
   	 var query_result = Vue.category_search(q, this.nodes);
-  	 this.result = query_result;
+  	 this.result = this.$store.getters.sorted(query_result);
        }
    };
 
@@ -2052,11 +2355,11 @@
     /* style */
     const __vue_inject_styles__$c = function (inject) {
       if (!inject) return
-      inject("data-v-4a2e9466_0", { source: "\n.category-slideshow[data-v-4a2e9466] {\n    text-align:center;\n    width:100%;\n    overflow-x:scroll;\n}\n.category-slideshow-slide[data-v-4a2e9466] {\n    text-align:center;\n}\n.category-slideshow-caption[data-v-4a2e9466] {\n    text-align:center;\n    margin:auto;\n    width:80%;\n}\n.category-slideshow-button[data-v-4a2e9466] {\n    width:2em;\n    display:inline-block;\n    height:2em;\n    border:2px solid black;\n    text-align:center;\n    cursor:pointer;\n    margin:.5ex 0;\n}\n.category-slideshow-button-other[data-v-4a2e9466] {\n    background-color:#ccc;\n}\n.category-slideshow-button-current[data-v-4a2e9466] {\n    background-color:#8cf;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/slideshow.vue"],"names":[],"mappings":";AAuDA;IACA,iBAAA;IACA,UAAA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;IACA,WAAA;IACA,SAAA;AACA;AAEA;IACA,SAAA;IACA,oBAAA;IACA,UAAA;IACA,sBAAA;IACA,iBAAA;IACA,cAAA;IACA,aAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"slideshow.vue","sourcesContent":["<template>\n    <div class=\"category-slideshow\">\n\t<span :class=\"current_index == index && !all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-for=\"(s,index) in slides\" v-on:mouseover=\"tmp_set_index(index)\" v-on:mouseout=\"reset_index()\" v-on:click=\"set_index(index)\">\n\t    {{index}}\n\t</span>\n\t<span :class=\"all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-on:click=\"all=!all\">\n\t    all\n\t</span>\n\t<div class=\"category-slideshow-slide\" v-html=\"slides[current_index]\" v-if=\"!all\">\n\t</div>\n\t<div class=\"category-slideshow-slide\" v-for=\"(s,index) in slides\" v-if=\"all\" v-html=\"s\">\n\t</div>\n    </div>\n</template>\n<script>\n export default {\n     name: 'cat-slideshow',\n     props: ['root'],\n     data() {\n\t return {\n\t     current_index: 0,\n\t     lock_index: 0,\n\t     init_index: 0,\n\t     all: false,\n\t     slides: [],\n\t };\n     },\n     mounted: function() {\n\t var doc = this.root;\n\t var elements = [];\n\n\t // Iterate through li nodes and extract these as the slides\n\t for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){\n\t     if(n.nodeName.toLowerCase() == \"li\") elements.push(n.innerHTML);\n\t }\n\t \n\t this.slides = elements;\n     },\n     methods: {\n\t tmp_set_index: function(idx){\n\t     this.current_index = idx;\n\t },\n\t reset_index: function(){\n\t     this.current_index = this.lock_index;\n\t },\n\t set_index: function(idx){\n\t     this.all = false;\n\t     this.lock_index = idx;\n\t     this.current_index = idx;\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .category-slideshow {\n     text-align:center;\n     width:100%;\n     overflow-x:scroll;\n }\n\n .category-slideshow-slide {\n     text-align:center;\n }\n\n .category-slideshow-caption {\n     text-align:center;\n     margin:auto;\n     width:80%;\n }\n\n .category-slideshow-button {\n     width:2em;\n     display:inline-block;\n     height:2em;\n     border:2px solid black;\n     text-align:center;\n     cursor:pointer;\n     margin:.5ex 0;\n }\n\n .category-slideshow-button-other {\n     background-color:#ccc;\n }\n\n .category-slideshow-button-current {\n     background-color:#8cf;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-46ec8c84_0", { source: "\n.category-slideshow[data-v-46ec8c84] {\n    text-align:center;\n    width:100%;\n    overflow-x:scroll;\n}\n.category-slideshow-slide[data-v-46ec8c84] img {\n    max-width: 100% !important;\n}\n.category-slideshow-slide[data-v-46ec8c84] {\n    text-align:center;\n}\n.category-slideshow-caption[data-v-46ec8c84] {\n    text-align:center;\n    margin:auto;\n    width:80%;\n}\n.category-slideshow-button[data-v-46ec8c84] {\n    width:2em;\n    display:inline-block;\n    height:2em;\n    border:2px solid black;\n    text-align:center;\n    cursor:pointer;\n    margin:.5ex 0;\n}\n.category-slideshow-button-other[data-v-46ec8c84] {\n    background-color:#ccc;\n}\n.category-slideshow-button-current[data-v-46ec8c84] {\n    background-color:#8cf;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/slideshow.vue"],"names":[],"mappings":";AAuDA;IACA,iBAAA;IACA,UAAA;IACA,iBAAA;AACA;AAEA;IACA,0BAAA;AACA;AAEA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;IACA,WAAA;IACA,SAAA;AACA;AAEA;IACA,SAAA;IACA,oBAAA;IACA,UAAA;IACA,sBAAA;IACA,iBAAA;IACA,cAAA;IACA,aAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"slideshow.vue","sourcesContent":["<template>\n    <div class=\"category-slideshow\">\n\t<span :class=\"current_index == index && !all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-for=\"(s,index) in slides\" v-on:mouseover=\"tmp_set_index(index)\" v-on:mouseout=\"reset_index()\" v-on:click=\"set_index(index)\">\n\t    {{index}}\n\t</span>\n\t<span :class=\"all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-on:click=\"all=!all\">\n\t    all\n\t</span>\n\t<div class=\"category-slideshow-slide\" v-html=\"slides[current_index]\" v-if=\"!all\">\n\t</div>\n\t<div class=\"category-slideshow-slide\" v-for=\"(s,index) in slides\" v-if=\"all\" v-html=\"s\">\n\t</div>\n    </div>\n</template>\n<script>\n export default {\n     name: 'cat-slideshow',\n     props: ['root'],\n     data() {\n\t return {\n\t     current_index: 0,\n\t     lock_index: 0,\n\t     init_index: 0,\n\t     all: false,\n\t     slides: [],\n\t };\n     },\n     mounted: function() {\n\t var doc = this.root;\n\t var elements = [];\n\n\t // Iterate through li nodes and extract these as the slides\n\t for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){\n\t     if(n.nodeName.toLowerCase() == \"li\") elements.push(n.innerHTML);\n\t }\n\t \n\t this.slides = elements;\n     },\n     methods: {\n\t tmp_set_index: function(idx){\n\t     this.current_index = idx;\n\t },\n\t reset_index: function(){\n\t     this.current_index = this.lock_index;\n\t },\n\t set_index: function(idx){\n\t     this.all = false;\n\t     this.lock_index = idx;\n\t     this.current_index = idx;\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .category-slideshow {\n     text-align:center;\n     width:100%;\n     overflow-x:scroll;\n }\n\n .category-slideshow-slide >>> img {\n     max-width: 100% !important;\n }\n \n .category-slideshow-slide {\n     text-align:center;\n }\n\n .category-slideshow-caption {\n     text-align:center;\n     margin:auto;\n     width:80%;\n }\n\n .category-slideshow-button {\n     width:2em;\n     display:inline-block;\n     height:2em;\n     border:2px solid black;\n     text-align:center;\n     cursor:pointer;\n     margin:.5ex 0;\n }\n\n .category-slideshow-button-other {\n     background-color:#ccc;\n }\n\n .category-slideshow-button-current {\n     background-color:#8cf;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$c = "data-v-4a2e9466";
+    const __vue_scope_id__$c = "data-v-46ec8c84";
     /* module identifier */
     const __vue_module_identifier__$c = undefined;
     /* functional template */
@@ -2733,7 +3036,6 @@
   	     else{
   		 return {"error":"Invalid instruction " + inst};
   	     }
-  	     return null;
   	 },
   	 is_updated: function(x){
   	     for(var i = 0; i < this.updated.length; i++){
@@ -4056,12 +4358,12 @@
     }
   */
   var query = (function(){
-  var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,5],$V2=[1,7],$V3=[1,6],$V4=[1,9],$V5=[1,10],$V6=[1,12],$V7=[1,13],$V8=[5,12,14,15],$V9=[5,9,10,12,14,15],$Va=[5,9,10,12,14,15,18];
+  var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,5],$V2=[1,8],$V3=[1,6],$V4=[1,7],$V5=[1,10],$V6=[1,11],$V7=[1,13],$V8=[1,14],$V9=[5,12,15,16],$Va=[5,9,10,12,15,16],$Vb=[5,9,10,12,15,16,19];
   var parser = {trace: function trace () { },
   yy: {},
-  symbols_: {"error":2,"query":3,"q":4,"EOF":5,"name":6,"HAS":7,"IS":8,":":9,"OF":10,"(":11,")":12,"!":13,",":14,"/":15,"words":16,"*":17,"STR":18,"$accept":0,"$end":1},
-  terminals_: {2:"error",5:"EOF",7:"HAS",8:"IS",9:":",10:"OF",11:"(",12:")",13:"!",14:",",15:"/",17:"*",18:"STR"},
-  productions_: [0,[3,2],[4,1],[4,2],[4,2],[4,4],[4,4],[4,6],[4,6],[4,2],[4,4],[4,3],[4,3],[4,3],[6,1],[6,1],[16,2],[16,1]],
+  symbols_: {"error":2,"query":3,"q":4,"EOF":5,"name":6,"HAS":7,"IS":8,":":9,"OF":10,"(":11,")":12,".":13,"!":14,",":15,"/":16,"words":17,"*":18,"STR":19,"$accept":0,"$end":1},
+  terminals_: {2:"error",5:"EOF",7:"HAS",8:"IS",9:":",10:"OF",11:"(",12:")",13:".",14:"!",15:",",16:"/",18:"*",19:"STR"},
+  productions_: [0,[3,2],[4,1],[4,2],[4,2],[4,4],[4,4],[4,6],[4,6],[4,4],[4,2],[4,4],[4,3],[4,3],[4,3],[6,1],[6,1],[17,2],[17,1]],
   performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
   /* this == yyval */
 
@@ -4069,7 +4371,6 @@
   switch (yystate) {
   case 1:
    return $$[$0-1]; 
-  break;
   case 2:
   this.$ = ["name",$$[$0]];
   break;
@@ -4092,36 +4393,39 @@
   this.$ = ["edge",{"name":$$[$0-5],"dir":"is","query":$$[$0-1]}];
   break;
   case 9:
-  this.$ = ["not",[["name",$$[$0]]]];
+  this.$ = ["prop",[$$[$0-2],$$[$0]]];
   break;
   case 10:
-  this.$ = ["not",[$$[$0-1]]];
+  this.$ = ["not",[["name",$$[$0]]]];
   break;
   case 11:
-  this.$ = $$[$0-1];
+  this.$ = ["not",[$$[$0-1]]];
   break;
   case 12:
-  this.$ = ["and",[$$[$0-2], $$[$0]]];
+  this.$ = $$[$0-1];
   break;
   case 13:
-  this.$ = ["or",[$$[$0-2], $$[$0]]];
+  this.$ = ["and",[$$[$0-2], $$[$0]]];
   break;
   case 14:
-  this.$ = $$[$0];
+  this.$ = ["or",[$$[$0-2], $$[$0]]];
   break;
   case 15:
-  this.$ = "*";
+  this.$ = $$[$0];
   break;
   case 16:
-  this.$ = $$[$0-1] +" "+ $$[$0];
+  this.$ = "*";
   break;
   case 17:
+  this.$ = $$[$0-1] +" "+ $$[$0];
+  break;
+  case 18:
   this.$ = $$[$0];
   break;
   }
   },
-  table: [{3:1,4:2,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{1:[3]},{5:[1,11],14:$V6,15:$V7},o($V8,[2,2],{10:[1,14]}),{6:15,16:8,17:$V4,18:$V5},{6:16,16:8,17:$V4,18:$V5},{6:17,11:[1,18],16:8,17:$V4,18:$V5},{4:19,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},o($V9,[2,14],{18:[1,20]}),o($V9,[2,15]),o($Va,[2,17]),{1:[2,1]},{4:21,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{4:22,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{9:[1,23]},o($V8,[2,3],{9:[1,24]}),o($V8,[2,4]),o($V8,[2,9]),{4:25,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},{12:[1,26],14:$V6,15:$V7},o($Va,[2,16]),o($V8,[2,12]),o([5,12,15],[2,13],{14:$V6}),{6:27,11:[1,28],16:8,17:$V4,18:$V5},{6:29,11:[1,30],16:8,17:$V4,18:$V5},{12:[1,31],14:$V6,15:$V7},o($V8,[2,11]),o($V8,[2,6]),{4:32,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},o($V8,[2,5]),{4:33,6:3,7:$V0,8:$V1,11:$V2,13:$V3,16:8,17:$V4,18:$V5},o($V8,[2,10]),{12:[1,34],14:$V6,15:$V7},{12:[1,35],14:$V6,15:$V7},o($V8,[2,8]),o($V8,[2,7])],
-  defaultActions: {11:[2,1]},
+  table: [{3:1,4:2,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{1:[3]},{5:[1,12],15:$V7,16:$V8},o($V9,[2,2],{10:[1,15]}),{6:16,17:9,18:$V5,19:$V6},{6:17,17:9,18:$V5,19:$V6},{6:18,17:9,18:$V5,19:$V6},{6:19,11:[1,20],17:9,18:$V5,19:$V6},{4:21,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},o($Va,[2,15],{19:[1,22]}),o($Va,[2,16]),o($Vb,[2,18]),{1:[2,1]},{4:23,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{4:24,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{9:[1,25]},o($V9,[2,3],{9:[1,26]}),o($V9,[2,4]),{9:[1,27]},o($V9,[2,10]),{4:28,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},{12:[1,29],15:$V7,16:$V8},o($Vb,[2,17]),o($V9,[2,13]),o([5,12,16],[2,14],{15:$V7}),{6:30,11:[1,31],17:9,18:$V5,19:$V6},{6:32,11:[1,33],17:9,18:$V5,19:$V6},{6:34,17:9,18:$V5,19:$V6},{12:[1,35],15:$V7,16:$V8},o($V9,[2,12]),o($V9,[2,6]),{4:36,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},o($V9,[2,5]),{4:37,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,17:9,18:$V5,19:$V6},o($V9,[2,9]),o($V9,[2,11]),{12:[1,38],15:$V7,16:$V8},{12:[1,39],15:$V7,16:$V8},o($V9,[2,8]),o($V9,[2,7])],
+  defaultActions: {12:[2,1]},
   parseError: function parseError (str, hash) {
       if (hash.recoverable) {
           this.trace(str);
@@ -4155,7 +4459,7 @@
       } else {
           this.parseError = Object.getPrototypeOf(this).parseError;
       }
-      _token_stack:
+      
           var lex = function () {
               var token;
               token = lexer.lex() || EOF;
@@ -4589,40 +4893,26 @@
   switch($avoiding_name_collisions) {
   case 0:/* skip whitespace */
   break;
-  case 1:return 13
-  break;
-  case 2:return 17
-  break;
-  case 3:return 15
-  break;
+  case 1:return 14
+  case 2:return 18
+  case 3:return 16
   case 4:return ';'
-  break;
   case 5:return 9
-  break;
-  case 6:return 14
-  break;
-  case 7:return 11
-  break;
-  case 8:return 12
-  break;
-  case 9:return 7
-  break;
-  case 10:return 8
-  break;
-  case 11:return 10
-  break;
-  case 12:return 'C'
-  break;
-  case 13:return 18
-  break;
-  case 14:return 5
-  break;
-  case 15:return 'INVALID'
-  break;
+  case 6:return 15
+  case 7:return 13
+  case 8:return 11
+  case 9:return 12
+  case 10:return 7
+  case 11:return 8
+  case 12:return 10
+  case 13:return 'C'
+  case 14:return 19
+  case 15:return 5
+  case 16:return 'INVALID'
   }
   },
-  rules: [/^(?:\s+)/,/^(?:!)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:\()/,/^(?:\))/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:(?!has)(?!of)[^*;\/,:()! ]+)/,/^(?:$)/,/^(?:.)/],
-  conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],"inclusive":true}}
+  rules: [/^(?:\s+)/,/^(?:!)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:\.)/,/^(?:\()/,/^(?:\))/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:(?!has)(?!of)[^*;\/,:.()! ]+)/,/^(?:$)/,/^(?:.)/],
+  conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16],"inclusive":true}}
   });
   return lexer;
   })();
@@ -4726,6 +5016,15 @@
   	var name = q[1].toLowerCase();
   	for(var n in nodes){
   	    if(name == "*" || nodes[n].name.toLowerCase().indexOf(name) >= 0){
+  		result.push(n);
+  	    }
+  	}
+      }
+      else if(q[0] == "prop"){
+  	var prop_name = q[1][0].toLowerCase();
+  	var prop_val = q[1][1].toLowerCase();
+  	for(var n in nodes){
+  	    if(nodes[n][prop_name] && nodes[n][prop_name].toLowerCase().indexOf(prop_val) >= 0){
   		result.push(n);
   	    }
   	}
