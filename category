@@ -9,18 +9,43 @@ Usage:
   category subcat [--static] <path> <subcat_path> <subcat_name> <query>
   category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
+  category n4jimport <path> <un> <pw>
 
 Options:
   -p port (default: 7688)
   -a address to bind (default: 127.0.0.1)
 """
 
+# [<db_url>] [--reset]
+
 from flask import Flask, send_from_directory, send_file
 import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading
+from neo4j import GraphDatabase
 from src.build import cat_builder
 import src.util
 
 metadata = {}
+
+nodes_import = """with {md} as metadata
+UNWIND keys(metadata) AS node
+CREATE (n:Node {nodeid:node, name:metadata[node].name, date:metadata[node].date, index:metadata[node].index})"""
+
+has_edges_import = """with {md} as metadata
+UNWIND keys(metadata) AS node
+UNWIND keys(metadata[node].edges.has) AS edge
+UNWIND metadata[node].edges.has[edge] AS dest
+MATCH (src:Node {nodeid:node}),(tgt:Node {nodeid:dest})
+MERGE (src)-[:HAS {label:edge}]->(tgt)"""
+
+is_edges_import = """with {md} as metadata
+UNWIND keys(metadata) AS node
+UNWIND keys(metadata[node].edges.is) AS edge
+UNWIND metadata[node].edges.is[edge] AS dest
+MATCH (src:Node {nodeid:node}),(tgt:Node {nodeid:dest})
+MERGE (src)-[:IS {label:edge}]->(tgt)"""
+
+def n4j_run(tx, q, md):
+    tx.run(q, md=md)
 
 def cat_error(*args):
     print("[ERROR]:",*args)
@@ -49,6 +74,21 @@ def read_config(cat_path):
     with open(config_path,"r") as f:
         return yaml.load(f, Loader=yaml.SafeLoader)
 
+def cat_n4j_import(cat_path, db_url, un, pw, reset_db=True):
+    metadata_path = os.path.join(cat_path,"out","metadata.json")
+    with open(metadata_path,"r") as f: s = f.read()
+    s = json.loads(s)
+
+    driver = GraphDatabase.driver("bolt://"+db_url, auth=(un, pw))
+
+    with driver.session() as session:
+        if reset_db:
+            session.read_transaction(n4j_run, "match (n) detach delete n", s)
+        session.read_transaction(n4j_run, nodes_import, s)
+        session.read_transaction(n4j_run, has_edges_import, s)
+        #session.read_transaction(n4j_run, is_edges_import, s)
+    
+    
 def cat_init(cat_path, name):
     # In the cat_path folder, create the structure
     # $CAT_PATH/src
@@ -300,3 +340,9 @@ if __name__ == "__main__":
         cat_serve(args['<path>'],
                   args['-p'] if args['-p'] != False else 7688,
                   args['-a'] if args['-a'] != False else "127.0.0.1")
+    elif args['n4jimport']:
+        cat_n4j_import(args['<path>'],
+                       "localhost:7687",
+                       args['<un>'],
+                       args['<pw>'],
+                       True)
