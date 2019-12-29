@@ -10,6 +10,7 @@ Usage:
   category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
   category n4jimport <path> <un> <pw>
+  category n4jquery <un> <pw> <query>
 
 Options:
   -p port (default: 7688)
@@ -45,7 +46,7 @@ MATCH (src:Node {nodeid:node}),(tgt:Node {nodeid:dest})
 MERGE (src)-[:IS {label:edge}]->(tgt)"""
 
 def n4j_run(tx, q, md):
-    tx.run(q, md=md)
+    return tx.run(q, md=md)
 
 def cat_error(*args):
     print("[ERROR]:",*args)
@@ -87,6 +88,14 @@ def cat_n4j_import(cat_path, db_url, un, pw, reset_db=True):
         session.read_transaction(n4j_run, nodes_import, s)
         session.read_transaction(n4j_run, has_edges_import, s)
         #session.read_transaction(n4j_run, is_edges_import, s)
+
+def cat_n4j_query(db_url, un, pw, q):
+    driver = GraphDatabase.driver("bolt://"+db_url, auth=(un, pw))
+
+    with driver.session() as session:
+        ans = session.read_transaction(n4j_run, q, None)
+        for r in ans:
+            print("  ".join([k+"="+str(r[k]) for k in r.keys()]))
     
     
 def cat_init(cat_path, name):
@@ -346,3 +355,8 @@ if __name__ == "__main__":
                        args['<un>'],
                        args['<pw>'],
                        True)
+    elif args['n4jquery']:
+        cat_n4j_query("localhost:7687",
+                      args['<un>'],
+                      args['<pw>'],
+                      args['<query>'])
