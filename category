@@ -20,7 +20,7 @@ Options:
 # [<db_url>] [--reset]
 
 from flask import Flask, send_from_directory, send_file
-import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading
+import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading, datetime
 from neo4j import GraphDatabase
 from src.build import cat_builder
 import src.util
@@ -286,7 +286,8 @@ def cat_serve(cat_path, port, bind_addr):
         print("NEW")
         def new_node(cat_path, editor):
             global metadata
-            proc = subprocess.Popen([editor, '--execute', '(insert "``` info\nname: \ndate: \n```\n\n")'],shell=False,cwd=os.path.join(cat_path,'src'))
+            now = datetime.datetime.now().strftime("%Y-%m-%d")
+            proc = subprocess.Popen([editor, '--execute', f'(insert "``` info\nname: \ndate: {now}\n```\n\n")'],shell=False,cwd=os.path.join(cat_path,'src'))
             proc.wait()
             cat_build(cat_path)
             metadata = load_metadata(cat_path)
