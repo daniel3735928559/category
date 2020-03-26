@@ -44,4 +44,10 @@
  #main_col{
  }
 
+ blockquote {
+     border-left: 4px solid #ccc;
+     padding-left: 1em;
+     color: #777;
+ }
+ 
 </style>

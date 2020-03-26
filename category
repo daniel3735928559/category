@@ -29,7 +29,7 @@ metadata = {}
 
 nodes_import = """with {md} as metadata
 UNWIND keys(metadata) AS node
-CREATE (n:Node {nodeid:node, name:metadata[node].name, date:metadata[node].date, index:metadata[node].index})"""
+CREATE (n:Node {nodeid:node, name:metadata[node].name, date:metadata[node].date, auto:metadata[node].auto, index:metadata[node].index})"""
 
 has_edges_import = """with {md} as metadata
 UNWIND keys(metadata) AS node
@@ -94,8 +94,12 @@ def cat_n4j_query(db_url, un, pw, q):
 
     with driver.session() as session:
         ans = session.read_transaction(n4j_run, q, None)
+        begin = True
         for r in ans:
-            print("  ".join([k+"="+str(r[k]) for k in r.keys()]))
+            if begin:
+                print(",".join([k for k in r.keys()]))
+                begin = False
+            print(",".join([str(r[k]) for k in r.keys()]))
     
     
 def cat_init(cat_path, name):
