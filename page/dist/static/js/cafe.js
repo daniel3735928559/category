@@ -19126,8 +19126,8 @@
        },
        methods: {
   	 add_to_query: function(qry) {
-  	     if(this.query.trim().length > 0) {
-  		 this.query += ","+qry;
+  	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
+  		 this.query = "("+this.query+"),"+qry;
   	     }
   	     else {
   		 this.query = qry;
@@ -19262,106 +19262,137 @@
               "div",
               { staticStyle: { float: "left", width: "20%" } },
               [
-                _vm._v("\n\t\tTop nodes:\n\t\t"),
+                _c("b", [_vm._v("Top nodes")]),
                 _vm._l(_vm.best_nodes, function(n) {
-                  return _c("div", [
-                    _c(
-                      "a",
-                      {
-                        attrs: { href: "#" },
-                        on: {
-                          click: function($event) {
-                            _vm.set_highlight(
-                              "(=" + _vm.nodes[n.node].name + ")[1]"
-                            );
-                          }
-                        }
-                      },
-                      [
-                        _vm._v(
-                          _vm._s(_vm.nodes[n.node].name) +
-                            " (" +
-                            _vm._s(n.degree) +
-                            ")"
+                  return _c(
+                    "div",
+                    {
+                      staticStyle: {
+                        border: "1px solid #66f",
+                        "border-radius": "3px",
+                        margin: "1px",
+                        overflow: "hidden",
+                        "white-space": "nowrap",
+                        padding: "2px"
+                      }
+                    },
+                    [
+                      _c("div", { staticStyle: { display: "inline-block" } }, [
+                        _c(
+                          "span",
+                          {
+                            staticClass: "badge_button",
+                            on: {
+                              click: function($event) {
+                                _vm.add_to_query(
+                                  "((=" +
+                                    _vm.nodes[n.node].name +
+                                    ")[2], !(=" +
+                                    _vm.nodes[n.node].name +
+                                    "))"
+                                );
+                              }
+                            }
+                          },
+                          [_vm._v("+")]
+                        ),
+                        _c(
+                          "span",
+                          {
+                            staticClass: "badge_button",
+                            on: {
+                              click: function($event) {
+                                _vm.add_to_query(
+                                  "!(=" + _vm.nodes[n.node].name + ")"
+                                );
+                              }
+                            }
+                          },
+                          [_vm._v("-")]
                         )
-                      ]
-                    ),
-                    _c(
-                      "a",
-                      {
-                        attrs: { href: "#" },
-                        on: {
-                          click: function($event) {
-                            _vm.add_to_query(
-                              "((=" +
-                                _vm.nodes[n.node].name +
-                                ")[2], !(=" +
-                                _vm.nodes[n.node].name +
-                                "))"
-                            );
+                      ]),
+                      _c(
+                        "a",
+                        {
+                          attrs: { href: "#" },
+                          on: {
+                            click: function($event) {
+                              _vm.set_highlight(
+                                "(=" + _vm.nodes[n.node].name + ")[1]"
+                              );
+                            }
                           }
-                        }
-                      },
-                      [_vm._v("[+]")]
-                    ),
-                    _c(
-                      "a",
-                      {
-                        attrs: { href: "#" },
-                        on: {
-                          click: function($event) {
-                            _vm.add_to_query("!(=" + _vm.nodes[n.node].name + ")");
-                          }
-                        }
-                      },
-                      [_vm._v("[-]")]
-                    ),
-                    _vm._v(", \n\t\t")
-                  ])
+                        },
+                        [
+                          _vm._v(
+                            _vm._s(_vm.nodes[n.node].name) +
+                              " (" +
+                              _vm._s(n.degree) +
+                              ")"
+                          )
+                        ]
+                      )
+                    ]
+                  )
                 }),
-                _vm._v("\n\t\tTop labels:\n\t\t"),
+                _c("hr"),
+                _c("b", [_vm._v("Top labels")]),
                 _vm._l(_vm.best_edges, function(e) {
-                  return _c("div", [
-                    _c(
-                      "a",
-                      {
-                        attrs: { href: "#" },
-                        on: {
-                          click: function($event) {
-                            _vm.set_highlight("(is " + e.edge + ")");
+                  return _c(
+                    "div",
+                    {
+                      staticStyle: {
+                        border: "1px solid #66f",
+                        "border-radius": "3px",
+                        margin: "1px",
+                        overflow: "hidden",
+                        "white-space": "nowrap",
+                        padding: "2px"
+                      }
+                    },
+                    [
+                      _c("div", { staticStyle: { display: "inline-block" } }, [
+                        _c(
+                          "span",
+                          {
+                            staticClass: "badge_button",
+                            on: {
+                              click: function($event) {
+                                _vm.add_to_query(
+                                  "(has " + e.edge + " / is " + e.edge + ")"
+                                );
+                              }
+                            }
+                          },
+                          [_vm._v("+")]
+                        ),
+                        _c(
+                          "span",
+                          {
+                            staticClass: "badge_button",
+                            on: {
+                              click: function($event) {
+                                _vm.add_to_query("!(is " + e.edge + ")");
+                              }
+                            }
+                          },
+                          [_vm._v("-")]
+                        )
+                      ]),
+                      _c(
+                        "a",
+                        {
+                          attrs: { href: "#" },
+                          on: {
+                            click: function($event) {
+                              _vm.set_highlight("(is " + e.edge + ")");
+                            }
                           }
-                        }
-                      },
-                      [_vm._v(_vm._s(e.edge) + " (" + _vm._s(e.count) + ")")]
-                    ),
-                    _c(
-                      "a",
-                      {
-                        attrs: { href: "#" },
-                        on: {
-                          click: function($event) {
-                            _vm.add_to_query(
-                              "(has " + e.edge + " / is " + e.edge + ")"
-                            );
-                          }
-                        }
-                      },
-                      [_vm._v("[+]")]
-                    ),
-                    _c(
-                      "a",
-                      {
-                        attrs: { href: "#" },
-                        on: {
-                          click: function($event) {
-                            _vm.add_to_query("!(is " + e.edge + ")");
-                          }
-                        }
-                      },
-                      [_vm._v("[-]")]
-                    ),
-                    _vm._v(", \n\t\t")
-                  ])
+                        },
+                        [_vm._v(_vm._s(e.edge) + " (" + _vm._s(e.count) + ")")]
+                      )
+                    ]
+                  )
                 })
               ],
               2
@@ -19370,60 +19401,76 @@
               "div",
               { staticStyle: { float: "left", width: "80%" } },
               [
-                _vm._v("\n\t\tHighlight: "),
-                _c("input", {
-                  directives: [
+                _c("div", { staticStyle: { float: "left" } }, [
+                  _vm._v("Highlight: "),
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.highlight_query,
+                        expression: "highlight_query"
+                      }
+                    ],
+                    attrs: { type: "text", id: "highlight_input" },
+                    domProps: { value: _vm.highlight_query },
+                    on: {
+                      keyup: function($event) {
+                        if (
+                          !$event.type.indexOf("key") &&
+                          _vm._k($event.keyCode, "enter", 13, $event.key, "Enter")
+                        ) {
+                          return null
+                        }
+                        return _vm.do_highlight($event)
+                      },
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.highlight_query = $event.target.value;
+                      }
+                    }
+                  }),
+                  _c(
+                    "span",
                     {
-                      name: "model",
-                      rawName: "v-model",
-                      value: _vm.highlight_query,
-                      expression: "highlight_query"
-                    }
-                  ],
-                  attrs: { type: "text", id: "highlight_input" },
-                  domProps: { value: _vm.highlight_query },
-                  on: {
-                    keyup: function($event) {
-                      if (
-                        !$event.type.indexOf("key") &&
-                        _vm._k($event.keyCode, "enter", 13, $event.key, "Enter")
-                      ) {
-                        return null
+                      staticClass: "close_x",
+                      on: {
+                        click: function($event) {
+                          return _vm.do_highlight()
+                        }
                       }
-                      return _vm.do_highlight($event)
                     },
-                    input: function($event) {
-                      if ($event.target.composing) {
-                        return
+                    [_c("span", { staticClass: "fas fa-search" })]
+                  ),
+                  _c(
+                    "span",
+                    {
+                      staticClass: "close_x",
+                      on: {
+                        click: function($event) {
+                          return _vm.set_query(_vm.highlight_query)
+                        }
                       }
-                      _vm.highlight_query = $event.target.value;
-                    }
-                  }
-                }),
-                _c(
-                  "span",
-                  {
-                    staticClass: "close_x",
-                    on: {
-                      click: function($event) {
-                        return _vm.do_highlight()
+                    },
+                    [_c("span", { staticClass: "fas fa-search-plus" })]
+                  ),
+                  _c(
+                    "span",
+                    {
+                      staticClass: "close_x",
+                      on: {
+                        click: function($event) {
+                          _vm.add_to_query("!(" + _vm.highlight_query + ")");
+                        }
                       }
-                    }
-                  },
-                  [_c("span", { staticClass: "fas fa-search" })]
-                ),
-                _c(
-                  "span",
-                  {
-                    staticClass: "close_x",
-                    on: {
-                      click: function($event) {
-                        return _vm.set_query(_vm.highlight_query)
-                      }
-                    }
-                  },
-                  [_c("span", { staticClass: "fas fa-search-plus" })]
-                ),
+                    },
+                    [_c("span", { staticClass: "fas fa-search-minus" })]
+                  )
+                ]),
+                _c("br"),
+                _c("br"),
                 _vm.result.length > 0
                   ? _c("graph-index", {
                       attrs: {
@@ -19456,11 +19503,11 @@
     /* style */
     const __vue_inject_styles__$7 = function (inject) {
       if (!inject) return
-      inject("data-v-a71d2812_0", { source: "\n.search-error[data-v-a71d2812] {\n    color: #e33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AA4LA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n    <div class=\"searchbar\"> \n\t<input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t<span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\n\n\t<div v-if=\"mode=='graph'\">\n\t    <div style=\"float:left;width:20%;\">\n\t\tTop nodes:\n\t\t<div v-for=\"n in best_nodes\">\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + nodes[n.node].name + ')[1]')\">{{nodes[n.node].name}} ({{n.degree}})</a> <a href=\"#\" v-on:click=\"add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')\">[+]</a> <a href=\"#\" v-on:click=\"add_to_query('!(=' + nodes[n.node].name + ')')\">[-]</a>, \n\t\t</div>\n\t\tTop labels:\n\t\t<div v-for=\"e in best_edges\">\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(is ' + e.edge + ')')\">{{e.edge}} ({{e.count}})</a> <a href=\"#\" v-on:click=\"add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')\">[+]</a> <a href=\"#\" v-on:click=\"add_to_query('!(is ' + e.edge + ')')\">[-]</a>, \n\t\t</div>\n\t    </div>\n\t    <div style=\"float:left;width:80%;\">\n\t\tHighlight: <input type=\"text\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:keyup.enter=\"do_highlight\" />\n\t\t<span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"result.length > 0\"></graph-index>\n\t    </div>\n\t</div>\n\t<div v-if=\"mode=='list'\">\n\t    <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t</div>\n  </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     props: ['initquery'],\n     computed: { \n\t ...mapState(['nodes']),\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r of this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     var nodes_by_deg = [];\n\t     for(var n in this.resultset) {\n\t\t var targets = {}\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     for(var target of this.nodes[n].edges.has[label]) {\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t for(var label in this.nodes[n].edges.is) {\n\t\t     for(var target of this.nodes[n].edges.is[label]) {\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t var deg = 0;\n\t\t for(var t in targets) {\n\t\t     deg++;\n\t\t }\n\t\t nodes_by_deg.push({\"node\":n,\"degree\":deg});\n\t     }\n\t     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });\n\t     return nodes_by_deg.slice(0,10);\n\t },\n\t best_edges: function() {\n\t     var edges_with_count = {};\n\t     for(var n in this.resultset) {\n\t\t var count = 0;\n\t\t // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     if(!(label in edges_with_count)) {\n\t\t\t edges_with_count[label] = 0\n\t\t     }\n\t\t     for(var target of this.nodes[n].edges.has[label]) {\n\t\t\t if(target in this.resultset) {\n\t\t\t     edges_with_count[label]++;\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     var edges_by_count = [];\n\t     for(var e in edges_with_count) {\n\t\t edges_by_count.push({\"edge\":e,\"count\":edges_with_count[e]})\n\t     }\n\t     edges_by_count.sort(function(a, b){return b.count-a.count;});\n\t     return edges_by_count.slice(0,10);\n\t },\n\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t }\n     },\n     methods: {\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0) {\n\t\t this.query += \",\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry) {\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     return Vue.category_search(q, this.nodes);\n\t },\n\t search: function() {\n\t     var query_result = this.run_search(this.query)\n\t     console.log(query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t console.log(\"RES\",this.result);\n\t\t for(var i = 0; i < this.result.length; i++){\n\t\t     if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t\t this.$router.push('/node/'+this.result[i]);\n\t\t\t break;\n\t\t     }\n\t\t }\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query);\n\t }\n     },\n     mounted: function() {\n\t this.query = this.initquery;\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .search-error {\n     color: #e33;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-7245b588_0", { source: "\n.search-error[data-v-7245b588] {\n    color: #e33;\n}\n.badge_button[data-v-7245b588] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AAuMA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n    <div class=\"searchbar\"> \n\t<input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t<span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\n\n\t<div v-if=\"mode=='graph'\">\n\t    <div style=\"float:left;width:20%;\">\n\t\t<b>Top nodes</b>\n\t\t<div v-for=\"n in best_nodes\" style=\"border:1px solid #66f;border-radius:3px;margin:1px;overflow:hidden;white-space:nowrap;padding:2px;\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + nodes[n.node].name + ')[1]')\">{{nodes[n.node].name}} ({{n.degree}})</a> \n\t\t</div>\n\t\t<hr />\n\t\t<b>Top labels</b>\n\t\t<div v-for=\"e in best_edges\" style=\"border:1px solid #66f;border-radius:3px;margin:1px;overflow:hidden;white-space:nowrap;padding:2px;\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.edge + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(is ' + e.edge + ')')\">{{e.edge}} ({{e.count}})</a>\n\t\t</div>\n\t    </div>\n\t    <div style=\"float:left;width:80%;\">\n\t\t<div style=\"float:left\">Highlight: <input type=\"text\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:keyup.enter=\"do_highlight\" />\n\t\t<span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t\t</div><br /><br />\n\t\t<graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"result.length > 0\"></graph-index>\n\t    </div>\n\t</div>\n\t<div v-if=\"mode=='list'\">\n\t    <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t</div>\n  </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     props: ['initquery'],\n     computed: { \n\t ...mapState(['nodes']),\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r of this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     var nodes_by_deg = [];\n\t     for(var n in this.resultset) {\n\t\t var targets = {}\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     for(var target of this.nodes[n].edges.has[label]) {\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t for(var label in this.nodes[n].edges.is) {\n\t\t     for(var target of this.nodes[n].edges.is[label]) {\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t var deg = 0;\n\t\t for(var t in targets) {\n\t\t     deg++;\n\t\t }\n\t\t nodes_by_deg.push({\"node\":n,\"degree\":deg});\n\t     }\n\t     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });\n\t     return nodes_by_deg.slice(0,10);\n\t },\n\t best_edges: function() {\n\t     var edges_with_count = {};\n\t     for(var n in this.resultset) {\n\t\t var count = 0;\n\t\t // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     if(!(label in edges_with_count)) {\n\t\t\t edges_with_count[label] = 0\n\t\t     }\n\t\t     for(var target of this.nodes[n].edges.has[label]) {\n\t\t\t if(target in this.resultset) {\n\t\t\t     edges_with_count[label]++;\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     var edges_by_count = [];\n\t     for(var e in edges_with_count) {\n\t\t edges_by_count.push({\"edge\":e,\"count\":edges_with_count[e]})\n\t     }\n\t     edges_by_count.sort(function(a, b){return b.count-a.count;});\n\t     return edges_by_count.slice(0,10);\n\t },\n\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t }\n     },\n     methods: {\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry) {\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     return Vue.category_search(q, this.nodes);\n\t },\n\t search: function() {\n\t     var query_result = this.run_search(this.query)\n\t     console.log(query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t console.log(\"RES\",this.result);\n\t\t for(var i = 0; i < this.result.length; i++){\n\t\t     if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t\t this.$router.push('/node/'+this.result[i]);\n\t\t\t break;\n\t\t     }\n\t\t }\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query);\n\t }\n     },\n     mounted: function() {\n\t this.query = this.initquery;\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .search-error {\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$7 = "data-v-a71d2812";
+    const __vue_scope_id__$7 = "data-v-7245b588";
     /* module identifier */
     const __vue_module_identifier__$7 = undefined;
     /* functional template */
@@ -32666,11 +32713,11 @@
     /* style */
     const __vue_inject_styles__$8 = function (inject) {
       if (!inject) return
-      inject("data-v-3acdf012_0", { source: "\n.graph_index[data-v-3acdf012] {\n    height: 100%;\n    min-height:100vh;\n    width: 100%;\n}\n#graph_container[data-v-3acdf012] {\n    height: 100%;\n    min-height:100vh;\n    width: 100%;\n    color: unset;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/graph.vue"],"names":[],"mappings":";AAgLA;IACA,YAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,YAAA;IACA,gBAAA;IACA,WAAA;IACA,YAAA;AACA","file":"graph.vue","sourcesContent":["<template>\n    <div class=\"graph_index\">\n\t<div id=\"graph_container\"></div>\n    </div>\n</template>\n\n<script>\n import {DirectedGraph} from 'graphology';\n import FA2 from 'graphology-layout-forceatlas2';\n import FA2Layout from 'graphology-layout-forceatlas2/worker';\n import WebGLRenderer from 'sigma/renderers/webgl';\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'graph-index',\n     props: ['nodeset','highlight'],\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var id in this.nodeset) {\n\t\t ans++;\n\t     }\n\t     return ans;\n\t },\n\t graph_data: function() {\n\t     var ans = {nodes:[],edges:[]};\n\t     var edgeset = {};\n\t     for(var id in this.nodeset) {\n\t\t //console.log(\"NODE\",id,name);\n\t\t ans.nodes.push({\"key\":id,attributes:{\"label\":this.nodeset[id].name, \"color\":\"#00f\"}})\n\t\t if(!(this.nodeset[id].edges)) continue;\n\t\t for(var label in this.nodeset[id].edges.has) {\n\t\t     for(var target of this.nodeset[id].edges.has[label]) {\n\t\t\t //console.log(\"TARGET\",target);\n\t\t\t if(target in this.nodeset) {\n\t\t\t     var eid = `${id}_${target}_${label}`;\n\t\t\t     if(eid in edgeset) {\n\t\t\t\t edgeset[eid].attributes.label += \", \" + label;\n\t\t\t     }\n\t\t\t     else {\n\t\t\t\t edgeset[eid] = {\"source\":id,\"target\":target,attributes:{\"label\":label}};\n\t\t\t     }\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     for(var eid in edgeset) {\n\t\t ans.edges.push(edgeset[eid]);\n\t     }\n\t     return ans;\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     watch: {\n\t nodeset: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_graph();\n\t     });\n\t },\n\t highlight: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_highlight();\n\t     });\n\t }\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i];\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t update_graph: function() {\n\t     this.graph.clear();\n\t     this.graph.import(this.graph_data);\n\t     this.graph.nodes().forEach(node => {\n\t\t this.graph.mergeNodeAttributes(node, {\n\t\t     x: Math.random(),\n\t\t     y: Math.random(),\n\t\t     size: Math.max(3,Math.min(this.graph.degree(node), 8)),\n\t\t     color: node in this.highlight ? \"#f00\" : \"#00f\"\n\t\t });\n\t     });\n\t     \n\t     var settings = FA2.inferSettings(this.graph);\n\t     console.log(settings);\n\t     settings.slowDown = 10;\n\t     //saneSettings.strongGravityMode = true;\n\t     //saneSettings.gravity = 3;\n\t     var layout = new FA2Layout(this.graph, {settings: settings});\n\t     layout.start();\n\t     setTimeout(function(){layout.stop();}, 1*3*(this.num_nodes/100)*1000);\n\t },\n\t update_highlight: function() {\n\t     console.log(\"updating highlight\",this.highlight);\n\t     this.graph.nodes().forEach(node => {\n\t\t console.log(\"N\",node, node in this.highlight);\n\t\t this.graph.mergeNodeAttributes(node, {color: node in this.highlight ? \"#f00\" : \"#00f\"});\n\t     });\n\t     \n\t }\n     },\n     mounted: function () {\n\t this.$nextTick(function () {\n\t     console.log(\"initing graph container\");\n\t     this.graph = new DirectedGraph({multi: true});\n\t     this.renderer = new WebGLRenderer(this.graph, document.getElementById(\"graph_container\"), {\n\t\t defaultEdgeType: 'arrow',\n\t\t defaultEdgeColor: '#888',\n\t\t renderEdgeLabels: true,\n\t\t labelSize: 12,\n\t\t labelGrid: {\n\t\t     cell: {\n\t\t\t width: 40,\n\t\t\t height: 20\n\t\t     },\n\t\t     renderedSizeThreshold: 1}});\n\t     const camera = this.renderer.getCamera();\n\t     const captor = this.renderer.getMouseCaptor();\n\n\t     // State\n\t     let draggedNode = null, dragging = false;\n\n\t     var self = this;\n\t     \n\t     this.renderer.on('downNode', e => {\n\t\t dragging = true;\n\t\t console.log(\"down\",e);\n\t\t draggedNode = e.node;\n\t\t camera.disable();\n\t     });\n\n\t     this.renderer.on('clickNode', e => {\n\t\t console.log(\"nav\",e.node);\n\t\t this.$router.push(\"/node/\"+e.node);\n\t     });\n\n\t     captor.on('mouseup', e => {\n\t\t dragging = false;\n\t\t console.log(\"up\",e);\n\t\t draggedNode = null;\n\t\t camera.enable();\n\t     });\n\n\t     captor.on('mousemove', e => {\n\t\t if (!dragging)\n\t\t     return;\n\n\t\t // Get new position of node\n\t\t const pos = self.renderer.normalizationFunction.inverse(\n\t\t     camera.viewportToGraph(self.renderer, e.x, e.y)\n\t\t );\n\n\t\t self.graph.setNodeAttribute(draggedNode, 'x', pos.x);\n\t\t self.graph.setNodeAttribute(draggedNode, 'y', pos.y);\n\t     });\n\n\t     this.update_graph();\n\t     this.update_highlight();\n\t });\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .graph_index {\n     height: 100%;\n     min-height:100vh;\n     width: 100%;\n }\n #graph_container {\n     height: 100%;\n     min-height:100vh;\n     width: 100%;\n     color: unset;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-6700b040_0", { source: "\n.graph_index[data-v-6700b040] {\n    height: 100%;\n    min-height:100vh;\n    width: 100%;\n}\n#graph_container[data-v-6700b040] {\n    height: 100%;\n    min-height:100vh;\n    width: 100%;\n    color: unset;\n    border: 1px solid #ccc;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/graph.vue"],"names":[],"mappings":";AAgLA;IACA,YAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,YAAA;IACA,gBAAA;IACA,WAAA;IACA,YAAA;IACA,sBAAA;AACA","file":"graph.vue","sourcesContent":["<template>\n    <div class=\"graph_index\">\n\t<div id=\"graph_container\"></div>\n    </div>\n</template>\n\n<script>\n import {DirectedGraph} from 'graphology';\n import FA2 from 'graphology-layout-forceatlas2';\n import FA2Layout from 'graphology-layout-forceatlas2/worker';\n import WebGLRenderer from 'sigma/renderers/webgl';\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'graph-index',\n     props: ['nodeset','highlight'],\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var id in this.nodeset) {\n\t\t ans++;\n\t     }\n\t     return ans;\n\t },\n\t graph_data: function() {\n\t     var ans = {nodes:[],edges:[]};\n\t     var edgeset = {};\n\t     for(var id in this.nodeset) {\n\t\t //console.log(\"NODE\",id,name);\n\t\t ans.nodes.push({\"key\":id,attributes:{\"label\":this.nodeset[id].name, \"color\":\"#00f\"}})\n\t\t if(!(this.nodeset[id].edges)) continue;\n\t\t for(var label in this.nodeset[id].edges.has) {\n\t\t     for(var target of this.nodeset[id].edges.has[label]) {\n\t\t\t //console.log(\"TARGET\",target);\n\t\t\t if(target in this.nodeset) {\n\t\t\t     var eid = `${id}_${target}_${label}`;\n\t\t\t     if(eid in edgeset) {\n\t\t\t\t edgeset[eid].attributes.label += \", \" + label;\n\t\t\t     }\n\t\t\t     else {\n\t\t\t\t edgeset[eid] = {\"source\":id,\"target\":target,attributes:{\"label\":label}};\n\t\t\t     }\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     for(var eid in edgeset) {\n\t\t ans.edges.push(edgeset[eid]);\n\t     }\n\t     return ans;\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     watch: {\n\t nodeset: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_graph();\n\t     });\n\t },\n\t highlight: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_highlight();\n\t     });\n\t }\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i];\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t update_graph: function() {\n\t     this.graph.clear();\n\t     this.graph.import(this.graph_data);\n\t     this.graph.nodes().forEach(node => {\n\t\t this.graph.mergeNodeAttributes(node, {\n\t\t     x: Math.random(),\n\t\t     y: Math.random(),\n\t\t     size: Math.max(3,Math.min(this.graph.degree(node), 8)),\n\t\t     color: node in this.highlight ? \"#f00\" : \"#00f\"\n\t\t });\n\t     });\n\t     \n\t     var settings = FA2.inferSettings(this.graph);\n\t     console.log(settings);\n\t     settings.slowDown = 10;\n\t     //saneSettings.strongGravityMode = true;\n\t     //saneSettings.gravity = 3;\n\t     var layout = new FA2Layout(this.graph, {settings: settings});\n\t     layout.start();\n\t     setTimeout(function(){layout.stop();}, 1*3*(this.num_nodes/100)*1000);\n\t },\n\t update_highlight: function() {\n\t     console.log(\"updating highlight\",this.highlight);\n\t     this.graph.nodes().forEach(node => {\n\t\t console.log(\"N\",node, node in this.highlight);\n\t\t this.graph.mergeNodeAttributes(node, {color: node in this.highlight ? \"#f00\" : \"#00f\"});\n\t     });\n\t     \n\t }\n     },\n     mounted: function () {\n\t this.$nextTick(function () {\n\t     console.log(\"initing graph container\");\n\t     this.graph = new DirectedGraph({multi: true});\n\t     this.renderer = new WebGLRenderer(this.graph, document.getElementById(\"graph_container\"), {\n\t\t defaultEdgeType: 'arrow',\n\t\t defaultEdgeColor: '#888',\n\t\t renderEdgeLabels: true,\n\t\t labelSize: 12,\n\t\t labelGrid: {\n\t\t     cell: {\n\t\t\t width: 40,\n\t\t\t height: 20\n\t\t     },\n\t\t     renderedSizeThreshold: 1}});\n\t     const camera = this.renderer.getCamera();\n\t     const captor = this.renderer.getMouseCaptor();\n\n\t     // State\n\t     let draggedNode = null, dragging = false;\n\n\t     var self = this;\n\t     \n\t     this.renderer.on('downNode', e => {\n\t\t dragging = true;\n\t\t console.log(\"down\",e);\n\t\t draggedNode = e.node;\n\t\t camera.disable();\n\t     });\n\n\t     this.renderer.on('clickNode', e => {\n\t\t console.log(\"nav\",e.node);\n\t\t this.$router.push(\"/node/\"+e.node);\n\t     });\n\n\t     captor.on('mouseup', e => {\n\t\t dragging = false;\n\t\t console.log(\"up\",e);\n\t\t draggedNode = null;\n\t\t camera.enable();\n\t     });\n\n\t     captor.on('mousemove', e => {\n\t\t if (!dragging)\n\t\t     return;\n\n\t\t // Get new position of node\n\t\t const pos = self.renderer.normalizationFunction.inverse(\n\t\t     camera.viewportToGraph(self.renderer, e.x, e.y)\n\t\t );\n\n\t\t self.graph.setNodeAttribute(draggedNode, 'x', pos.x);\n\t\t self.graph.setNodeAttribute(draggedNode, 'y', pos.y);\n\t     });\n\n\t     this.update_graph();\n\t     this.update_highlight();\n\t });\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .graph_index {\n     height: 100%;\n     min-height:100vh;\n     width: 100%;\n }\n #graph_container {\n     height: 100%;\n     min-height:100vh;\n     width: 100%;\n     color: unset;\n     border: 1px solid #ccc;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$8 = "data-v-3acdf012";
+    const __vue_scope_id__$8 = "data-v-6700b040";
     /* module identifier */
     const __vue_module_identifier__$8 = undefined;
     /* functional template */
@@ -45672,6 +45719,8 @@
       }
       var new_nodeset = {};
       for(var n in nodeset) {
+  	if(!(n in nodes)) continue;
+  	
   	for(var label in nodes[n].edges.has) {
   	    for(var target of nodes[n].edges.has[label]) {
   		new_nodeset[target] = true;
@@ -45699,8 +45748,17 @@
       else if(q[0] == "and"){
   	result = search(q[1][0],nodes);
   	for(var i = 1; i < q[1].length; i++){
-  	    var res = search(q[1][i],nodes);
+  	    console.log("q",q[1][i]);
+  	    var nodeset = {};
+  	    for(var n of result) {
+  		if(n in nodes) {
+  		    nodeset[n] = nodes[n];
+  		}
+  	    }
+  	    console.log("NS",nodeset);
+  	    res = search(q[1][i],nodeset);
   	    result = intersect_lists(result,res);
+  	    console.log("AND RES",q[1][i],result);
   	}
       }
       else if(q[0] == "or"){

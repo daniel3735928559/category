@@ -47,6 +47,8 @@ var neighbourhood = function(nodeset, steps, nodes) {
     }
     var new_nodeset = {}
     for(var n in nodeset) {
+	if(!(n in nodes)) continue;
+	
 	for(var label in nodes[n].edges.has) {
 	    for(var target of nodes[n].edges.has[label]) {
 		new_nodeset[target] = true;
@@ -74,8 +76,17 @@ var search = function(q, nodes){
     else if(q[0] == "and"){
 	result = search(q[1][0],nodes);
 	for(var i = 1; i < q[1].length; i++){
-	    var res = search(q[1][i],nodes);
+	    console.log("q",q[1][i]);
+	    var nodeset = {};
+	    for(var n of result) {
+		if(n in nodes) {
+		    nodeset[n] = nodes[n];
+		}
+	    }
+	    console.log("NS",nodeset);
+	    res = search(q[1][i],nodeset);
 	    result = intersect_lists(result,res);
+	    console.log("AND RES",q[1][i],result);
 	}
     }
     else if(q[0] == "or"){

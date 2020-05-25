@@ -184,5 +184,6 @@
      min-height:100vh;
      width: 100%;
      color: unset;
+     border: 1px solid #ccc;
  }
 </style>

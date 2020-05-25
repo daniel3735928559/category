@@ -8,19 +8,30 @@
 
 	<div v-if="mode=='graph'">
 	    <div style="float:left;width:20%;">
-		Top nodes:
-		<div v-for="n in best_nodes">
-		    <a href="#" v-on:click="set_highlight('(=' + nodes[n.node].name + ')[1]')">{{nodes[n.node].name}} ({{n.degree}})</a> <a href="#" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">[+]</a> <a href="#" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">[-]</a>, 
+		<b>Top nodes</b>
+		<div v-for="n in best_nodes" style="border:1px solid #66f;border-radius:3px;margin:1px;overflow:hidden;white-space:nowrap;padding:2px;">
+		    <div style="display:inline-block;">
+			<span class="badge_button" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">-</span>
+		    </div>
+		    <a href="#" v-on:click="set_highlight('(=' + nodes[n.node].name + ')[1]')">{{nodes[n.node].name}} ({{n.degree}})</a> 
 		</div>
-		Top labels:
-		<div v-for="e in best_edges">
-		    <a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.edge}} ({{e.count}})</a> <a href="#" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">[+]</a> <a href="#" v-on:click="add_to_query('!(is ' + e.edge + ')')">[-]</a>, 
+		<hr />
+		<b>Top labels</b>
+		<div v-for="e in best_edges" style="border:1px solid #66f;border-radius:3px;margin:1px;overflow:hidden;white-space:nowrap;padding:2px;">
+		    <div style="display:inline-block;">
+			<span class="badge_button" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(is ' + e.edge + ')')">-</span>
+		    </div>
+		    <a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.edge}} ({{e.count}})</a>
 		</div>
 	    </div>
 	    <div style="float:left;width:80%;">
-		Highlight: <input type="text" id="highlight_input" v-model="highlight_query" v-on:keyup.enter="do_highlight" />
+		<div style="float:left">Highlight: <input type="text" id="highlight_input" v-model="highlight_query" v-on:keyup.enter="do_highlight" />
 		<span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
 		<span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
+		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
+		</div><br /><br />
 		<graph-index :nodeset="resultset" :highlight="highlightset" v-if="result.length > 0"></graph-index>
 	    </div>
 	</div>
@@ -119,8 +130,8 @@
      },
      methods: {
 	 add_to_query: function(qry) {
-	     if(this.query.trim().length > 0) {
-		 this.query += ","+qry;
+	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
+		 this.query = "("+this.query+"),"+qry;
 	     }
 	     else {
 		 this.query = qry;
@@ -188,5 +199,22 @@
 
  .search-error {
      color: #e33;
+ }
+ .badge_button {
+     cursor:pointer;
+     margin-right:5px;
+     display: inline-block;
+     min-width: 10px;
+     padding: 3px 7px;
+     font-size: 12px;
+     font-weight: bold;
+     line-height: 1;
+     color: #fff;
+     text-align: center;
+     white-space: nowrap;
+     vertical-align: middle;
+     background-color: #777;
+     border-radius: 10px;
+     float:right;
  }
 </style>
