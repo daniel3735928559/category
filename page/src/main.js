@@ -8,6 +8,7 @@ import LabelIndex from './components/labels.vue'
 import HistoryDisplay from './components/history.vue'
 import EdgeDisplay from './components/edges.vue'
 import SearchDisplay from './components/search/search.vue'
+import GraphIndex from './components/graph.vue'
 
 import VideoPlugin from './plugins/video.vue'
 import MathPlugin from './plugins/math.vue'
@@ -16,11 +17,16 @@ import QueryPlugin from './plugins/query.vue'
 import SlideshowPlugin from './plugins/slideshow.vue'
 import JSAVRPlugin from './plugins/jsavr.vue'
 
+// import {UndirectedGraph} from 'graphology';
+// import FA2Layout from 'graphology-layout-forceatlas2/worker';
+// import WebGLRenderer from 'sigma/renderers/webgl';
+ 
 import Query from './components/search/module/query.js'
 import Search from './components/search/module/search.js'
 
 Vue.config.productionTip = true;
 
+Vue.component('graphIndex', GraphIndex);
 Vue.component('nodeIndex', NodeIndex);
 Vue.component('labelIndex', LabelIndex);
 Vue.component('historyDisplay', HistoryDisplay);

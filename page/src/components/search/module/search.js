@@ -1,26 +1,28 @@
 var intersect_lists = function(l1,l2){
-    var result = [];
+    var ans = [];
+    var l1_dict = {};
     for(var i = 0; i < l1.length; i++){
-	for(var j = 0; j < l2.length; j++){
-	    if(l1[i] == l2[j]) result.push(l1[i]);
+	l1_dict[l1[i]] = true;
+    }
+    for(var j = 0; j < l2.length; j++){
+	if(l1_dict[l2[j]]) {
+	    ans.push(l2[j]);
 	}
     }
-    return result;
+    return ans;
 }
 
 var union_lists = function(l1,l2){
-    var result = [].concat(l1);
-    for(var i = 0; i < l2.length; i++){
-	var found = false;
-	for(var j = 0; j < l1.length; j++){
-	    if(l2[i] == l1[j]){
-		found = true;
-		break;
-	    }
-	}
-	if(!found) result.push(l2[i]);
+    var result = [].concat(l1).concat(l2);
+    var ans_dict = {};
+    var ans = [];
+    for(var i = 0; i < result.length; i++) {
+	ans_dict[result[i]] = true;
     }
-    return result;
+    for(var x in ans_dict) {
+	ans.push(x);
+    }
+    return ans;
 }
 
 // removes everything in l2 from l1
@@ -37,6 +39,29 @@ var remove_all = function(l1,l2){
 	if(!found) result.push(l1[i]);
     }
     return result;
+}
+
+var neighbourhood = function(nodeset, steps, nodes) {
+    if(steps <= 0) {
+	return nodeset;
+    }
+    var new_nodeset = {}
+    for(var n in nodeset) {
+	for(var label in nodes[n].edges.has) {
+	    for(var target of nodes[n].edges.has[label]) {
+		new_nodeset[target] = true;
+	    }
+	}
+	for(var label in nodes[n].edges.is) {
+	    for(var target of nodes[n].edges.is[label]) {
+		new_nodeset[target] = true;
+	    }
+	}
+    }
+    for(var n in nodeset) {
+	new_nodeset[n] = true;
+    }
+    return neighbourhood(new_nodeset, steps-1, nodes);
 }
 
 var search = function(q, nodes){
@@ -86,10 +111,31 @@ var search = function(q, nodes){
 	    }
 	}
     }
+    else if(q[0] == "nbhd"){
+	var subquery = q[1][0];
+	var steps = q[1][1];
+	var res = search(subquery,nodes);
+	var nodeset = {};
+	for(var n of res) {
+	    nodeset[n] = true;
+	}
+	var ans_dict = neighbourhood(nodeset, steps, nodes);
+	for(var n in ans_dict) {
+	    result.push(n);
+	}
+    }
     else if(q[0] == "name"){
 	var name = q[1].toLowerCase();
 	for(var n in nodes){
 	    if(name == "*" || nodes[n].name.toLowerCase().indexOf(name) >= 0){
+		result.push(n);
+	    }
+	}
+    }
+    else if(q[0] == "exactly"){
+	var name = q[1].toLowerCase();
+	for(var n in nodes){
+	    if(nodes[n].name.toLowerCase() == name){
 		result.push(n);
 	    }
 	}
@@ -108,4 +154,4 @@ var search = function(q, nodes){
     }
     return result;
 }
-module.exports = search
+export default search

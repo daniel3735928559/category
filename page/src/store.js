@@ -40,7 +40,7 @@ export default new Vuex.Store({
 	    var ans = nodelist.sort(function(a, b){
 		var res = 0;
 		if (key in state.nodes[a] && key in state.nodes[b]) {
-		    console.log("arr by",key);
+		    //console.log("arr by",key);
 		    if (key == 'index') {
 			var res = parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index)
 			return ascending ? res : -res;
@@ -65,6 +65,7 @@ export default new Vuex.Store({
 	    //node_data = plugin_process(state, node_id, node_data);
 	    console.log('caching',nodes);
 	    for(var node_id in nodes){
+		state.nodes[node_id].snippet = nodes[node_id].substring(0,100);
 		state.node_data[node_id] = nodes[node_id];
 	    }
 	},
@@ -79,17 +80,33 @@ export default new Vuex.Store({
 	    state.recent = [];
 	},
 	REMOVE_FROM_HISTORY: (state, node_id) => {
-	    var idx = state.recent.indexOf(node_id);
+	    var idx = -1;
+	    for(var i = 0; i < state.recent.length; i++) {
+		if(state.recent[i].id == node_id) {
+		    idx = i;
+		    break;
+		}
+	    }
 	    if(idx >= 0) state.recent.splice(idx,1);
 	},
 	GO: (state, node_id) => {
 	    console.log('historicising');
+	    console.log(state.recent);
 	    state.current = node_id;
-	    var idx = state.recent.indexOf(node_id);
-	    if(idx >= 0) {
-		state.recent.splice(idx, 1);
+	    var idx = -1;
+	    for(var i = 0; i < state.recent.length; i++) {
+		if(state.recent[i].id == node_id) {
+		    idx = i;
+		    break;
+		}
 	    }
-	    state.recent.unshift(node_id);
+	    if(idx < 0) {
+		state.recent.unshift({"id":node_id,"fixed":false});
+	    }
+	    // else {
+	    // 	// Move to top if already in working set
+	    // 	state.recent.splice(idx, 1);
+	    // }
 	},
 	METADATA: (state, nodes) => {
 	    state.nodes = nodes;

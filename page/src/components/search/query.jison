@@ -7,6 +7,7 @@
 
 \s+			          /* skip whitespace */
 "!"         			  return '!'
+"="         			  return '='
 "*"         			  return '*'
 "/"                    		  return '/'
 ";"                    		  return ';'
@@ -15,10 +16,13 @@
 "."                    		  return '.'
 "("                    		  return '('
 ")"                    		  return ')'
+"["                    		  return '['
+"]"                    		  return ']'
 "has"		       		  return 'HAS'
 "is"		       		  return 'IS'
 "of"		       		  return 'OF'
 "c"		       	      	  return 'C'
+[1-9][0-9]*                       return 'NUM'
 (?!has)(?!of)[^*;/,:.()! ]+       return 'STR'
 <<EOF>>                	       	  return 'EOF'
 .                      		  return 'INVALID'
@@ -56,10 +60,14 @@ q
         {$$ = ["edge",{"name":$1,"dir":"is","query":$5}];}
     | '.' name ':' name
         {$$ = ["prop",[$2,$4]];}
+    | '=' name
+        {$$ = ["exactly",$2];}
     | '!' name
         {$$ = ["not",[["name",$2]]];}
     | '!' '(' q ')'
         {$$ = ["not",[$3]];}
+    | '(' q ')' '[' NUM ']'
+        {$$ = ["nbhd",[$2,parseInt($5)]];}    
     | '(' q ')'
         {$$ = $2;}
     | q ',' q

@@ -11,6 +11,7 @@ Usage:
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
   category n4jimport <path> <un> <pw>
   category n4jquery <un> <pw> <query>
+  category complete <input> <output>
 
 Options:
   -p port (default: 7688)
@@ -365,3 +366,10 @@ if __name__ == "__main__":
                       args['<un>'],
                       args['<pw>'],
                       args['<query>'])
+    elif args['complete']:
+        with open(args["<input>"],"r") as f:
+            json_data = f.read()
+            md = json.loads(json_data)
+            with open(args["<output>"],"w") as of:
+                of.write(json.dumps(src.util.complete_metadata(md)))
+            
