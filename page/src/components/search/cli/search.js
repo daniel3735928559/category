@@ -216,4 +216,4 @@ var search = function(q, nodes){
     }
     return result;
 }
-export default search
+exports.search = search;

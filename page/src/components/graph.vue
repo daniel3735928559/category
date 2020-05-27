@@ -81,6 +81,14 @@
 	     return ans;
 	 },
 	 update_graph: function() {
+	     if(this.layout) {
+		 this.layout.stop();
+		 this.layout = null;
+	     }
+	     if(this.layout_timer) {
+		 clearTimeout(this.layout_timer);
+		 this.layout_timer = null;
+	     }
 	     this.graph.clear();
 	     this.graph.import(this.graph_data);
 	     this.graph.nodes().forEach(node => {
@@ -97,9 +105,10 @@
 	     settings.slowDown = 10;
 	     //saneSettings.strongGravityMode = true;
 	     //saneSettings.gravity = 3;
-	     var layout = new FA2Layout(this.graph, {settings: settings});
-	     layout.start();
-	     setTimeout(function(){layout.stop();}, 1*3*(this.num_nodes/100)*1000);
+	     this.layout = new FA2Layout(this.graph, {settings: settings});
+	     this.layout.start();
+	     var self = this;
+	     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout = null; self.layout_timer = null;}, 1*3*(this.num_nodes/100)*1000);
 	 },
 	 update_highlight: function() {
 	     console.log("updating highlight",this.highlight);

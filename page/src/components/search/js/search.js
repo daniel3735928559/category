@@ -41,29 +41,60 @@ var remove_all = function(l1,l2){
     return result;
 }
 
-var neighbourhood = function(nodeset, steps, nodes) {
+var date_from_string = function(d) {
+    var arr = d.split("-");
+    if(arr.length != 3) return null;
+    return new Date(parseInt(arr[0]), parseInt(arr[1])-1, parseInt(arr[2]));
+}
+
+var neighbourhood = function(nodeset, steps, nodes, frontier) {
     if(steps <= 0) {
+	for(var n in frontier) {
+	    nodeset[n] = true;
+	}
 	return nodeset;
     }
-    var new_nodeset = {}
+    if(!frontier) {
+	frontier = nodeset;
+	nodeset = {};
+    }
+    // Check if the frontier is empty
+    var no_new = true;
+    for(var n in frontier) {
+	no_new = false;
+	break;
+    }
+    if(no_new) {
+	return nodeset;
+    }
+    var new_frontier = {}
+    var new_nodeset = {};
     for(var n in nodeset) {
+	new_nodeset[n] = true;
+    }
+    for(var n in frontier) {
+	new_nodeset[n] = true;
+    }
+    for(var n in frontier) {
 	if(!(n in nodes)) continue;
-	
 	for(var label in nodes[n].edges.has) {
 	    for(var target of nodes[n].edges.has[label]) {
-		new_nodeset[target] = true;
+		if(!(target in new_nodeset)) {
+		    // if the target is not in the set we've visited or that we're visiting, we'll visit it on the next round
+		    new_frontier[target] = true;
+		}
 	    }
 	}
 	for(var label in nodes[n].edges.is) {
 	    for(var target of nodes[n].edges.is[label]) {
-		new_nodeset[target] = true;
+		if(!(target in new_nodeset)) {
+		    // if the target is not in the set we've visited or that we're visiting, we'll visit it on the next round
+		    new_frontier[target] = true;
+		}
 	    }
 	}
     }
-    for(var n in nodeset) {
-	new_nodeset[n] = true;
-    }
-    return neighbourhood(new_nodeset, steps-1, nodes);
+    return neighbourhood(new_nodeset, steps-1, nodes, new_frontier);
 }
 
 var search = function(q, nodes){
@@ -156,6 +187,26 @@ var search = function(q, nodes){
 	var prop_val = q[1][1].toLowerCase();
 	for(var n in nodes){
 	    if(nodes[n][prop_name] && nodes[n][prop_name].toLowerCase().indexOf(prop_val) >= 0){
+		result.push(n);
+	    }
+	}
+    }
+    else if(q[0] == "before"){
+	var cutoff_date = date_from_string(q[1]);
+	for(var n in nodes){
+	    if(!(nodes[n].date)) continue;
+	    var d = date_from_string(nodes[n].date);
+	    if(d && d < cutoff_date){
+		result.push(n);
+	    }
+	}
+    }
+    else if(q[0] == "after"){
+	var cutoff_date = date_from_string(q[1]);
+	for(var n in nodes){
+	    if(!(nodes[n].date)) continue;
+	    var d = date_from_string(nodes[n].date);
+	    if(d && d > cutoff_date){
 		result.push(n);
 	    }
 	}

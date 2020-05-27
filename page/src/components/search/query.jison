@@ -8,6 +8,7 @@
 \s+			          /* skip whitespace */
 "!"         			  return '!'
 "="         			  return '='
+"-"                               return '-'
 "*"         			  return '*'
 "/"                    		  return '/'
 ";"                    		  return ';'
@@ -18,12 +19,15 @@
 ")"                    		  return ')'
 "["                    		  return '['
 "]"                    		  return ']'
+"before"	       		  return 'BEFORE'
+"after"		       		  return 'AFTER'
 "has"		       		  return 'HAS'
 "is"		       		  return 'IS'
 "of"		       		  return 'OF'
 "c"		       	      	  return 'C'
-[1-9][0-9]*                       return 'NUM'
-(?!has)(?!of)[^*;/,:.()! ]+       return 'STR'
+[0-9]{4}"-"[0-9]{2}"-"[0-9]{2}        return 'DATE'
+[0-9][0-9]*                       return 'NUM'
+(?!has)(?!of)(?!is)(?!before)(?!after)[^*;/,:.()! ]+       return 'STR'
 <<EOF>>                	       	  return 'EOF'
 .                      		  return 'INVALID'
 
@@ -59,7 +63,11 @@ q
     | name OF ':' '(' q ')'
         {$$ = ["edge",{"name":$1,"dir":"is","query":$5}];}
     | '.' name ':' name
-        {$$ = ["prop",[$2,$4]];}
+        {$$ = ["propeq",[$2,$4]];}
+    | BEFORE ':' DATE
+        {$$ = ["before",$3];}
+    | AFTER ':' DATE
+        {$$ = ["after",$3];}
     | '=' name
         {$$ = ["exactly",$2];}
     | '!' name

@@ -38,7 +38,7 @@
 	<div v-if="mode=='list'">
 	    <node-index :nodeset="resultset" v-if="result.length > 0"></node-index>
 	</div>
-  </div>
+    </div>
 </template>
 
 <script>
@@ -128,6 +128,13 @@
 	     mode: 'graph',
 	 }
      },
+     watch: {
+	 nodes: function(val) {
+	     this.$nextTick(function () {
+		 this.search();
+	     });
+	 }
+     },
      methods: {
 	 add_to_query: function(qry) {
 	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
@@ -148,7 +155,7 @@
 	     this.highlight_query = qry;
 	     this.do_highlight();
 	 },
-	 run_search: function(qry) {
+	 run_search: function(qry, nodeset) {
 	     this.entered_query = qry;
 	     this.errormsg = "";
 	     if(qry.trim().length == 0) {
@@ -161,10 +168,13 @@
 		 this.errormsg = e.toString();
 		 return [];
 	     }
-	     return Vue.category_search(q, this.nodes);
+	     return Vue.category_search(q, nodeset);
 	 },
 	 search: function() {
-	     var query_result = this.run_search(this.query)
+	     if(this.query.trim().length == 0) {
+		 this.query = "*";
+	     }
+	     var query_result = this.run_search(this.query, this.nodes)
 	     console.log(query_result);
 	     if(query_result.length == 0) {
 		 return;
@@ -184,7 +194,7 @@
 	     }
 	 },
 	 do_highlight: function() {
-	     this.highlight = this.run_search(this.highlight_query);
+	     this.highlight = this.run_search(this.highlight_query, this.resultset);
 	 }
      },
      mounted: function() {
@@ -198,6 +208,8 @@
 <style scoped>
 
  .search-error {
+     font-family: monospace;
+     white-space: pre;
      color: #e33;
  }
  .badge_button {
