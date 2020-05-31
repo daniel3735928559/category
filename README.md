@@ -17,9 +17,9 @@ Specifically:
   
   * Video with captions at specified timestamps
 
-* *Snippets*: We want to be able to make these documents in whatever
-  form is most convenient. Currently, this means markdown (since it is
-  easily written) and XML (since it is easily manipulated).
+* *Snippets*: We want it to be easy to take a couple sentences, a
+  single file, a quick thught, and ingest that into the system without
+  too much more work than scribbling a post-it.
 
 * *Discoverable*: Content needs to be tagged in some way to make it
   findable. We make it easy to tag documents by their relationships to
@@ -28,7 +28,7 @@ Specifically:
 
 * *Shareable*: We want to be able to take a sub-collection of
   documents (say, specified by a search query) and pull out exactly
-  that content so it can be separately published. 
+  that content so it can be separately published.
   
   This way, no complex per-document access-control mechanism is
   required; simply use a query to airlift out exactly the files
@@ -42,16 +42,59 @@ To view the static example category:
 
 ## Quick Start
 
-To test-drive the example category locally:
+### Setting up
 
 ```
 git clone https://github.com/daniel3735928559/category.git
 cd category
-pip install -r requirements.txt
-python3 category serve example/cat -p 1234
+# Here, set up any python3 virtualenv if desired
+source install.sh
 ```
 
-Then navigate in a browser to [http://localhost:1234](http://localhost:1234)
+### Start your own category
+
+Make a folder for your data. We'll put ours in `~/cat`
+
+```
+./category init ~/cat
+```
+
+To view your blank category in a browser, run: 
+
+```
+./category serve ~/cat
+```
+
+and navigate to [http://localhost:5000](http://localhost:5000).
+
+### Adding nodes by hand
+
+All your nodes are stored in `~/cat/src`. All markdown (`.md`) files
+in any subdirectory of this folder that contain a valid `info` block
+at the start will be treated as nodes. The simplest node, then, looks
+like this:
+
+~~~
+``` info
+name: This is an example node
+```
+
+This is the body of the node
+~~~
+
+If you save this in `~/cat/src/test.md` and then run the below command
+to include the node in your category.
+
+```
+./category build ~/cat
+```
+
+Now refresh the web interface and you should see your new node appear!
+
+### Adding nodes from the web interface
+
+From the web interface, click the "+" button at the top. This will use
+`emacs`
 
 ## Building
 
