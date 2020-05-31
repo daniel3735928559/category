@@ -96,6 +96,38 @@ Now refresh the web interface and you should see your new node appear!
 From the web interface, click the "+" button at the top. This will use
 `emacs`
 
+### Adding nodes to the json database directly
+
+The node database is stored in `~/cat/out/metadata.json`. If you have
+a file containing nodes that you wish to import, ensure it has the
+format:
+```
+{
+  any_key_1: {
+    name: <node_name>,
+    date: <optional_date>,
+	edges: {
+	  has: {
+	    label1:[target_name_1, target_name_2, ...],
+	    label2:[target_name_1, target_name_2, ...],
+		...
+	  },
+	  is: {
+	    label3:[target_name_3, target_name_4, ...],
+	    label4:[target_name_5, target_name_6, ...],
+		...
+	  }
+	}
+  }
+}
+```
+
+Then run 
+
+```
+./category complete data.json ~/cat/out/metadata.json
+```
+
 ## Building
 
 To incrementally build the example (only updating changed files), do: 
