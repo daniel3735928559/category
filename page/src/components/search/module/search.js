@@ -78,7 +78,8 @@ var neighbourhood = function(nodeset, steps, nodes, frontier) {
     for(var n in frontier) {
 	if(!(n in nodes)) continue;
 	for(var label in nodes[n].edges.has) {
-	    for(var target of nodes[n].edges.has[label]) {
+	    for(var edge of nodes[n].edges.has[label]) {
+		var target = edge.target
 		if(!(target in new_nodeset)) {
 		    // if the target is not in the set we've visited or that we're visiting, we'll visit it on the next round
 		    new_frontier[target] = true;
@@ -86,7 +87,8 @@ var neighbourhood = function(nodeset, steps, nodes, frontier) {
 	    }
 	}
 	for(var label in nodes[n].edges.is) {
-	    for(var target of nodes[n].edges.is[label]) {
+	    for(var edge of nodes[n].edges.is[label]) {
+		var target = edge.target
 		if(!(target in new_nodeset)) {
 		    // if the target is not in the set we've visited or that we're visiting, we'll visit it on the next round
 		    new_frontier[target] = true;
@@ -140,14 +142,25 @@ var search = function(q, nodes){
 	    var node_id = res[i];
 	    for(var n in nodes){
 		if(edge.name == "*"){
-		    for(var e in nodes[n].edges[edge.dir]){
-			if(nodes[n].edges[edge.dir][e].indexOf(node_id) >= 0){
+		    var found = false;
+		    for(var label in nodes[n].edges[edge.dir]){
+			for(var e of nodes[n].edges[edge.dir][label]) {
+			    if(e.target == node_id) {
+				found = true;
+				result = union_lists(result,[n]);
+				break;
+			    }
+			    if(found) break;
+			}
+		    }
+		}
+		else if(edge.name in nodes[n].edges[edge.dir]) {
+		    for(var e of nodes[n].edges[edge.dir][edge.name]) {
+			if(e.target == node_id) {
 			    result = union_lists(result,[n]);
 			    break;
 			}
 		    }
-		}
-		else if(edge.name in nodes[n].edges[edge.dir] && nodes[n].edges[edge.dir][edge.name].indexOf(node_id) >= 0){
 		    result = union_lists(result,[n]);
 		}
 	    }

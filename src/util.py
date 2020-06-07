@@ -19,9 +19,9 @@ def add_edges(src, dst):
             dst[et] = {}
         for en in src[et]:
             if not en in dst[et]: dst[et][en] = []
-            for target in src[et][en]:
-                if not target in dst[et][en]:
-                    dst[et][en].append(target)
+            for edge in src[et][en]:
+                # May need to do some work here to prevent duplicates.......
+                dst[et][en].append(edge)
 
 def make_config(data, edges):
     ans = []
@@ -29,10 +29,18 @@ def make_config(data, edges):
         ans.append(f"{d}: {data[d]}")
     for e in edges.get('has',{}):
         for t in edges['has'][e]:
-            ans.append(f"has {e}: {t}")
+            ans.append(f"has {e}: {t['target']}")
+            for ed in t:
+                if ed == "target":
+                    continue
+                ans.append(f";{ed}={t[ed]}")
     for e in edges.get('is',{}):
         for t in edges['is'][e]:
-            ans.append(f"is {e} of: {t}")
+            ans.append(f"is {e} of: {t['target']}")
+            for ed in t:
+                if ed == "target":
+                    continue
+                ans.append(f";{ed}={t[ed]}")
     return "\n".join(ans)
 
 def parse_config(text):
@@ -59,8 +67,18 @@ def parse_config(text):
             continue
         en = m.group(1).strip()
         target = m.group(2).strip()
+        edge_data_list = target.split(";")
+        edge_data = {"target":edge_data_list[0].strip()}
+        for edge_metadata in edge_data_list[1:]:
+            edge_metadata = edge_metadata.strip()
+            if not "=" in edge_metadata:
+                sys.stderr.write("WARNING: Invalid edge metadata: {}\n".format(edge_metadata))
+                continue
+            k,v = edge_metadata.split("=",1)
+            if k != "target":
+                edge_data[k] = v
         if not en in edges[et]: edges[et][en] = []
-        edges[et][en].append(target)
+        edges[et][en].append(edge_data)
     return data,edges
 
 def get_file(ID, filename, input_url, output_dir):
@@ -98,15 +116,16 @@ def import_metadata(fn):
         name = node['name']
         metadata[name] = node
         metadata[name]['id'] = node_id
-        metadata[name]['edges'] = {'has':{en:[data[nid]['name'] for nid in node['edges']['has'][en]] for en in node['edges']['has']}}
+        metadata[name]['edges'] = {'has':{en:[data[edge["target"]]['name'] for edge in node['edges']['has'][en]] for en in node['edges']['has']}}
 
     return metadata
 
 def get_targets(node):
     targets = set()
     for et in ['is','has']:
-        for ts in node.get('edges',{}).get(et,{}).values():
-            for t in ts: targets.add(t)
+        for es in node.get('edges',{}).get(et,{}).values():
+            for e in es:
+                targets.add(e["target"])
     return targets
 
 def create_subcat(metadata, node_list):
@@ -120,12 +139,32 @@ def create_subcat(metadata, node_list):
         for et in duals:
             edges = node['edges'][et]
             for e in edges:
-                edges[e] = [target for target in edges[e] if target in node_set]
+                edges[e] = [edge for edge in edges[e] if edge["target"] in node_set]
         ans[x] = node
     return ans
 
+def edge_exists(edge, edgeset):
+    for e in edgeset:
+        if e['target'] != edge['target']:
+            continue
+        if 'srcloc' in edge and edge['srcloc'] != e.get('srcloc', None):
+            continue
+        if 'dstloc' in edge and edge['dstloc'] != e.get('dstloc', None):
+            continue
+        return True
+    return False
+
+def is_neighbour(node, potential_neighbour_name):
+    duals = {'has':'is','is':'has'}
+    for et in duals:
+        for label in node['edges'][et]:
+            for edge in node['edges'][et][label]:
+                if edge['target'] == potential_neighbour_name:
+                    return True
+    return False
+
 def complete_metadata(metadata):
-    #print("completing",metadata)
+    print("completing",metadata)
     duals = {'has':'is','is':'has'}
     name_to_id = {}
     ans = {}
@@ -149,8 +188,8 @@ def complete_metadata(metadata):
         for et in duals:
             if not et in node['edges']: node['edges'][et] = {}
             edges = node['edges'][et]
-            for e in edges:
-                targets = targets.union(set(edges[e]))
+            for label in edges:
+                targets = targets.union({e['target'] for e in edges[label]})
                 
     for node_name in targets:
         if not node_name in name_to_id:
@@ -165,8 +204,10 @@ def complete_metadata(metadata):
             # category.
             category_votes = {}
             for node in metadata.values():
-                if not node_name in get_targets(node): continue
+                if not is_neighbour(node, node_name): continue
                 cat = node.get('edges',{}).get('has',{}).get('category',[None])[0]
+                if not cat is None:
+                    cat = cat["target"]
                 if cat == node_name:
                     cat = None
                     break
@@ -174,7 +215,8 @@ def complete_metadata(metadata):
                 tot = sum(category_votes.values())
                 for c in category_votes:
                     if category_votes[c]/tot >= 0.8: cat = c
-            metadata[node_name] = {'auto':'yes','name':node_name,'edges':{'has':{'category':[cat]} if cat else {},'is':{}}}
+            print("C selected:",cat)
+            metadata[node_name] = {'auto':'yes','name':node_name,'edges':{'has':{'category':[{"target":cat}]} if cat else {},'is':{}}}
             ans[node_id] = {'auto':'yes','name':node_name,'edges':{'has':{},'is':{}}}
             
             
@@ -183,18 +225,39 @@ def complete_metadata(metadata):
     # edges in ans
     for node in metadata.values():
         node_id = name_to_id[node['name']]
-
+        print("fixing", node['name'], node_id)
         # Add all edges and duals
         for et in duals:
             edges = node['edges'][et]
             for e in edges:
-                for target in edges[e]:
-                    target_id = name_to_id[target]
+                for edge in edges[e]:
+                    # Replace edge target name with id
+                    target_id = name_to_id[edge["target"]]
+
+                    # Construct the new edge and the dual edge--all properties are copied except target is swapped, and srcloc/dstloc are swapped
+                    new_edge = {"target": target_id}
+                    dual_edge = {"target":node_id}
+                    for emd in edge:
+                        if emd == "target":
+                            continue
+                        elif emd == "srcloc":
+                            new_edge["srcloc"] = edge[emd]
+                            dual_edge["dstloc"] = edge[emd]
+                        elif emd == "dstloc":
+                            new_edge["dstloc"] = edge[emd]
+                            dual_edge["srcloc"] = edge[emd]
+                        else:
+                            new_edge[emd] = edge[emd]
+                            dual_edge[emd] = edge[emd]
                     # Add edge
-                    if not e in ans[node_id]['edges'][et]: ans[node_id]['edges'][et][e] = []
-                    if not target_id in ans[node_id]['edges'][et][e]: ans[node_id]['edges'][et][e].append(target_id)
+                    if not e in ans[node_id]['edges'][et]:
+                        ans[node_id]['edges'][et][e] = []
+                    if not edge_exists(edge, ans[node_id]['edges'][et][e]):
+                        ans[node_id]['edges'][et][e].append(new_edge)
                     # Add dualised edge
-                    if not e in ans[target_id]['edges'][duals[et]]: ans[target_id]['edges'][duals[et]][e] = []
-                    if not node_id in ans[target_id]['edges'][duals[et]][e]: ans[target_id]['edges'][duals[et]][e].append(node_id)
+                    if not e in ans[target_id]['edges'][duals[et]]:
+                        ans[target_id]['edges'][duals[et]][e] = []
+                    if not edge_exists(dual_edge, ans[target_id]['edges'][duals[et]][e]):
+                        ans[target_id]['edges'][duals[et]][e].append(dual_edge)
 
     return ans

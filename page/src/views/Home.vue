@@ -5,7 +5,7 @@
 	  <span v-on:click="new_node()" class="close_x"><span class="fas fa-plus"></span></span>
 	</div>
 
-	<search initquery="*" />
+	<search initquery="*" :nodes="nodes" />
   </div>
 </template>
 

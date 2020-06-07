@@ -28,12 +28,13 @@
 	     var ans = {nodes:[],edges:[]};
 	     var edgeset = {};
 	     for(var id in this.nodeset) {
-		 //console.log("NODE",id,name);
+		 console.log("NODE",id,name);
 		 ans.nodes.push({"key":id,attributes:{"label":this.nodeset[id].name, "color":"#00f"}})
 		 if(!(this.nodeset[id].edges)) continue;
 		 for(var label in this.nodeset[id].edges.has) {
-		     for(var target of this.nodeset[id].edges.has[label]) {
-			 //console.log("TARGET",target);
+		     for(var edge of this.nodeset[id].edges.has[label]) {
+			 var target = edge.target;
+			 console.log("EDGE",edge,id,target);
 			 if(target in this.nodeset) {
 			     var eid = `${id}_${target}_${label}`;
 			     if(eid in edgeset) {
@@ -73,7 +74,7 @@
 	     var ans = [];
 	     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];
 	     for(var i = 0; i < tgts.length; i++) {
-		 var m = tgts[i];
+		 var m = tgts[i].target;
 		 console.log(m);
 		 if(m in this.nodeset) ans.push(m);
 	     }

@@ -47,9 +47,8 @@
 
  export default {
      name: 'search',
-     props: ['initquery'],
+     props: ['nodes','initquery'],
      computed: { 
-	 ...mapState(['nodes']),
 	 resultset: function() {
 	     var ans = {};
 	     for(var r of this.result) {
@@ -70,14 +69,16 @@
 	     for(var n in this.resultset) {
 		 var targets = {}
 		 for(var label in this.nodes[n].edges.has) {
-		     for(var target of this.nodes[n].edges.has[label]) {
+		     for(var edge of this.nodes[n].edges.has[label]) {
+			 var target = edge.target;
 			 if(target in this.resultset) {
 			     targets[target] = true;
 			 }
 		     }
 		 }
 		 for(var label in this.nodes[n].edges.is) {
-		     for(var target of this.nodes[n].edges.is[label]) {
+		     for(var edge of this.nodes[n].edges.is[label]) {
+			 var target = edge.target;
 			 if(target in this.resultset) {
 			     targets[target] = true;
 			 }
@@ -101,7 +102,8 @@
 		     if(!(label in edges_with_count)) {
 			 edges_with_count[label] = 0
 		     }
-		     for(var target of this.nodes[n].edges.has[label]) {
+		     for(var edge of this.nodes[n].edges.has[label]) {
+			 var target = edge.target;
 			 if(target in this.resultset) {
 			     edges_with_count[label]++;
 			 }

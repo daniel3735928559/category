@@ -48,7 +48,7 @@
 		</h3>
     		<ul>
 		    <li v-for="n in sorted_nodes">
-			<router-link :to="'/node/'+n">{{nodes[n].name}} <span v-if="'date' in nodes[n]" style="font-size:.5em;color:#666;">{{nodes[n].date}}</span></router-link>
+			<router-link :to="'/node/'+n">{{nodeset[n].name}} <span v-if="'date' in nodeset[n]" style="font-size:.5em;color:#666;">{{nodeset[n].date}}</span></router-link>
 		    </li>
     		</ul>
             </div>
@@ -59,7 +59,7 @@
             <h3>Unlinked</h3>
             <ul>
     		<li v-for="n in sorted(labeldata.disconnected)">
-    		    <router-link :to="'/node/'+n">{{nodes[n].name}}</router-link>
+    		    <router-link :to="'/node/'+n">{{nodeset[n].name}}</router-link>
     		</li>
             </ul>
 	</div>
@@ -89,7 +89,7 @@
 	     for(var n in this.nodeset) {
 		 ans.push(n);
 	     }
-	     return this.sortedby(ans, this.sort_method, this.sort_is_ascending)
+	     return this.sortedby(this.nodeset, ans, this.sort_method, this.sort_is_ascending)
 	 },
 	 nodelist: function() {
 	     var ans = [];
@@ -127,7 +127,7 @@
 		 for(var e in this.nodeset[n].edges.has) {
 		     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
 		     for(var t in this.nodeset[n].edges.has[e]){
-			 t = this.nodeset[n].edges.has[e][t];
+			 t = this.nodeset[n].edges.has[e][t].target;
 			 if(!(t in this.nodeset)) continue;
 			 if(!all_labels[e].covered[t]){
 			     // We haven't seen this node before
@@ -141,7 +141,7 @@
 		 for(var e in this.nodeset[n].edges.is){
 		     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
 		     for(var t in this.nodeset[n].edges.is[e]){
-			 t = this.nodeset[n].edges.is[e][t];
+			 t = this.nodeset[n].edges.is[e][t].target;
 			 if(!(t in this.nodeset)) continue;
 			 if(!all_labels[e].covered[t]){
 			     // We haven't seen this node before
@@ -206,13 +206,13 @@
 		 var disconnected = true;
 		 for(var e in this.nodeset[n].edges.has){
 		     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){
-			 t = this.nodeset[n].edges.has[e][i];
+			 t = this.nodeset[n].edges.has[e][i].target;
 			 if(this.nodeset[t]) disconnected = false;
 		     }
 		 }
 		 for(var e in this.nodeset[n].edges.is){
 		     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){
-			 t = this.nodeset[n].edges.is[e][i];
+			 t = this.nodeset[n].edges.is[e][i].target;
 			 if(this.nodeset[t]) disconnected = false;
 		     }
 		 }
