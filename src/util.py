@@ -1,5 +1,7 @@
 import hashlib, json, traceback, os, datetime, re, sys
 from shutil import copyfile
+sys.path.append(os.path.join(os.path.dirname(__file__), "."))
+from agraph import *
 
 class jsonenc(json.JSONEncoder):
     def default(self, obj):
@@ -11,77 +13,89 @@ class jsonenc(json.JSONEncoder):
             return super(jsonenc, self).default(obj)
 
 def get_id(node):
-    return hashlib.sha256(node.encode()).hexdigest()
+    return hashlib.sha256(node.lower().encode()).hexdigest()
 
 def add_edges(src, dst):
     for et in src:
         if not et in dst:
-            dst[et] = {}
-        for en in src[et]:
-            if not en in dst[et]: dst[et][en] = []
-            for edge in src[et][en]:
-                # May need to do some work here to prevent duplicates.......
-                dst[et][en].append(edge)
+            dst[et] = []
+        for edge in src[et]:
+            dst[et].append(edge)
 
-def make_config(data, edges):
-    ans = []
-    for d in data:
-        ans.append(f"{d}: {data[d]}")
-    for e in edges.get('has',{}):
-        for t in edges['has'][e]:
-            ans.append(f"has {e}: {t['target']}")
-            for ed in t:
-                if ed == "target":
-                    continue
-                ans.append(f";{ed}={t[ed]}")
-    for e in edges.get('is',{}):
-        for t in edges['is'][e]:
-            ans.append(f"is {e} of: {t['target']}")
-            for ed in t:
-                if ed == "target":
-                    continue
-                ans.append(f";{ed}={t[ed]}")
-    return "\n".join(ans)
+# def make_config(data, edges):
+#     ans = []
+#     for d in data:
+#         ans.append(f"{d}: {data[d]}")
+#     for e in edges.get('has',{}):
+#         for t in edges['has'][e]:
+#             ans.append(f"has {e}: {t['target']}")
+#             for ed in t:
+#                 if ed == "target":
+#                     continue
+#                 ans.append(f";{ed}={t[ed]}")
+#     for e in edges.get('is',{}):
+#         for t in edges['is'][e]:
+#             ans.append(f"is {e} of: {t['target']}")
+#             for ed in t:
+#                 if ed == "target":
+#                     continue
+#                 ans.append(f";{ed}={t[ed]}")
+#     return "\n".join(ans)
+
+def parse_edge(node, text, edge_data={}):
+    text = text.strip()
+    m = re.match(r"^\s*has\s+([^:]*):\s*(.*)\s*$", text)
+    direction = 'out'
+    if not m:
+        # Check for "is" edge
+        m = re.match(r"^\s*is\s+([^:]*)\s+of:\s*(.*)\s*$", text)
+        direction = 'in'
+        if not m:
+            return None
+    label = m.group(1).strip()
+    target = m.group(2).strip()
+    edge_data_list = target.split("#")
+    for edge_metadata in edge_data_list[1:]:
+        edge_metadata = edge_metadata.strip()
+        if not "=" in edge_metadata:
+            sys.stderr.write("WARNING: Invalid edge metadata: {}\n".format(edge_metadata))
+            continue
+        k,v = edge_metadata.split("=",1)
+        if k != "target" and k != "label":
+            edge_data[k] = v
+    if direction == 'out':
+        return AEdge(node, target, label, edge_data)
+    elif direction == 'in':
+        return AEdge(target, node, label, edge_data)
 
 def parse_config(text):
-    edges = {'has':{}, 'is':{}}
+    edges = []
     data = {}
+    name = ""
     for line in text.split("\n"):
         if len(line.strip()) == 0: continue
         # Check for "has" edge
-        m = re.match(r"^\s*has\s+([^:]*):\s*(.*)\s*$", line)
-        et = 'has'
-        if not m:
-            # Check for "is" edge
-            m = re.match(r"^\s*is\s+([^:]*)\s+of:\s*(.*)\s*$", line)
-            et = 'is'
-            if not m:
-                m = re.search(":\s*",line)
-                if m:
-                    et = None
-                    data[line[:m.start()]] = line[m.end():]
-                else:
-                    sys.stderr.write("WARNING: Line not a valid edge: {}\n".format(line))
-                    continue
-        if et is None:
-            continue
-        en = m.group(1).strip()
-        target = m.group(2).strip()
-        edge_data_list = target.split(";")
-        edge_data = {"target":edge_data_list[0].strip()}
-        for edge_metadata in edge_data_list[1:]:
-            edge_metadata = edge_metadata.strip()
-            if not "=" in edge_metadata:
-                sys.stderr.write("WARNING: Invalid edge metadata: {}\n".format(edge_metadata))
+        e = parse_edge(data.get('name',''), line)
+        if not e is e is None:
+            m = re.search(":\s*",line)
+            if m:
+                data[line[:m.start()].strip()] = line[m.end():].strip()
+            else:
+                sys.stderr.write("WARNING: Line not a valid configuration item: {}\n".format(line))
                 continue
-            k,v = edge_metadata.split("=",1)
-            if k != "target":
-                edge_data[k] = v
-        if not en in edges[et]: edges[et][en] = []
-        edges[et][en].append(edge_data)
+        else:
+            edges.append(e)
     return data,edges
 
+def extract_name(text):
+    for line in text.split("\n"):
+        m = re.search('name:\s*',line)
+        if m:
+            return line[m.end():].strip()
+    raise Exception("Config found without name:", text)
+
 def get_file(ID, filename, input_url, output_dir):
+    print("GET FILE",ID,filename,input_url,output_dir)
     if input_url[:6] == "files/":
         input_path = input_url[6:]
         path = os.path.dirname(filename)

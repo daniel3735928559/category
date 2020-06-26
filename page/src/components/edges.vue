@@ -3,26 +3,26 @@
 	<div v-for="(edges,label) in nodes[node].edges.has">
             <div v-for="edge in edges" v-if="nodes[edge.target].auto != 'yes'">
 		has {{label}}: 
-		<router-link :to="'./'+edge.target + ('dstloc' in edge ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
+		<router-link :to="'./'+edge.target + ('dstloc' in edge && edge.dstloc != null ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
 	    </div>
 	</div> 
 	<div v-for="(edges,label) in nodes[node].edges.is">
             <div v-for="edge in edges" v-if="nodes[edge.target].auto != 'yes'">
 		is {{label}} of: 
-		<router-link :to="'./'+edge.target + ('dstloc' in edge ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
+		<router-link :to="'./'+edge.target + ('dstloc' in edge && edge.dstloc != null ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
 	    </div>
 	</div>
 	<b>Auto-generated:</b>
 	<div v-for="(edges,label) in nodes[node].edges.has">
             <div v-for="edge in edges" v-if="nodes[edge.target].auto == 'yes'">
 		has {{label}}: 
-		<router-link :to="'./'+edge.target + ('dstloc' in edge ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
+		<router-link :to="'./'+edge.target + ('dstloc' in edge && edge.dstloc != null ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
 	    </div>
 	</div> 
 	<div v-for="(edges,label) in nodes[node].edges.is">
             <div v-for="edge in edges" v-if="nodes[edge.target].auto == 'yes'">
 		is {{label}} of: 
-		<router-link :to="'./'+edge.target + ('dstloc' in edge ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
+		<router-link :to="'./'+edge.target + ('dstloc' in edge && edge.dstloc != null ? '/' + edge.dstloc : '')">{{nodes[edge.target].name}}</router-link>
 	    </div>
 	</div>
     </div>

@@ -6,6 +6,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     state: {
 	query: 'is category',
+	ready: false,
 	current: '',
 	nodes: {},
 	recent: [],
@@ -64,9 +65,13 @@ export default new Vuex.Store({
 	CACHE: (state, nodes) => {
 	    //node_data = plugin_process(state, node_id, node_data);
 	    console.log('caching',nodes);
-	    for(var node_id in nodes){
-		state.nodes[node_id].snippet = nodes[node_id].substring(0,100);
-		state.node_data[node_id] = nodes[node_id];
+	    if(state.ready) {
+		for(var node_id in nodes){
+		    if(state.nodes[node_id].auto) {
+			state.nodes[node_id].snippet = "[index node]";
+		    }
+		    state.node_data[node_id] = nodes[node_id];
+		}
 	    }
 	},
 	PLUGIN_DATA_STORE: (state, data) => {
@@ -111,6 +116,7 @@ export default new Vuex.Store({
 	METADATA: (state, nodes) => {
 	    state.nodes = nodes;
 	    state.recent = [];
+	    state.ready = true;
 	    state.query = "is category";
 	}
     },

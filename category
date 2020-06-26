@@ -6,12 +6,13 @@ Usage:
   category init <path> <name>
   category build <path>
   category rebuild <path>
+  category mdrebuild <path>
   category subcat [--static] <path> <subcat_path> <subcat_name> <query>
   category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
-  category serve <path> [(-p <port>)] [(-a <bind_addr>)]
+  category serve <path> <db_name> <db_un> <db_pw> [(-p <port>)] [(-a <bind_addr>)] [(--da <db_addr>)] [(--dp <db_port>)] 
   category n4jimport <path> <un> <pw>
   category n4jquery <un> <pw> <query>
-  category complete <input> <output>
+  category updatedb <path> <db_name> <db_un> <db_pw> [(--da <db_addr>)] [(--dp <db_port>)] 
 
 Options:
   -p port (default: 7688)
@@ -20,7 +21,8 @@ Options:
 
 # [<db_url>] [--reset]
 
-from flask import Flask, send_from_directory, send_file
+from pyArango.connection import *
+from flask import Flask, send_from_directory, send_file, request, jsonify
 import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading, datetime
 from neo4j import GraphDatabase
 from src.build import cat_builder
@@ -118,10 +120,13 @@ def cat_init(cat_path, name):
         yaml.dump({"name":name},f)
 
 def cat_build(cat_path):
-    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"))
+    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), True, False)
+
+def cat_md_rebuild(cat_path):
+    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), False, True)
 
 def cat_rebuild(cat_path):
-    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), True)
+    cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), False, False)
 
 def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
     if not is_category(subcat_path):
@@ -243,13 +248,52 @@ def cat_query(src_path, query, as_src, as_json, as_edit, pdf_path=None):
             for n in output_names:
                 print(n)
         
-def cat_serve(cat_path, port, bind_addr):
-    global metadata
+def cat_updatedb(cat_path, db_name, db_un, db_pw, db_port, db_addr):
+    #global metadata
+
+    conn = Connection(username=db_un, password=db_pw)
+    db = conn[db_name]
+    db.collections["nodes"].truncate()
+    db.collections["edges"].truncate()
+    nodes_path = os.path.join(cat_path, "out", "nodes.jsonl")
+    edges_path = os.path.join(cat_path, "out", "edges.jsonl")
+    node_import = f"""arangoimp --server.username "{db_un}" --server.password "{db_pw}" --server.database "{db_name}" --file {nodes_path} --collection nodes --overwrite true --create-collection true --create-collection-type document --on-duplicate replace"""
+    edge_import = f"""arangoimp --server.username "{db_un}" --server.password "{db_pw}" --server.database "{db_name}" --file {edges_path} --collection edges --overwrite true --create-collection true --create-collection-type edge"""
+
+    print(node_import)
+    subprocess.Popen(shlex.split(node_import), shell=False)
+    print(edge_import)
+    subprocess.Popen(shlex.split(edge_import), shell=False)
+    
+    md_query = """RETURN MERGE(FOR doc IN nodes
+    LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
+    
+    # make aql query to arangdb
+    res = db.AQLQuery(md_query, rawResults=True, batchSize=1000)
+    ans = next(res)
+    print(ans)
+    md_path = os.path.join(cat_path, "out", "metadata.json")
+    with open(md_path, "w") as f:
+        f.write(json.dumps(ans))
+
+def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr):
+    #global metadata
+
+    conn = Connection(username=db_un, password=db_pw)
+    db = conn[db_name]
+    
+    md_query = """RETURN MERGE(FOR doc IN QUERYGOESHERE 
+    LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
+    
     # Ensure we don't zombify our editors
     signal.signal(signal.SIGCHLD, signal.SIG_IGN);
 
     # Load the category metadata and configuration
-    metadata = load_metadata(cat_path)
+    #metadata = load_metadata(cat_path)
     config = load_config(cat_path)
     editor = config.get("editor","/usr/bin/emacs")
     
@@ -268,15 +312,16 @@ def cat_serve(cat_path, port, bind_addr):
     
     @app.route('/edit/<node>')
     def edit_file(node):
-        global metadata
-        node_src = os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+        #global metadata
+        node_src = ""#os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
         print("EDIT",node_src)
         def edit_node(cat_path, editor, node_src):
             global metadata
             proc = subprocess.Popen([editor, node_src],shell=False)
             proc.wait()
+            cat_md_rebuild(cat_path)
             cat_build(cat_path)
-            metadata = load_metadata(cat_path)
+            #metadata = load_metadata(cat_path)
             return
         if os.path.exists(node_src):
             thread = threading.Thread(target=edit_node, args=(cat_path, editor, node_src))
@@ -287,42 +332,57 @@ def cat_serve(cat_path, port, bind_addr):
 
     @app.route('/new')
     def new_file():
-        global metadata
+        #global metadata
         print("NEW")
         def new_node(cat_path, editor):
-            global metadata
+            #global metadata
             now = datetime.datetime.now().strftime("%Y-%m-%d")
             proc = subprocess.Popen([editor, '--execute', f'(insert "``` info\nname: \ndate: {now}\n```\n\n")'],shell=False,cwd=os.path.join(cat_path,'src'))
             proc.wait()
             cat_build(cat_path)
-            metadata = load_metadata(cat_path)
+            cat_md_rebuild(cat_path)
+            #metadata = load_metadata(cat_path)
             return
         thread = threading.Thread(target=new_node, args=(cat_path, editor))
         thread.start()
         return f"Editor {editor} started"
 
-    @app.route('/print/<node>')
-    def print_file(node):
-        global metadata
-        print("PRINT")
-        node_src = os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
-        dst_path = os.path.join(cat_path,"out","node.pdf")
-        if os.path.exists(dst_path):
-            os.remove(dst_path)
-        cmd = f"/bin/bash -c 'pandoc {node_src} -o {dst_path}'"
-        src_folder = os.path.dirname(node_src)
-        print(node_src,dst_path)
-        #pandoc_output = pypandoc.convert_file(node_src, "pdf", outputfile=dst_path)
-        pandoc_output = subprocess.check_output(shlex.split(cmd),shell=False,env={"PATH":"/usr/bin"},cwd=src_folder)
-        if os.path.exists(dst_path):
-            return send_file(dst_path, f"""{metadata[node]["name"]}.pdf""")
-        else:
-            print(pandoc_output)
-            return pandoc_output
-    
+    # @app.route('/print/<node>')
+    # def print_file(node):
+    #     global metadata
+    #     print("PRINT")
+    #     node_src = os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+    #     dst_path = os.path.join(cat_path,"out","node.pdf")
+    #     if os.path.exists(dst_path):
+    #         os.remove(dst_path)
+    #     cmd = f"/bin/bash -c 'pandoc {node_src} -o {dst_path}'"
+    #     src_folder = os.path.dirname(node_src)
+    #     print(node_src,dst_path)
+    #     #pandoc_output = pypandoc.convert_file(node_src, "pdf", outputfile=dst_path)
+    #     pandoc_output = subprocess.check_output(shlex.split(cmd),shell=False,env={"PATH":"/usr/bin"},cwd=src_folder)
+    #     if os.path.exists(dst_path):
+    #         return send_file(dst_path, f"""{metadata[node]["name"]}.pdf""")
+    #     else:
+    #         print(pandoc_output)
+    #         return pandoc_output
+
     @app.route('/out/<path:path>')
     def send_output_file(path):
         return send_from_directory(cat_root, path)
+
+    @app.route('/out/metadata.json')
+    def send_metadata():
+        query = request.args.get('q','')
+        if len(query.strip()) == 0:
+            query = 'nodes'
+        else:
+            query = "(" + query + ")"
+        q = md_query.replace("QUERYGOESHERE",query)
+        
+        # make aql query to arangdb
+        res = db.AQLQuery(q, rawResults=True, batchSize=10)
+        ans = next(res)
+        return jsonify(ans)
 
     @app.route('/node/<path:path>')
     def send_node(path):
@@ -340,6 +400,8 @@ if __name__ == "__main__":
         cat_init(args['<path>'], args['<name>'])
     elif args['build']:
         cat_build(args['<path>'])
+    elif args['mdrebuild']:
+        cat_md_rebuild(args['<path>'])
     elif args['rebuild']:
         cat_rebuild(args['<path>'])
     elif args['subcat']:
@@ -353,8 +415,13 @@ if __name__ == "__main__":
                   args['<query>'], as_src=args['--src'], as_json=args['--json'], as_edit=args['--edit'], pdf_path=args['<pdf_path>'])
     elif args['serve']:
         cat_serve(args['<path>'],
+                  args['<db_name>'],
+                  args['<db_un>'],
+                  args['<db_pw>'],
                   args['-p'] if args['-p'] != False else 7688,
-                  args['-a'] if args['-a'] != False else "127.0.0.1")
+                  args['-a'] if args['-a'] != False else "127.0.0.1",
+                  args['--dp'] if args['--dp'] != False else 8529,
+                  args['--da'] if args['--da'] != False else "127.0.0.1")
     elif args['n4jimport']:
         cat_n4j_import(args['<path>'],
                        "localhost:7687",
@@ -366,6 +433,13 @@ if __name__ == "__main__":
                       args['<un>'],
                       args['<pw>'],
                       args['<query>'])
+    elif args['updatedb']:
+        cat_updatedb(args['<path>'],
+                     args['<db_name>'],
+                     args['<db_un>'],
+                     args['<db_pw>'],
+                     args['--dp'] if args['--dp'] != False else 8529,
+                     args['--da'] if args['--da'] != False else "127.0.0.1")
     elif args['complete']:
         with open(args["<input>"],"r") as f:
             json_data = f.read()

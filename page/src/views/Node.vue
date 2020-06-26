@@ -8,16 +8,16 @@
 	    <router-link to="/" class="close_x"><span class="fas fa-home"></span></router-link>
 	</div>
 	<div>
-	    <div v-if="nodes && nodes[node] && nodes[node].auto != 'yes'">
-		<span v-on:click="display_graph = !display_graph" class="close_x"><span class="fas fa-project-diagram"></span></span>
-		<div v-if="display_graph"  style="float:left;width:80%;">
-		    <search :nodes="internal_nodes" init_query="'*'"></search>
+	    <div v-if="nodes && nodes[node] && nodes[node].auto == false">
+		<span v-on:click="display_graph = !display_graph" class="close_x"><span class="fas fa-search"></span></span>
+		<div v-if="display_graph" style="float:left;width:100%;">
+		    <search :nodes="internal_nodes" initquery="*"></search>
 		</div>
 		
 		<div v-html="data" class="expanded_content"></div>
 		<edge-display :node="node"></edge-display>
 	    </div>
-	    <div v-if="nodes && nodes[node] && nodes[node].auto == 'yes'">
+	    <div v-if="nodes && nodes[node] && nodes[node].auto == true">
 		<node-index :nodeset="neighbours(node)" />
 	    </div>
 	    <div v-if="!nodes || !nodes[node]">
@@ -79,40 +79,18 @@
 	     // ans is going to be the set of locations within this document as well as all targets
 	     var ans = {};
 	     var duals = {"has":"is","is":"has"};
-	     for(var dir in duals){
-		 var dual_dir = duals[dir];
-		 for(var label in this.nodes[this.node].edges[dir]) {
-		     for(var edge of this.nodes[this.node].edges[dir][label]) {
-			 console.log("E",edge);
-			 var target = edge.target;
-			 if('srcloc' in edge) {
-			     // Ensure that location has an entry in ans
-			     if(!(edge.srcloc in ans)){
-				 ans[edge.srcloc] = {
-				     "name":"loc"+edge.srcloc,
-				     "url":this.node+"/"+edge.srcloc,
-				     "edges":{"has":{},"is":{}}
-				 };
+	     // Pull in children of the current node and everything connected to them:
+	     for(var n in this.nodes) {
+		 var node = this.nodes[n];
+		 if(node.parent == this.node && n != this.node) {
+		     ans[n] = node;
+		     for(var dir in node.edges) {
+			 for(var label in node.edges[dir]) {
+			     for(var edge of node.edges[dir][label]) {
+				 if(edge.target != this.node) {
+				     ans[edge.target] = this.nodes[edge.target];
+				 }
 			     }
-			     // Ensure the target has an entry in ans
-			     if(!(edge.target in ans)) {
-				 ans[edge.target] = {
-				     "name":this.nodes[edge.target].name,
-				     "url":edge.target,
-				     "edges":{"has":{},"is":{}}
-				 };
-			     }
-			     // Ensure label exists in the appropriate edges of source and target
-			     if(!(label in ans[edge.srcloc].edges[dir])) {
-				 ans[edge.srcloc].edges[dir][label] = [];
-			     } 
-			     if(!(label in ans[edge.target].edges[dual_dir])) {
-				 ans[edge.target].edges[dual_dir][label] = [];
-			     }
-			     
-			     // Add edges between location and target
-			     ans[edge.srcloc].edges[dir][label].push({"target":edge.target});
-			     ans[edge.target].edges[dual_dir][label].push({"target":edge.srcloc});
 			 }
 		     }
 		 }

@@ -24,40 +24,51 @@ def md_set_edges(filename, new_edges):
 
 
 class md_builder:
-    def __init__(self, filename, output_dir, plugins={}):
+    def __init__(self, filename, output_dir, extra_edges, plugins={}, md_only=True):
+        print("BUILDING",filename)
         self.OK = False
-        self.ID = ''
+        # Things to be processed upstream:
+        self.config = ''
+        self.extra_edges = extra_edges
+        self.locations = {} # loc_id -> [edge list]
+        self.src = os.path.realpath(filename)
+        self.fulltext = [] # will be converted to single string containing all the plaintext nodes' content by the end
+        # End of things to be processed
+        self.md_only = md_only
         self.current_loc = 0
-        self.node = {'edges':{'has':{}, 'is':{}}}
+        self.node = None
         self.filename = filename
         self.output_dir = output_dir
         self.plugins = plugins
-        self.location_edges = {"is":{},"has":{}}
         with open(filename,"rb") as f:
             doc = pf.convert_text(f.read().decode(),standalone=True)
         doc = doc.walk(self.extract_metadata)
         self.doc = pf.convert_text(doc, input_format='panflute',output_format='html').encode('utf-8')
+        self.fulltext = " ".join(self.fulltext)
         self.OK = True
 
-    def add_edge(self, direction, label, edgedata):
-        if not label in self.node['edges'][direction]:
-            self.node['edges'][direction][label] = []
-        self.node['edges'][direction][label].append(edgedata)
+    # def add_edge(self, direction, label, edgedata):
+    #     if not label in self.node['edges'][direction]:
+    #         self.node['edges'][direction][label] = []
+    #     self.node['edges'][direction][label].append(edgedata)
+    #     self.edges['has'] = edgedata
         
     def extract_metadata(self, elem, doc):
+        if isinstance(elem, pf.Str):
+            self.fulltext.append(elem.text)
         if (isinstance(elem, pf.Code) or isinstance(elem, pf.CodeBlock)):
             if 'info' in elem.classes:
-                data,new_edges = parse_config(elem.text)
-                if not 'name' in data:
-                    sys.stderr.write("WARNING: 'name' required in info\n")
-                    return []
-                for x in data:
-                    self.node[x] = data[x]
-                edges = self.node['edges']
-                self.ID = get_id(self.node['name'])
-                add_edges(new_edges, edges)
+                # TODO: move to build.py
+                # self.node = self.graph.parse_config(elem.text)
+                # for e in self.extra_edges:
+                #     self.graph.parse_edge(self.node, e)
+                self.config = elem.text
+                self.name = extract_name(elem.text)
+                self.ID = get_id(self.name)
                 return []
             else:
+                if self.md_only:
+                    return []
                 for p in self.plugins:
                     if p in elem.classes:
                         plugin = self.plugins[p]
@@ -74,27 +85,19 @@ class md_builder:
             url = urllib.parse.unquote(elem.url)
             loc = self.current_loc
             self.current_loc += 1
+            #loc_node = ANode(auto=False, loc=loc, parent=self.node)
+            self.locations[loc] = []
+            #self.graph.add_node(loc_node)
             for e in url.split(";"):
                 e = e.strip()
-                print("LOC",url)
-                m_has = re.match(r"^has ([^:]+):(.*)$", e)
-                m_is = re.match(r"^is ([^:]+) of:(.*)$", e)
-                if not m_has is None:
-                    edge_name = m_has.group(1).strip()
-                    target_name = m_has.group(2).strip()
-                    print("#", self.current_loc, "HAS",edge_name,":",target_name)
-                    self.add_edge("has",edge_name,{"target":target_name,"srcloc":self.current_loc})
-                    loc = self.current_loc
-                elif not m_is is None:
-                    edge_name = m_is.group(1).strip()
-                    target_name = m_is.group(2).strip()
-                    print("#", self.current_loc, "IS",edge_name,"OF:",target_name)
-                    self.add_edge("is",edge_name,{"target":target_name,"srcloc":self.current_loc})
-                else:
-                    print("Not a valid edge--ignoring:",url)
+                self.locations[loc].append(e)
+                #edge = self.graph.parse_edge(self.node, e, edge_data={"loc":loc})
             return pf.RawInline("""<a name="node_loc_{}"></a>""".format(loc),format="html")
             
         elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
+            if self.md_only:
+                print("MD ONLY, SO SKIPPING")
+                return []
             new_url = get_file(self.ID, self.filename, elem.url, self.output_dir)
             print("URL",elem.url)
             if new_url:
@@ -108,6 +111,8 @@ class md_builder:
                 print("QUERY",q)
                 return pf.RawInline("""<cat-query>{}</cat-query>""".format(q),format="html")
         elif isinstance(elem, pf.Math):
+            if self.md_only:
+                return []
             print("MATH",elem.text)
             return pf.RawInline("""<cat-math>{}</cat-math>""".format(elem.text),format="html")
 

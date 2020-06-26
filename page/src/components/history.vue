@@ -13,11 +13,15 @@
 	     </li>
 	     </draggable> -->
 	
-	<draggable element="span" v-model="recent" v-bind="dragOptions" :move="onMove">
+	<draggable v-if="ready" element="span" v-model="recent" v-bind="dragOptions" :move="onMove">
             <transition-group name="no" class="list-group" tag="ul">
 		<li class="list-group-item" v-for="node in recent" :key="node.id">
 		    <i :class="node.fixed ? 'fa fa-lock' : 'fa fa-pin'" @click="node.fixed = !node.fixed" aria-hidden="true"></i>
-		    <router-link :to="{name:'node', params: {id: node.id}}">{{nodes[node.id].name}}</router-link> <span class="node_snippet">{{nodes[node.id].snippet}}</span>
+		    <div style="width:90%;float:left;">
+			<router-link :to="{name:'node', params: {id: node.id}}">{{nodes[node.id].name}}</router-link>
+			<br />
+			<span class="node_snippet">{{nodes[node.id].snippet}}</span>
+		    </div>
 		    <span v-on:click="remove_from_history(node.id)" class="badge_button">x</span>
 		</li>
             </transition-group>
@@ -52,7 +56,7 @@
 	     };
 	 },
 	 ...mapState([
-	 'recent', 'nodes'
+	 'recent', 'nodes', 'ready'
 	 ])
      },
      methods: {
@@ -107,6 +111,7 @@
      margin-right:5px;
      display: inline-block;
      min-width: 10px;
+     max-width: 10%;
      padding: 3px 7px;
      font-size: 12px;
      font-weight: bold;

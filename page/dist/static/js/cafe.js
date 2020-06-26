@@ -11410,41 +11410,18 @@
   	 internal_nodes: function() {
   	     // ans is going to be the set of locations within this document as well as all targets
   	     var ans = {};
-  	     var duals = {"has":"is","is":"has"};
-  	     for(var dir in duals){
-  		 var dual_dir = duals[dir];
-  		 for(var label in this.nodes[this.node].edges[dir]) {
-  		     for(var edge of this.nodes[this.node].edges[dir][label]) {
-  			 console.log("E",edge);
-  			 var target = edge.target;
-  			 if('srcloc' in edge) {
-  			     // Ensure that location has an entry in ans
-  			     if(!(edge.srcloc in ans)){
-  				 ans[edge.srcloc] = {
-  				     "name":"loc"+edge.srcloc,
-  				     "url":this.node+"/"+edge.srcloc,
-  				     "edges":{"has":{},"is":{}}
-  				 };
+  	     // Pull in children of the current node and everything connected to them:
+  	     for(var n in this.nodes) {
+  		 var node = this.nodes[n];
+  		 if(node.parent == this.node && n != this.node) {
+  		     ans[n] = node;
+  		     for(var dir in node.edges) {
+  			 for(var label in node.edges[dir]) {
+  			     for(var edge of node.edges[dir][label]) {
+  				 if(edge.target != this.node) {
+  				     ans[edge.target] = this.nodes[edge.target];
+  				 }
   			     }
-  			     // Ensure the target has an entry in ans
-  			     if(!(edge.target in ans)) {
-  				 ans[edge.target] = {
-  				     "name":this.nodes[edge.target].name,
-  				     "url":edge.target,
-  				     "edges":{"has":{},"is":{}}
-  				 };
-  			     }
-  			     // Ensure label exists in the appropriate edges of source and target
-  			     if(!(label in ans[edge.srcloc].edges[dir])) {
-  				 ans[edge.srcloc].edges[dir][label] = [];
-  			     } 
-  			     if(!(label in ans[edge.target].edges[dual_dir])) {
-  				 ans[edge.target].edges[dual_dir][label] = [];
-  			     }
-  			     
-  			     // Add edges between location and target
-  			     ans[edge.srcloc].edges[dir][label].push({"target":edge.target});
-  			     ans[edge.target].edges[dual_dir][label].push({"target":edge.srcloc});
   			 }
   		     }
   		 }
@@ -11586,7 +11563,7 @@
         1
       ),
       _c("div", [
-        _vm.nodes && _vm.nodes[_vm.node] && _vm.nodes[_vm.node].auto != "yes"
+        _vm.nodes && _vm.nodes[_vm.node] && _vm.nodes[_vm.node].auto == false
           ? _c(
               "div",
               [
@@ -11600,15 +11577,15 @@
                       }
                     }
                   },
-                  [_c("span", { staticClass: "fas fa-project-diagram" })]
+                  [_c("span", { staticClass: "fas fa-search" })]
                 ),
                 _vm.display_graph
                   ? _c(
                       "div",
-                      { staticStyle: { float: "left", width: "80%" } },
+                      { staticStyle: { float: "left", width: "100%" } },
                       [
                         _c("search", {
-                          attrs: { nodes: _vm.internal_nodes, init_query: "'*'" }
+                          attrs: { nodes: _vm.internal_nodes, initquery: "*" }
                         })
                       ],
                       1
@@ -11623,7 +11600,7 @@
               1
             )
           : _vm._e(),
-        _vm.nodes && _vm.nodes[_vm.node] && _vm.nodes[_vm.node].auto == "yes"
+        _vm.nodes && _vm.nodes[_vm.node] && _vm.nodes[_vm.node].auto == true
           ? _c(
               "div",
               [
@@ -11644,11 +11621,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-57dc0b56_0", { source: "\n.snippet_content img[data-v-57dc0b56] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-57dc0b56] {\n    max-width: 100%;\n}\n.snippet[data-v-57dc0b56]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-57dc0b56]{\n    padding:5px;\n}\n.snippet_header[data-v-57dc0b56]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-57dc0b56]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-57dc0b56]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAoMA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <span v-on:click=\"new_node(node)\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto != 'yes'\">\n\t\t<span v-on:click=\"display_graph = !display_graph\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t\t<div v-if=\"display_graph\"  style=\"float:left;width:80%;\">\n\t\t    <search :nodes=\"internal_nodes\" init_query=\"'*'\"></search>\n\t\t</div>\n\t\t\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == 'yes'\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'display_graph':false,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t internal_nodes: function() {\n\t     // ans is going to be the set of locations within this document as well as all targets\n\t     var ans = {};\n\t     var duals = {\"has\":\"is\",\"is\":\"has\"};\n\t     for(var dir in duals){\n\t\t var dual_dir = duals[dir];\n\t\t for(var label in this.nodes[this.node].edges[dir]) {\n\t\t     for(var edge of this.nodes[this.node].edges[dir][label]) {\n\t\t\t console.log(\"E\",edge);\n\t\t\t var target = edge.target;\n\t\t\t if('srcloc' in edge) {\n\t\t\t     // Ensure that location has an entry in ans\n\t\t\t     if(!(edge.srcloc in ans)){\n\t\t\t\t ans[edge.srcloc] = {\n\t\t\t\t     \"name\":\"loc\"+edge.srcloc,\n\t\t\t\t     \"url\":this.node+\"/\"+edge.srcloc,\n\t\t\t\t     \"edges\":{\"has\":{},\"is\":{}}\n\t\t\t\t };\n\t\t\t     }\n\t\t\t     // Ensure the target has an entry in ans\n\t\t\t     if(!(edge.target in ans)) {\n\t\t\t\t ans[edge.target] = {\n\t\t\t\t     \"name\":this.nodes[edge.target].name,\n\t\t\t\t     \"url\":edge.target,\n\t\t\t\t     \"edges\":{\"has\":{},\"is\":{}}\n\t\t\t\t };\n\t\t\t     }\n\t\t\t     // Ensure label exists in the appropriate edges of source and target\n\t\t\t     if(!(label in ans[edge.srcloc].edges[dir])) {\n\t\t\t\t ans[edge.srcloc].edges[dir][label] = [];\n\t\t\t     } \n\t\t\t     if(!(label in ans[edge.target].edges[dual_dir])) {\n\t\t\t\t ans[edge.target].edges[dual_dir][label] = [];\n\t\t\t     }\n\t\t\t     \n\t\t\t     // Add edges between location and target\n\t\t\t     ans[edge.srcloc].edges[dir][label].push({\"target\":edge.target});\n\t\t\t     ans[edge.target].edges[dual_dir][label].push({\"target\":edge.srcloc});\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     console.log(\"INTERNAL\",ans);\n\t     return ans;\n\t },\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-f8ff00f8_0", { source: "\n.snippet_content img[data-v-f8ff00f8] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-f8ff00f8] {\n    max-width: 100%;\n}\n.snippet[data-v-f8ff00f8]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-f8ff00f8]{\n    padding:5px;\n}\n.snippet_header[data-v-f8ff00f8]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-f8ff00f8]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-f8ff00f8]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AA8KA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <span v-on:click=\"new_node(node)\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == false\">\n\t\t<span v-on:click=\"display_graph = !display_graph\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<div v-if=\"display_graph\" style=\"float:left;width:100%;\">\n\t\t    <search :nodes=\"internal_nodes\" initquery=\"*\"></search>\n\t\t</div>\n\t\t\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == true\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'display_graph':false,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t internal_nodes: function() {\n\t     // ans is going to be the set of locations within this document as well as all targets\n\t     var ans = {};\n\t     var duals = {\"has\":\"is\",\"is\":\"has\"};\n\t     // Pull in children of the current node and everything connected to them:\n\t     for(var n in this.nodes) {\n\t\t var node = this.nodes[n];\n\t\t if(node.parent == this.node && n != this.node) {\n\t\t     ans[n] = node;\n\t\t     for(var dir in node.edges) {\n\t\t\t for(var label in node.edges[dir]) {\n\t\t\t     for(var edge of node.edges[dir][label]) {\n\t\t\t\t if(edge.target != this.node) {\n\t\t\t\t     ans[edge.target] = this.nodes[edge.target];\n\t\t\t\t }\n\t\t\t     }\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     console.log(\"INTERNAL\",ans);\n\t     return ans;\n\t },\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-57dc0b56";
+    const __vue_scope_id__$2 = "data-v-f8ff00f8";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -11699,6 +11676,7 @@
   var store = new index_esm.Store({
       state: {
   	query: 'is category',
+  	ready: false,
   	current: '',
   	nodes: {},
   	recent: [],
@@ -11757,9 +11735,13 @@
   	CACHE: (state, nodes) => {
   	    //node_data = plugin_process(state, node_id, node_data);
   	    console.log('caching',nodes);
-  	    for(var node_id in nodes){
-  		state.nodes[node_id].snippet = nodes[node_id].substring(0,100);
-  		state.node_data[node_id] = nodes[node_id];
+  	    if(state.ready) {
+  		for(var node_id in nodes){
+  		    if(state.nodes[node_id].auto) {
+  			state.nodes[node_id].snippet = "[index node]";
+  		    }
+  		    state.node_data[node_id] = nodes[node_id];
+  		}
   	    }
   	},
   	PLUGIN_DATA_STORE: (state, data) => {
@@ -11804,6 +11786,7 @@
   	METADATA: (state, nodes) => {
   	    state.nodes = nodes;
   	    state.recent = [];
+  	    state.ready = true;
   	    state.query = "is category";
   	}
       },
@@ -18833,7 +18816,7 @@
   	     };
   	 },
   	 ...mapState([
-  	 'recent', 'nodes'
+  	 'recent', 'nodes', 'ready'
   	 ])
        },
        methods: {
@@ -18880,72 +18863,83 @@
             [_vm._v("clear")]
           )
         ]),
-        _c(
-          "draggable",
-          _vm._b(
-            {
-              attrs: { element: "span", move: _vm.onMove },
-              model: {
-                value: _vm.recent,
-                callback: function($$v) {
-                  _vm.recent = $$v;
+        _vm.ready
+          ? _c(
+              "draggable",
+              _vm._b(
+                {
+                  attrs: { element: "span", move: _vm.onMove },
+                  model: {
+                    value: _vm.recent,
+                    callback: function($$v) {
+                      _vm.recent = $$v;
+                    },
+                    expression: "recent"
+                  }
                 },
-                expression: "recent"
-              }
-            },
-            "draggable",
-            _vm.dragOptions,
-            false
-          ),
-          [
-            _c(
-              "transition-group",
-              { staticClass: "list-group", attrs: { name: "no", tag: "ul" } },
-              _vm._l(_vm.recent, function(node) {
-                return _c(
-                  "li",
-                  { key: node.id, staticClass: "list-group-item" },
-                  [
-                    _c("i", {
-                      class: node.fixed ? "fa fa-lock" : "fa fa-pin",
-                      attrs: { "aria-hidden": "true" },
-                      on: {
-                        click: function($event) {
-                          node.fixed = !node.fixed;
-                        }
-                      }
-                    }),
-                    _c(
-                      "router-link",
-                      {
-                        attrs: { to: { name: "node", params: { id: node.id } } }
-                      },
-                      [_vm._v(_vm._s(_vm.nodes[node.id].name))]
-                    ),
-                    _c("span", { staticClass: "node_snippet" }, [
-                      _vm._v(_vm._s(_vm.nodes[node.id].snippet))
-                    ]),
-                    _c(
-                      "span",
-                      {
-                        staticClass: "badge_button",
-                        on: {
-                          click: function($event) {
-                            return _vm.remove_from_history(node.id)
+                "draggable",
+                _vm.dragOptions,
+                false
+              ),
+              [
+                _c(
+                  "transition-group",
+                  { staticClass: "list-group", attrs: { name: "no", tag: "ul" } },
+                  _vm._l(_vm.recent, function(node) {
+                    return _c(
+                      "li",
+                      { key: node.id, staticClass: "list-group-item" },
+                      [
+                        _c("i", {
+                          class: node.fixed ? "fa fa-lock" : "fa fa-pin",
+                          attrs: { "aria-hidden": "true" },
+                          on: {
+                            click: function($event) {
+                              node.fixed = !node.fixed;
+                            }
                           }
-                        }
-                      },
-                      [_vm._v("x")]
+                        }),
+                        _c(
+                          "div",
+                          { staticStyle: { width: "90%", float: "left" } },
+                          [
+                            _c(
+                              "router-link",
+                              {
+                                attrs: {
+                                  to: { name: "node", params: { id: node.id } }
+                                }
+                              },
+                              [_vm._v(_vm._s(_vm.nodes[node.id].name))]
+                            ),
+                            _c("br"),
+                            _c("span", { staticClass: "node_snippet" }, [
+                              _vm._v(_vm._s(_vm.nodes[node.id].snippet))
+                            ])
+                          ],
+                          1
+                        ),
+                        _c(
+                          "span",
+                          {
+                            staticClass: "badge_button",
+                            on: {
+                              click: function($event) {
+                                return _vm.remove_from_history(node.id)
+                              }
+                            }
+                          },
+                          [_vm._v("x")]
+                        )
+                      ]
                     )
-                  ],
-                  1
+                  }),
+                  0
                 )
-              }),
-              0
+              ],
+              1
             )
-          ],
-          1
-        )
+          : _vm._e()
       ],
       1
     )
@@ -18956,11 +18950,11 @@
     /* style */
     const __vue_inject_styles__$5 = function (inject) {
       if (!inject) return
-      inject("data-v-5f2dd9a8_0", { source: "\n#working_set[data-v-5f2dd9a8]{\n    padding-top:5px;\n    padding-left:5px;\n}\n.flip-list-move[data-v-5f2dd9a8] {\n    transition: transform 0.5s;\n}\n.no-move[data-v-5f2dd9a8] {\n    transition: transform 0s;\n}\n.node_snippet[data-v-5f2dd9a8] {\n    color:#ccc;\n}\n.ghost[data-v-5f2dd9a8] {\n    opacity: 0.5;\n    background: #c8ebfb;\n}\n.list-group[data-v-5f2dd9a8] {\n    min-height: 20px;\n}\n.list-group-item[data-v-5f2dd9a8] {\n    cursor: move;\n}\n.list-group-item i[data-v-5f2dd9a8] {\n    cursor: pointer;\n}\n.badge_button[data-v-5f2dd9a8] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/history.vue"],"names":[],"mappings":";AA8EA;IACA,eAAA;IACA,gBAAA;AACA;AACA;IACA,0BAAA;AACA;AACA;IACA,wBAAA;AACA;AACA;IACA,UAAA;AACA;AACA;IACA,YAAA;IACA,mBAAA;AACA;AACA;IACA,gBAAA;AACA;AACA;IACA,YAAA;AACA;AACA;IACA,eAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA","file":"history.vue","sourcesContent":["<template>\n    <div id=\"working_set\">\n\t<h4>\n\t    Working set <span v-on:click=\"clear_history()\" class=\"badge_button\">clear</span>\n\t</h4>\n\t<!-- <div v-for=\"node in recent\">\n\t     <span v-on:click=\"remove_from_history(node)\" style=\"cursor:pointer;margin-right:5px;\">[x]</span> <router-link :to=\"{name:'node', params: {id: node}}\">{{nodes && nodes[node] ? nodes[node].name : \"loading...\"}}</router-link> -->\n\t<!-- <draggable v-model=\"recent\" element=\"span\">\n\t     <li v-for=\"node in recent\">\n\t     <i :class=\"element.fixed? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'\" @click=\" element.fixed=! element.fixed\" aria-hidden=\"true\"></i>\n\t     <router-link :to=\"{name:'doc', params: {id: node}}\">{{nodes[node].name}}</router-link>\n\t     \n\t     </li>\n\t     </draggable> -->\n\t\n\t<draggable element=\"span\" v-model=\"recent\" v-bind=\"dragOptions\" :move=\"onMove\">\n            <transition-group name=\"no\" class=\"list-group\" tag=\"ul\">\n\t\t<li class=\"list-group-item\" v-for=\"node in recent\" :key=\"node.id\">\n\t\t    <i :class=\"node.fixed ? 'fa fa-lock' : 'fa fa-pin'\" @click=\"node.fixed = !node.fixed\" aria-hidden=\"true\"></i>\n\t\t    <router-link :to=\"{name:'node', params: {id: node.id}}\">{{nodes[node.id].name}}</router-link> <span class=\"node_snippet\">{{nodes[node.id].snippet}}</span>\n\t\t    <span v-on:click=\"remove_from_history(node.id)\" class=\"badge_button\">x</span>\n\t\t</li>\n            </transition-group>\n\t</draggable>\n\t<!-- </div> -->\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import draggable from \"vuedraggable\";\n \n export default {\n     name: 'history-display',\n     components: {\n\t draggable\n     },\n     data() {\n\t return {\n\t     editable: true,\n\t     isDragging: false,\n\t     delayedDragging: false\n\t };\n     },\n     computed: {\n\t dragOptions() {\n\t     return {\n\t\t animation: 0,\n\t\t group: \"description\",\n\t\t disabled: !this.editable,\n\t\t ghostClass: \"ghost\"\n\t     };\n\t },\n\t ...mapState([\n\t 'recent', 'nodes'\n\t ])\n     },\n     methods: {\n\t onMove({ relatedContext, draggedContext }) {\n\t     const relatedElement = relatedContext.element;\n\t     const draggedElement = draggedContext.element;\n\t     return (\n\t\t (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed\n\t     );\n\t },\n\t remove_from_history: function(node_id) {\n\t     this.$store.dispatch('remove_from_history',node_id);\n\t },\n\t clear_history: function() {\n\t     this.$store.dispatch('clear_history');\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n #working_set{\n     padding-top:5px;\n     padding-left:5px;\n }\n .flip-list-move {\n     transition: transform 0.5s;\n }\n .no-move {\n     transition: transform 0s;\n }\n .node_snippet {\n     color:#ccc;\n }\n .ghost {\n     opacity: 0.5;\n     background: #c8ebfb;\n }\n .list-group {\n     min-height: 20px;\n }\n .list-group-item {\n     cursor: move;\n }\n .list-group-item i {\n     cursor: pointer;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-66400312_0", { source: "\n#working_set[data-v-66400312]{\n    padding-top:5px;\n    padding-left:5px;\n}\n.flip-list-move[data-v-66400312] {\n    transition: transform 0.5s;\n}\n.no-move[data-v-66400312] {\n    transition: transform 0s;\n}\n.node_snippet[data-v-66400312] {\n    color:#ccc;\n}\n.ghost[data-v-66400312] {\n    opacity: 0.5;\n    background: #c8ebfb;\n}\n.list-group[data-v-66400312] {\n    min-height: 20px;\n}\n.list-group-item[data-v-66400312] {\n    cursor: move;\n}\n.list-group-item i[data-v-66400312] {\n    cursor: pointer;\n}\n.badge_button[data-v-66400312] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    max-width: 10%;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/history.vue"],"names":[],"mappings":";AAkFA;IACA,eAAA;IACA,gBAAA;AACA;AACA;IACA,0BAAA;AACA;AACA;IACA,wBAAA;AACA;AACA;IACA,UAAA;AACA;AACA;IACA,YAAA;IACA,mBAAA;AACA;AACA;IACA,gBAAA;AACA;AACA;IACA,YAAA;AACA;AACA;IACA,eAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,cAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA","file":"history.vue","sourcesContent":["<template>\n    <div id=\"working_set\">\n\t<h4>\n\t    Working set <span v-on:click=\"clear_history()\" class=\"badge_button\">clear</span>\n\t</h4>\n\t<!-- <div v-for=\"node in recent\">\n\t     <span v-on:click=\"remove_from_history(node)\" style=\"cursor:pointer;margin-right:5px;\">[x]</span> <router-link :to=\"{name:'node', params: {id: node}}\">{{nodes && nodes[node] ? nodes[node].name : \"loading...\"}}</router-link> -->\n\t<!-- <draggable v-model=\"recent\" element=\"span\">\n\t     <li v-for=\"node in recent\">\n\t     <i :class=\"element.fixed? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'\" @click=\" element.fixed=! element.fixed\" aria-hidden=\"true\"></i>\n\t     <router-link :to=\"{name:'doc', params: {id: node}}\">{{nodes[node].name}}</router-link>\n\t     \n\t     </li>\n\t     </draggable> -->\n\t\n\t<draggable v-if=\"ready\" element=\"span\" v-model=\"recent\" v-bind=\"dragOptions\" :move=\"onMove\">\n            <transition-group name=\"no\" class=\"list-group\" tag=\"ul\">\n\t\t<li class=\"list-group-item\" v-for=\"node in recent\" :key=\"node.id\">\n\t\t    <i :class=\"node.fixed ? 'fa fa-lock' : 'fa fa-pin'\" @click=\"node.fixed = !node.fixed\" aria-hidden=\"true\"></i>\n\t\t    <div style=\"width:90%;float:left;\">\n\t\t\t<router-link :to=\"{name:'node', params: {id: node.id}}\">{{nodes[node.id].name}}</router-link>\n\t\t\t<br />\n\t\t\t<span class=\"node_snippet\">{{nodes[node.id].snippet}}</span>\n\t\t    </div>\n\t\t    <span v-on:click=\"remove_from_history(node.id)\" class=\"badge_button\">x</span>\n\t\t</li>\n            </transition-group>\n\t</draggable>\n\t<!-- </div> -->\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import draggable from \"vuedraggable\";\n \n export default {\n     name: 'history-display',\n     components: {\n\t draggable\n     },\n     data() {\n\t return {\n\t     editable: true,\n\t     isDragging: false,\n\t     delayedDragging: false\n\t };\n     },\n     computed: {\n\t dragOptions() {\n\t     return {\n\t\t animation: 0,\n\t\t group: \"description\",\n\t\t disabled: !this.editable,\n\t\t ghostClass: \"ghost\"\n\t     };\n\t },\n\t ...mapState([\n\t 'recent', 'nodes', 'ready'\n\t ])\n     },\n     methods: {\n\t onMove({ relatedContext, draggedContext }) {\n\t     const relatedElement = relatedContext.element;\n\t     const draggedElement = draggedContext.element;\n\t     return (\n\t\t (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed\n\t     );\n\t },\n\t remove_from_history: function(node_id) {\n\t     this.$store.dispatch('remove_from_history',node_id);\n\t },\n\t clear_history: function() {\n\t     this.$store.dispatch('clear_history');\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n #working_set{\n     padding-top:5px;\n     padding-left:5px;\n }\n .flip-list-move {\n     transition: transform 0.5s;\n }\n .no-move {\n     transition: transform 0s;\n }\n .node_snippet {\n     color:#ccc;\n }\n .ghost {\n     opacity: 0.5;\n     background: #c8ebfb;\n }\n .list-group {\n     min-height: 20px;\n }\n .list-group-item {\n     cursor: move;\n }\n .list-group-item i {\n     cursor: pointer;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     max-width: 10%;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$5 = "data-v-5f2dd9a8";
+    const __vue_scope_id__$5 = "data-v-66400312";
     /* module identifier */
     const __vue_module_identifier__$5 = undefined;
     /* functional template */
@@ -19018,7 +19012,9 @@
                             to:
                               "./" +
                               edge.target +
-                              ("dstloc" in edge ? "/" + edge.dstloc : "")
+                              ("dstloc" in edge && edge.dstloc != null
+                                ? "/" + edge.dstloc
+                                : "")
                           }
                         },
                         [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
@@ -19047,7 +19043,9 @@
                             to:
                               "./" +
                               edge.target +
-                              ("dstloc" in edge ? "/" + edge.dstloc : "")
+                              ("dstloc" in edge && edge.dstloc != null
+                                ? "/" + edge.dstloc
+                                : "")
                           }
                         },
                         [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
@@ -19077,7 +19075,9 @@
                             to:
                               "./" +
                               edge.target +
-                              ("dstloc" in edge ? "/" + edge.dstloc : "")
+                              ("dstloc" in edge && edge.dstloc != null
+                                ? "/" + edge.dstloc
+                                : "")
                           }
                         },
                         [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
@@ -19106,7 +19106,9 @@
                             to:
                               "./" +
                               edge.target +
-                              ("dstloc" in edge ? "/" + edge.dstloc : "")
+                              ("dstloc" in edge && edge.dstloc != null
+                                ? "/" + edge.dstloc
+                                : "")
                           }
                         },
                         [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
@@ -19129,11 +19131,11 @@
     /* style */
     const __vue_inject_styles__$6 = function (inject) {
       if (!inject) return
-      inject("data-v-987fa8d4_0", { source: "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", map: {"version":3,"sources":[],"names":[],"mappings":"","file":"edges.vue"}, media: undefined });
+      inject("data-v-552c7996_0", { source: "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", map: {"version":3,"sources":[],"names":[],"mappings":"","file":"edges.vue"}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$6 = "data-v-987fa8d4";
+    const __vue_scope_id__$6 = "data-v-552c7996";
     /* module identifier */
     const __vue_module_identifier__$6 = undefined;
     /* functional template */
