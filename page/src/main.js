@@ -5,11 +5,13 @@ import store from './store'
 
 import NodeIndex from './components/nodes.vue'
 import LabelIndex from './components/labels.vue'
+import NodeFilter from './components/filter.vue'
 import HistoryDisplay from './components/history.vue'
 import EdgeDisplay from './components/edges.vue'
 import SearchDisplay from './components/search/search.vue'
 import GraphIndex from './components/graph.vue'
 
+import LocPlugin from './plugins/loc.vue'
 import VideoPlugin from './plugins/video.vue'
 import MathPlugin from './plugins/math.vue'
 import LinkPlugin from './plugins/link.vue'
@@ -29,11 +31,13 @@ Vue.config.productionTip = true;
 Vue.component('graphIndex', GraphIndex);
 Vue.component('nodeIndex', NodeIndex);
 Vue.component('labelIndex', LabelIndex);
+Vue.component('nodeFilter', NodeFilter);
 Vue.component('historyDisplay', HistoryDisplay);
 Vue.component('edgeDisplay', EdgeDisplay);
 
 Vue.category_plugins = {
     'cat-slideshow': Vue.component('catSlideshow', SlideshowPlugin),
+    'cat-loc': Vue.component('catLoc', LocPlugin),
     'cat-video': Vue.component('catVideo', VideoPlugin),
     'cat-query': Vue.component('catQuery', QueryPlugin),
     'cat-link': Vue.component('catLink', LinkPlugin),

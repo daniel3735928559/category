@@ -264,8 +264,9 @@ def cat_updatedb(cat_path, db_name, db_un, db_pw, db_port, db_addr):
     subprocess.Popen(shlex.split(node_import), shell=False)
     print(edge_import)
     subprocess.Popen(shlex.split(edge_import), shell=False)
-    
-    md_query = """RETURN MERGE(FOR doc IN nodes
+
+    md_query = """LET subgr = nodes
+    RETURN MERGE(FOR doc IN subgr
     LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
     LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
     RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
@@ -283,12 +284,19 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
 
     conn = Connection(username=db_un, password=db_pw)
     db = conn[db_name]
+
+    md_query = """LET subgr = QUERYGOESHERE
+    LET subst = MERGE(for doc in subgr return {[doc._id]:true})
+    RETURN MERGE(FOR doc IN subgr
+    LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})"""
     
-    md_query = """RETURN MERGE(FOR doc IN QUERYGOESHERE 
-    LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
-    
+    # md_query = """RETURN MERGE(FOR doc IN nodes
+    # LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    # LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
+    # RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
+        
     # Ensure we don't zombify our editors
     signal.signal(signal.SIGCHLD, signal.SIG_IGN);
 
@@ -374,15 +382,19 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
     def send_metadata():
         query = request.args.get('q','')
         if len(query.strip()) == 0:
-            query = 'nodes'
-        else:
-            query = "(" + query + ")"
+            query = '(for doc in nodes limit 2000 return doc)'
         q = md_query.replace("QUERYGOESHERE",query)
+
+        print("AQL:",q)
         
         # make aql query to arangdb
-        res = db.AQLQuery(q, rawResults=True, batchSize=10)
-        ans = next(res)
-        return jsonify(ans)
+        try:
+            res = db.AQLQuery(q, rawResults=True, batchSize=10)
+            ans = next(res)
+            return jsonify(ans)
+        except Exception as e:
+            print("ERROR",e,e.message)
+            return jsonify({"error":e.message})
 
     @app.route('/node/<path:path>')
     def send_node(path):

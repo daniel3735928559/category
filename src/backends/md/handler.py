@@ -92,7 +92,7 @@ class md_builder:
                 e = e.strip()
                 self.locations[loc].append(e)
                 #edge = self.graph.parse_edge(self.node, e, edge_data={"loc":loc})
-            return pf.RawInline("""<a name="node_loc_{}"></a>""".format(loc),format="html")
+            return pf.RawInline("""<cat-loc>{}</cat-loc>""".format(loc),format="html")
             
         elif isinstance(elem, pf.Link) or isinstance(elem, pf.Image):
             if self.md_only:

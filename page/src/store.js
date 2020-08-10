@@ -127,6 +127,9 @@ export default new Vuex.Store({
 	clear_history: (context) => {
 	    context.commit('CLEAR_HISTORY');
 	},
+	reset_metadata: (context, data) => {
+	    context.commit('METADATA', data);
+	},
 	remove_from_history: (context, node_id) => {
 	    context.commit('REMOVE_FROM_HISTORY', node_id);
 	},

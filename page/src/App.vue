@@ -8,6 +8,7 @@
 	    </div>
 	    
 	    <div class="col-md-3">
+		<node-filter />
 		<history-display />
 	    </div>
 	    
