@@ -109,7 +109,7 @@
 	     this.layout = new FA2Layout(this.graph, {settings: settings});
 	     this.layout.start();
 	     var self = this;
-	     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout = null; self.layout_timer = null;}, 1*3*(this.num_nodes/100)*1000);
+	     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));
 	 },
 	 update_highlight: function() {
 	     console.log("updating highlight",this.highlight);
@@ -143,14 +143,14 @@
 
 	     var self = this;
 	     
-	     this.renderer.on('downNode', e => {
+	     this.renderer.on('downNode', (e) => {
 		 dragging = true;
 		 console.log("down",e);
 		 draggedNode = e.node;
 		 camera.disable();
 	     });
 
-	     this.renderer.on('clickNode', e => {
+	     this.renderer.on('clickNode', (e) => {
 		 console.log("nav",e.node);
 		 this.$router.push("/node/"+e.node);
 	     });
@@ -185,13 +185,13 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
  .graph_index {
-     height: 100%;
-     min-height:100vh;
+     height: 70%;
+     min-height:70vh;
      width: 100%;
  }
  #graph_container {
-     height: 100%;
-     min-height:100vh;
+     height: 70%;
+     min-height:70vh;
      width: 100%;
      color: unset;
      border: 1px solid #ccc;

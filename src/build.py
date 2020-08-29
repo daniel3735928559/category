@@ -5,7 +5,7 @@ from multiprocessing import Process, Queue
 #from queue import Queue
 from . util import *
 from . agraph import *
-from . backends.xml.handler import xml_builder
+#from . backends.xml.handler import xml_builder
 from . backends.md.handler import md_builder
 from . backends.md.plugins import *
 
@@ -16,7 +16,10 @@ def build_worker(inputs, outputs, build_only_new=False, md_only=True):
         ans = {'empty':True}
         try:
             ending = fn[fn.rfind('.'):]
-            endings = {".md":md_builder, ".xml":xml_builder}
+            endings = {
+                ".md":md_builder,
+                #".xml":xml_builder
+            }
             if ending in endings:
                 ans['empty'] = False
                 common_prefix = os.path.commonprefix([input_dir, fn])

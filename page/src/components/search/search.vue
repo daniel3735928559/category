@@ -8,8 +8,15 @@
 
 	<div v-if="mode=='graph'">
 	    <div style="float:left;width:20%;">
+		<div v-if="highlight.length > 0">
+		    <b>Highlighted</b>
+		    <div v-for="n in best_highlights" class="sidebar-item">
+			<router-link :to="'./node/'+ n.node">{{nodes[n.node].name}} ({{n.degree}})</router-link>
+		    </div>
+		    <hr />
+		</div>
 		<b>Top nodes</b>
-		<div v-for="n in best_nodes" style="border:1px solid #66f;border-radius:3px;margin:1px;overflow:hidden;white-space:nowrap;padding:2px;">
+		<div v-for="n in best_nodes" class="sidebar-item">
 		    <div style="display:inline-block;">
 			<span class="badge_button" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">+</span>
 			<span class="badge_button" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">-</span>
@@ -18,7 +25,7 @@
 		</div>
 		<hr />
 		<b>Top labels</b>
-		<div v-for="e in best_edges" style="border:1px solid #66f;border-radius:3px;margin:1px;overflow:hidden;white-space:nowrap;padding:2px;">
+		<div v-for="e in best_edges" class="sidebar-item">
 		    <div style="display:inline-block;">
 			<span class="badge_button" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">+</span>
 			<span class="badge_button" v-on:click="add_to_query('!(is ' + e.edge + ')')">-</span>
@@ -28,9 +35,11 @@
 	    </div>
 	    <div style="float:left;width:80%;">
 		<div style="float:left">Highlight: <input type="text" id="highlight_input" v-model="highlight_query" v-on:keyup.enter="do_highlight" />
-		<span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
-		<span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
-		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
+		    <span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
+		    <span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
+		    <span v-on:click="clear_highlight()" class="close_x"><span class="fas fa-backspace"></span></span>
+		    <span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
+		    <span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
 		</div><br /><br />
 		<graph-index :nodeset="resultset" :highlight="highlightset" v-if="result.length > 0"></graph-index>
 	    </div>
@@ -63,6 +72,35 @@
 	     }
 	     console.log(ans);
 	     return ans;
+	 },
+	 best_highlights: function() {
+	     var nodes_by_deg = [];
+	     for(var n in this.highlightset) {
+		 var targets = {}
+		 for(var label in this.nodes[n].edges.has) {
+		     for(var edge of this.nodes[n].edges.has[label]) {
+			 var target = edge.target;
+			 if(target in this.resultset) {
+			     targets[target] = true;
+			 }
+		     }
+		 }
+		 for(var label in this.nodes[n].edges.is) {
+		     for(var edge of this.nodes[n].edges.is[label]) {
+			 var target = edge.target;
+			 if(target in this.resultset) {
+			     targets[target] = true;
+			 }
+		     }
+		 }
+		 var deg = 0;
+		 for(var t in targets) {
+		     deg++;
+		 }
+		 nodes_by_deg.push({"node":n,"degree":deg});
+	     }
+	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
+	     return nodes_by_deg.slice(0,10);
 	 },
 	 best_nodes: function() {
 	     var nodes_by_deg = [];
@@ -197,6 +235,14 @@
 	 },
 	 do_highlight: function() {
 	     this.highlight = this.run_search(this.highlight_query, this.resultset);
+	 },
+	 expand_highlight: function() {
+	     this.highlight_query = "("+this.highlight_query+")[1]";
+	     this.do_highlight();
+	 },
+	 clear_highlight: function() {
+	     this.highlight_query = "";
+	     this.do_highlight();
 	 }
      },
      mounted: function() {
@@ -209,6 +255,14 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 
+ .sidebar-item {
+     border:1px solid #66f;
+     border-radius:3px;
+     margin:1px;
+     overflow:hidden;
+     white-space:nowrap;
+     padding:2px;
+ }
  .search-error {
      font-family: monospace;
      white-space: pre;
