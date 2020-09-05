@@ -3,7 +3,7 @@
 """ Category
 
 Usage: 
-  category init <path> <name>
+  category init <path> <name> <db_name> <db_un> <db_pw> [(--da <db_addr>)] [(--dp <db_port>)] 
   category build <path>
   category rebuild <path>
   category mdrebuild <path>
@@ -104,8 +104,25 @@ def cat_n4j_query(db_url, un, pw, q):
                 begin = False
             print(",".join([str(r[k]) for k in r.keys()]))
     
+
+def cat_init_db(db_name, db_un, db_pw, db_port, db_addr):
+    try:
+        conn = Connection(username=db_un, password=db_pw)
+    except:
+        cat_error("Failed to connect to arangodb. Is arango running? Are address, port, username, password all correct?")
+    try:
+        db = conn[db_name]
+        cat_error(f"Database with name {db_name} already exists. Aborting")
+    except:
+        db = conn.createDatabase(db_name)
+        db.createCollection(name="nodes")
+        db.createCollection(className='Edges', name="edges")
+        
+def cat_init(cat_path, name, db_name, db_un, db_pw, db_port, db_addr):
+    cat_init_db(db_name, db_un, db_pw, db_port, db_addr)
+    cat_init_files(cat_path, name)
     
-def cat_init(cat_path, name):
+def cat_init_files(cat_path, name):
     # In the cat_path folder, create the structure
     # $CAT_PATH/src
     # $CAT_PATH/out
@@ -348,7 +365,8 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
             proc = subprocess.Popen([editor, '--execute', f'(insert "``` info\nname: \ndate: {now}\n```\n\n")'],shell=False,cwd=os.path.join(cat_path,'src'))
             proc.wait()
             cat_build(cat_path)
-            cat_md_rebuild(cat_path)
+            cat_rebuild(cat_path)
+            cat_updatedb(cat_path, db_name, db_un, db_pw, db_port, db_addr)
             #metadata = load_metadata(cat_path)
             return
         thread = threading.Thread(target=new_node, args=(cat_path, editor))
@@ -409,7 +427,13 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     if args['init']:
-        cat_init(args['<path>'], args['<name>'])
+        cat_init(args['<path>'],
+                 args['<name>'],
+                 args['<db_name>'],
+                 args['<db_un>'],
+                 args['<db_pw>'],
+                 args['--dp'] if args['--dp'] != False else 8529,
+                 args['--da'] if args['--da'] != False else "127.0.0.1")
     elif args['build']:
         cat_build(args['<path>'])
     elif args['mdrebuild']:

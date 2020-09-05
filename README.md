@@ -53,19 +53,54 @@ source install.sh
 
 ### Start your own category
 
-Make a folder for your data. We'll put ours in `~/cat`
+First, you need an arangodb instance running. We'll assume the
+database username is in an environment var `DB_USERNAME` and the
+password in `DB_PASSWORD`. 
+
+Make a folder for your data. We'll put ours in `~/cat`. 
 
 ```
-./category init ~/cat
+mkdir ~/cat
+./category init ~/cat my_category category_db "$DB_USERNAME" "$DB_PASSWORD"
+```
+
+This will create an arango database named `category_db` configured
+appropriately.
+
+To allow you to create/edit entries from the web browser, add an
+`editor` field to `~/cat/category.yaml`:
+
+```
+name: my_category
+editor: /usr/bin/emacs
 ```
 
 To view your blank category in a browser, run: 
 
 ```
-./category serve ~/cat
+./category serve ~/cat category_db "$DB_USERNAME" "$DB_PASSWORD" -p 5000 -a 127.0.0.1
 ```
 
 and navigate to [http://localhost:5000](http://localhost:5000).
+
+### Adding nodes from the web interface
+
+From the web interface, click the "+" button at the top. This will
+open an instance of the editor you configured earlier. This file must
+start with an info block, and then may be followed by arbitrary
+content, such as:
+
+~~~
+```info
+name: My new node
+```
+
+Some content goes here
+~~~
+
+Save this as a `.md` file anywhere within `~/cat/src` and when you
+close the editor, the category should be automatically rebuilt and you
+can refresh the page to see the results.
 
 ### Adding nodes by hand
 
@@ -86,15 +121,11 @@ If you save this in `~/cat/src/test.md` and then run the below command
 to include the node in your category.
 
 ```
-./category build ~/cat
+./category rebuild ~/cat
+./category updatedb ~/cat category_db "$DB_USERNAME" "$DB_PASSWORD"
 ```
 
 Now refresh the web interface and you should see your new node appear!
-
-### Adding nodes from the web interface
-
-From the web interface, click the "+" button at the top. This will use
-`emacs`
 
 ### Adding nodes to the json database directly
 

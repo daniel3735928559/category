@@ -38,11 +38,14 @@ class ANode:
         return ans
 
 class AEdge:
-    def __init__(self, src, dst, label, args={}):
+    def __init__(self, src, dst, label, args=None):
         self.src = src
         self.dst = dst
         self.label = label
-        self.args = args
+        if args is None:
+            self.args = {}
+        else:
+            self.args = {a:args[a] for a in args}
 
     def get_src_id(self):
         ans = ""
@@ -70,6 +73,7 @@ class AEdge:
         ans = {"_from":f"nodes/{srcid}", "_to":f"nodes/{dstid}", "label":self.label, "internal":('srcloc' in self.args or 'dstloc' in self.args)}
         for arg in self.args:
             if not arg in {"_to", "_from", "label" "srcloc", "dstloc"}:
+                print("EDGE ARG",arg,self.args[arg])
                 ans[arg] = self.args[arg]
         return ans
 
@@ -92,9 +96,11 @@ class AGraph:
                 return None
         label = m.group(1).strip()
         target = m.group(2).strip()
+
+        # parse edge metadata in the form of has X: Y # key1=val1 # key2=val2 # ...
         edge_data_list = target.split("#")
         target_node_name = edge_data_list[0].strip()
-        target_node = self.get_node_by_name(target_node_name)
+        target_node = self.get_node_by_name(target_node_name, srcfile=node.args.get('src',None))
         for edge_metadata in edge_data_list[1:]:
             edge_metadata = edge_metadata.strip()
             if not "=" in edge_metadata:
@@ -106,11 +112,19 @@ class AGraph:
         if direction == 'out':
             if not loc is None:
                 edge_data['srcloc'] = loc
-            self.add_edge(AEdge(node, target_node, label, edge_data))
+            e = AEdge(node, target_node, label, edge_data)
+            print("EDGE SOURCE FILE",node.name, target_node_name, node.args.get('src',None))
+            e.args['src'] = node.args.get('src',None)
+            self.add_edge(e)
+            return e
         elif direction == 'in':
             if not loc is None:
                 edge_data['dstloc'] = loc
-            self.add_edge(AEdge(target_node, node, label, edge_data))
+            e = AEdge(target_node, node, label, edge_data)
+            print("EDGE SOURCE FILE",node.name, target_node_name, node.args.get('src',None))
+            e.args['src'] = node.args.get('src',None)
+            self.add_edge(e)
+            return e
 
     def extract_name(self, text):
         for line in text.split("\n"):
@@ -120,13 +134,15 @@ class AGraph:
         raise Exception("Config found without name:", text)
             
     # Parse config lines from the context of `node`
-    def parse_config(self, text):
+    def parse_config(self, text, srcfile=None):
         # This is being built from an actual node file, so it is not an auto node
         name = self.extract_name(text)
         node = self.get_node_by_name(name)
         
         # Maybe we had this node from before as an auto node, but now we know it is not
         node.auto = False
+        if not srcfile is None:
+            node.args['src'] = srcfile
         
         for line in text.split("\n"):
             if len(line.strip()) == 0: continue
@@ -140,23 +156,29 @@ class AGraph:
                     sys.stderr.write("WARNING: Line not a valid configuration item: {}\n".format(line))
                     continue
             else:
-                self.add_edge(e)
+                print("EDGE PARSED FROM CONFIG",e,e.args['src'])
+            # else:
+            #     self.add_edge(e)
         
         self.add_node(node)
         return node
 
-    def get_node_by_id(self, nodeid):
+    def get_node_by_id(self, nodeid, srcfile=None):
         if not nodeid in self.nodes:
             self.nodes[nodeid] = ANode(auto=True)
+            if not srcfile is None:
+                self.nodes[nodeid].args['src'] = srcfile
         return self.nodes[nodeid]
         
-    def get_node_by_name(self, name, loc=None):
+    def get_node_by_name(self, name, loc=None, srcfile=None):
         if not loc is None:
             nodeid = get_id(name) + f"_{loc}"
         else:
             nodeid = get_id(name)
         if not nodeid in self.nodes:
             new_node = ANode(auto=True)
+            if not srcfile is None:
+                new_node.args['src'] = srcfile
             new_node.name = name
             self.nodes[nodeid] = new_node
         return self.nodes[nodeid]

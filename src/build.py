@@ -134,16 +134,20 @@ class cat_builder:
             builder = ans['builder']
 
             # Collect the info from the builder and add it to the graph:
-            current_node = self.agraph.parse_config(builder.config)
-            current_node.args['src'] = builder.src
+            print("BUILDING FROM",builder.src)
+            current_node = self.agraph.parse_config(builder.config, srcfile=str(builder.src))
             current_node.args['snippet'] = " ".join(builder.fulltext[:200].split()[:-1])+"..."
             for e in builder.extra_edges:
-                self.agraph.parse_edge(current_node, e)
+                ed = self.agraph.parse_edge(current_node, e)
+                print("EXTRA EDGE",ed.args.get('src',None))
                 
             for loc in builder.locations:
                 loc_node = ANode(auto=False, loc=loc, parent=current_node)
+                loc_node.args['src'] = builder.src
                 self.agraph.add_node(loc_node)
-                self.agraph.add_edge(AEdge(loc_node, current_node, "parent"))
+                e = AEdge(loc_node, current_node, "parent")
+                e.args['src'] = str(builder.src)
+                self.agraph.add_edge(e)
                 for e in builder.locations[loc]:
                     self.agraph.parse_edge(current_node, e, edge_data={"loc":loc})
             
@@ -155,34 +159,40 @@ class cat_builder:
                 with open(output_path,"wb") as f:
                     f.write(builder.doc)
 
+            # debug: print the graph
+            for n in self.agraph.nodes:
+                print(self.agraph.nodes[n].to_json())
+            for e in self.agraph.edges:
+                print(e.to_json())
+        
         # Add category edges to every non-category node:
-        categories = set()
-        nodes = {self.agraph.nodes[n].get_id():"" for n in self.agraph.nodes if not n in categories}
-        for e in self.agraph.edges:
-            if e.label == "category":
-                c = e.get_dst_id()
-                categories.add(c)
-                nodes[e.get_src_id()] = c
+        # categories = set()
+        # nodes = {self.agraph.nodes[n].get_id():"" for n in self.agraph.nodes if not n in categories}
+        # for e in self.agraph.edges:
+        #     if e.label == "category":
+        #         c = e.get_dst_id()
+        #         categories.add(c)
+        #         nodes[e.get_src_id()] = c
 
-        auto_assignments = {n:{} for n in nodes if len(nodes[n]) == 0 and not n in categories}
-        def add_candidate(n, c):
-            if not c in auto_assignments[n]:
-                auto_assignments[n][c] = 0
-            auto_assignments[n][c] += 1
-        for e in self.agraph.edges:
-            src,dst = e.get_src_id(),e.get_dst_id()
-            if src in auto_assignments and not dst in auto_assignments:
-                add_candidate(src, dst)
-            elif not src in auto_assignments and dst in auto_assignments:
-                add_candidate(dst, src)
-        for n in auto_assignments:
-            best_score = -1
-            candidate = ""
-            for c in auto_assignments[n]:
-                if auto_assignments[n][c] > best_score:
-                    best_score = auto_assignments[n][c]
-                    candidate = c
-            self.agraph.add_edge(AEdge(n, candidate, "category"))
+        # auto_assignments = {n:{} for n in nodes if len(nodes[n]) == 0 and not n in categories}
+        # def add_candidate(n, c):
+        #     if not c in auto_assignments[n]:
+        #         auto_assignments[n][c] = 0
+        #     auto_assignments[n][c] += 1
+        # for e in self.agraph.edges:
+        #     src,dst = e.get_src_id(),e.get_dst_id()
+        #     if src in auto_assignments and not dst in auto_assignments:
+        #         add_candidate(src, dst)
+        #     elif not src in auto_assignments and dst in auto_assignments:
+        #         add_candidate(dst, src)
+        # for n in auto_assignments:
+        #     best_score = -1
+        #     candidate = ""
+        #     for c in auto_assignments[n]:
+        #         if auto_assignments[n][c] > best_score:
+        #             best_score = auto_assignments[n][c]
+        #             candidate = c
+        #     self.agraph.add_edge(AEdge(n, candidate, "category"))
 
         # Now every non-category node should have a category
             

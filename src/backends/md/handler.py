@@ -8,19 +8,19 @@ import yaml, sys, re, hashlib, json, os, traceback, urllib.parse
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from util import *
 
-def md_set_edges(filename, new_edges):
-    def action(elem, doc):
-        if (isinstance(elem, pf.Code) or isinstance(elem, pf.CodeBlock)) and 'info' in elem.classes:
-            data,old_edges = parse_config(elem.text)
-            elem.text = make_config(data, new_edges)
+# def md_set_edges(filename, new_edges):
+#     def action(elem, doc):
+#         if (isinstance(elem, pf.Code) or isinstance(elem, pf.CodeBlock)) and 'info' in elem.classes:
+#             data,old_edges = parse_config(elem.text)
+#             elem.text = make_config(data, new_edges)
     
-    with open(filename,"rb") as f:
-        doc = pf.convert_text(f.read().decode(),standalone=True)
+#     with open(filename,"rb") as f:
+#         doc = pf.convert_text(f.read().decode(),standalone=True)
         
-    pf.run_filter(action, doc=doc)
+#     pf.run_filter(action, doc=doc)
     
-    with open(filename,"wb") as f:
-        f.write(pf.convert_text(doc, input_format='panflute',output_format='markdown', standalone=True).encode('utf-8'))
+#     with open(filename,"wb") as f:
+#         f.write(pf.convert_text(doc, input_format='panflute',output_format='markdown', standalone=True).encode('utf-8'))
 
 
 class md_builder:
