@@ -1,51 +1,64 @@
 <template>
-    <div class="searchbar"> 
-	<input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" />
-	<span v-on:click="mode='list'" class="close_x"><span class="fas fa-list"></span></span>
-	<span v-on:click="mode='graph'" class="close_x"><span class="fas fa-project-diagram"></span></span>
-	<span class="search-error" v-if="errormsg.length > 0">{{errormsg}}</span>
-
-
-	<div v-if="mode=='graph'">
-	    <div style="float:left;width:20%;">
-		<div v-if="highlight.length > 0">
-		    <b>Highlighted</b>
-		    <div v-for="n in best_highlights" class="sidebar-item">
-			<router-link :to="'./node/'+ n.node">{{nodes[n.node].name}} ({{n.degree}})</router-link>
-		    </div>
-		    <hr />
+    <div class="browse">
+	<div class="browse_container" style="float:left;width:70%;">
+	    <div class="filterquery">
+		<!-- <input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" /> -->
+		<span>{{query}}</span>
+		<span v-on:click="clear_filter()" class="close_x"><span class="fas fa-eraser"></span></span>
+		<span v-on:click="mode='list'" class="close_x"><span class="fas fa-list"></span></span>
+		<span v-on:click="mode='graph'" class="close_x"><span class="fas fa-project-diagram"></span></span>
+	    </div>
+	    <div v-if="mode=='graph'">
+		<div style="float:left;width:100%;">
+		    <br />
+		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="result.length > 0" v-on:clickedNode="goto_node"></graph-index>
 		</div>
+	    </div>
+	    <div v-if="mode=='list'">
+		<node-index :nodeset="resultset" v-if="result.length > 0"></node-index>
+	    </div>
+	</div>
+	<div class="querypanel" style="float:left;width:30%;padding-left:10px;">
+	    <div style="float:left">
+		<input type="text" id="highlight_input" v-model="highlight_query" v-on:keyup.enter="do_highlight" />
+		<span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
+		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
+		<span v-on:click="clear_highlight()" class="close_x"><span class="fas fa-backspace"></span></span>
+		<span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
+		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
+	    </div>
+
+	    <span class="search-error" v-if="errormsg.length > 0">{{errormsg}}</span>
+	    <br /><br />
+	    <div v-if="highlight.length == 0">
 		<b>Top nodes</b>
-		<div v-for="n in best_nodes" class="sidebar-item">
+		<div v-for="n in best_nodes" class="query_result">
 		    <div style="display:inline-block;">
 			<span class="badge_button" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">+</span>
 			<span class="badge_button" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">-</span>
 		    </div>
 		    <a href="#" v-on:click="set_highlight('(=' + nodes[n.node].name + ')[1]')">{{nodes[n.node].name}} ({{n.degree}})</a> 
 		</div>
-		<hr />
-		<b>Top labels</b>
-		<div v-for="e in best_edges" class="sidebar-item">
+	    </div>
+	    <div v-if="highlight.length > 0">
+		<b>Top nodes in result</b>
+		<div v-for="n in best_highlights" class="query_result">
 		    <div style="display:inline-block;">
-			<span class="badge_button" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">+</span>
-			<span class="badge_button" v-on:click="add_to_query('!(is ' + e.edge + ')')">-</span>
+			<span class="badge_button" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">-</span>
 		    </div>
-		    <a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.edge}} ({{e.count}})</a>
+		    <a href="#" v-on:click="set_highlight('(=' + nodes[n.node].name + ')[1]')">{{nodes[n.node].name}} ({{n.degree}})</a> 
 		</div>
 	    </div>
-	    <div style="float:left;width:80%;">
-		<div style="float:left">Highlight: <input type="text" id="highlight_input" v-model="highlight_query" v-on:keyup.enter="do_highlight" />
-		    <span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
-		    <span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
-		    <span v-on:click="clear_highlight()" class="close_x"><span class="fas fa-backspace"></span></span>
-		    <span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
-		    <span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
-		</div><br /><br />
-		<graph-index :nodeset="resultset" :highlight="highlightset" v-if="result.length > 0" v-on:clickedNode="goto_node"></graph-index>
+	    <hr />
+	    <b>Top labels</b>
+	    <div v-for="e in best_edges" class="query_result">
+		<div style="display:inline-block;">
+		    <span class="badge_button" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">+</span>
+		    <span class="badge_button" v-on:click="add_to_query('!(is ' + e.edge + ')')">-</span>
+		</div>
+		<a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.edge}} ({{e.count}})</a>
 	    </div>
-	</div>
-	<div v-if="mode=='list'">
-	    <node-index :nodeset="resultset" v-if="result.length > 0"></node-index>
 	</div>
     </div>
 </template>
@@ -55,8 +68,7 @@
  import { mapState } from 'vuex'
 
  export default {
-     name: 'search',
-     props: ['nodes','initquery'],
+     name: 'browse',
      computed: { 
 	 resultset: function() {
 	     var ans = {};
@@ -155,7 +167,7 @@
 	     edges_by_count.sort(function(a, b){return b.count-a.count;});
 	     return edges_by_count.slice(0,10);
 	 },
-
+	 ...mapState(['nodes', 'node_data']),
      },
      data() {
 	 return {
@@ -247,18 +259,39 @@
 	 clear_highlight: function() {
 	     this.highlight_query = "";
 	     this.do_highlight();
+	 },
+	 new_node: function(event){
+	     var self = this;
+	     var fetch_headers = new Headers();
+	     fetch_headers.append('pragma', 'no-cache');
+	     fetch_headers.append('cache-control', 'no-cache');
+	     
+	     var fetch_params = {
+		 method: 'GET',
+		 headers: fetch_headers,
+	     };
+	     fetch('/new', fetch_params).then(function(response){
+		 response.text().then(function(data){
+		     console.log(data);
+		 });
+	     });
+	 },
+	 clear_filter: function() {
+	     this.query = '*';
+	     this.search();
+	     this.do_highlight();
 	 }
      },
      mounted: function() {
-	 this.query = this.initquery;
+	 this.query = '*';
 	 this.search();
      }
  }
+
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
  .sidebar-item {
      border:1px solid #66f;
      border-radius:3px;
@@ -288,5 +321,15 @@
      background-color: #777;
      border-radius: 10px;
      float:right;
+ }
+ .snippet_header{
+     border-radius: 10px;
+     padding: 5px;
+     width: 100%;
+     margin-bottom: 10px;
+ }
+
+ .snippet_title{
+     font-size: 20pt;
  }
 </style>

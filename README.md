@@ -44,6 +44,8 @@ To view the static example category:
 
 ### Setting up
 
+Make sure you've installed `pandoc` using your favourite package manager. Then run:
+
 ```
 git clone https://github.com/daniel3735928559/category.git
 cd category

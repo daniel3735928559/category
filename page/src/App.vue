@@ -1,16 +1,16 @@
 <template>
     <div id="cafeapp" class="container-full-width">
 	<div id="main" class="row">
-	    <div class="col-md-7 offset-md-1">
+	    <div class="col-md-10 offset-md-1">
 		<div id="main_col">
 		    <router-view></router-view>
 		</div>
 	    </div>
 	    
-	    <div class="col-md-3">
-		<node-filter />
-		<history-display />
-	    </div>
+	    <!-- <div class="col-md-3">
+		 <node-filter />
+		 <history-display />
+		 </div> -->
 	    
 	</div>
     </div>

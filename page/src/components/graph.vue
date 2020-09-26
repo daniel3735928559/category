@@ -152,7 +152,8 @@
 
 	     this.renderer.on('clickNode', (e) => {
 		 console.log("nav",e.node);
-		 this.$router.push("/node/"+e.node);
+		 //this.$router.push("/node/"+e.node);
+		 this.$emit("clickedNode",e.node)
 	     });
 
 	     captor.on('mouseup', e => {
@@ -185,13 +186,13 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
  .graph_index {
-     height: 70%;
-     min-height:70vh;
+     height: 80%;
+     min-height:80vh;
      width: 100%;
  }
  #graph_container {
-     height: 70%;
-     min-height:70vh;
+     height: 80%;
+     min-height:80vh;
      width: 100%;
      color: unset;
      border: 1px solid #ccc;

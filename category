@@ -414,6 +414,10 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
             print("ERROR",e,e.message)
             return jsonify({"error":e.message})
 
+    @app.route('/browse/<path:path>')
+    def send_browse(path):
+        return send_from_directory(page_root,"dist/index.html")
+    
     @app.route('/node/<path:path>')
     def send_node(path):
         return send_from_directory(page_root,"dist/index.html")

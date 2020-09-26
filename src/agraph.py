@@ -1,4 +1,4 @@
-import os, json, hashlib, re
+import os, json, hashlib, re, sys
 
 def get_id(node):
     return hashlib.sha256(node.lower().encode()).hexdigest()
@@ -73,7 +73,6 @@ class AEdge:
         ans = {"_from":f"nodes/{srcid}", "_to":f"nodes/{dstid}", "label":self.label, "internal":('srcloc' in self.args or 'dstloc' in self.args)}
         for arg in self.args:
             if not arg in {"_to", "_from", "label" "srcloc", "dstloc"}:
-                print("EDGE ARG",arg,self.args[arg])
                 ans[arg] = self.args[arg]
         return ans
 
@@ -113,7 +112,6 @@ class AGraph:
             if not loc is None:
                 edge_data['srcloc'] = loc
             e = AEdge(node, target_node, label, edge_data)
-            print("EDGE SOURCE FILE",node.name, target_node_name, node.args.get('src',None))
             e.args['src'] = node.args.get('src',None)
             self.add_edge(e)
             return e
@@ -121,7 +119,6 @@ class AGraph:
             if not loc is None:
                 edge_data['dstloc'] = loc
             e = AEdge(target_node, node, label, edge_data)
-            print("EDGE SOURCE FILE",node.name, target_node_name, node.args.get('src',None))
             e.args['src'] = node.args.get('src',None)
             self.add_edge(e)
             return e
@@ -155,8 +152,6 @@ class AGraph:
                 else:
                     sys.stderr.write("WARNING: Line not a valid configuration item: {}\n".format(line))
                     continue
-            else:
-                print("EDGE PARSED FROM CONFIG",e,e.args['src'])
             # else:
             #     self.add_edge(e)
         

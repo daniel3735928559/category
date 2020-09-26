@@ -107,6 +107,8 @@ class cat_builder:
             
             # Now read the actual data files
             for fn in files:
+                if fn[0] == ".":
+                    continue
                 fn = os.path.join(dirname, fn)
                 input_queue.put([input_dir, output_dir, fn, config_edges, self.md_time])
                 num_inputs += 1
@@ -160,12 +162,12 @@ class cat_builder:
                     f.write(builder.doc)
 
             # debug: print the graph
-            for n in self.agraph.nodes:
-                print(self.agraph.nodes[n].to_json())
-            for e in self.agraph.edges:
-                print(e.to_json())
+            # for n in self.agraph.nodes:
+            #     print(self.agraph.nodes[n].to_json())
+            # for e in self.agraph.edges:
+            #     print(e.to_json())
         
-        # Add category edges to every non-category node:
+        # add category edges to every non-category node:
         # categories = set()
         # nodes = {self.agraph.nodes[n].get_id():"" for n in self.agraph.nodes if not n in categories}
         # for e in self.agraph.edges:
