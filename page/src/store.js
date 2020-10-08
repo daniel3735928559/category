@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import CatGraph from './graph/graph.mjs'
 
 Vue.use(Vuex)
 
@@ -8,7 +9,7 @@ export default new Vuex.Store({
 	query: 'is category',
 	ready: false,
 	current: '',
-	nodes: {},
+	graph: {},
 	recent: [],
 	node_data: {},
 	plugin_data: {}
@@ -113,8 +114,10 @@ export default new Vuex.Store({
 	    // 	state.recent.splice(idx, 1);
 	    // }
 	},
-	METADATA: (state, nodes) => {
-	    state.nodes = nodes;
+	METADATA: (state, g) => {
+	    //state.nodes = nodes;
+	    console.log("MD",g);
+	    state.graph = new CatGraph(g["nodes"], g["edges"])
 	    state.recent = [];
 	    state.ready = true;
 	    state.query = "is category";

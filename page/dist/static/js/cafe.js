@@ -11280,7 +11280,6 @@
    var script = {
        name: 'home',
        computed: mapState([
-  	 'nodes'
        ]),
        methods: {
   	 new_node: function(event){
@@ -11328,7 +11327,7 @@
             [_c("span", { staticClass: "fas fa-plus" })]
           )
         ]),
-        _c("search", { attrs: { initquery: "*", nodes: _vm.nodes } })
+        _c("search", { attrs: { initquery: "*" } })
       ],
       1
     )
@@ -11339,11 +11338,11 @@
     /* style */
     const __vue_inject_styles__$1 = function (inject) {
       if (!inject) return
-      inject("data-v-e1784cac_0", { source: "\n.snippet_header[data-v-e1784cac]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-e1784cac]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Home.vue"],"names":[],"mappings":";AA2CA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Home.vue","sourcesContent":["<template>\n  <div class=\"home\">\n      <div class=\"snippet_header\">\n\t  <span class=\"snippet_title\">Category</span>\n\t  <span v-on:click=\"new_node()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t</div>\n\n\t<search initquery=\"*\" :nodes=\"nodes\" />\n  </div>\n</template>\n\n<script>\n// @ is an alias to /src\n import { mapState } from 'vuex'\n \n export default {\n     name: 'home',\n     computed: mapState([\n\t 'nodes'\n     ]),\n     methods: {\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-35f3fb43_0", { source: "\n.snippet_header[data-v-35f3fb43]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-35f3fb43]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Home.vue"],"names":[],"mappings":";AA0CA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Home.vue","sourcesContent":["<template>\n  <div class=\"home\">\n      <div class=\"snippet_header\">\n\t  <span class=\"snippet_title\">Category</span>\n\t  <span v-on:click=\"new_node()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t</div>\n\n\t<search initquery=\"*\" />\n  </div>\n</template>\n\n<script>\n// @ is an alias to /src\n import { mapState } from 'vuex'\n \n export default {\n     name: 'home',\n     computed: mapState([\n     ]),\n     methods: {\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$1 = "data-v-e1784cac";
+    const __vue_scope_id__$1 = "data-v-35f3fb43";
     /* module identifier */
     const __vue_module_identifier__$1 = undefined;
     /* functional template */
@@ -11648,104 +11647,51 @@
 
    var script$2 = {
        name: 'browse',
-       computed: { 
+       computed: {
   	 resultset: function() {
   	     var ans = {};
-  	     for(var r of this.result) {
-  		 ans[r] = this.nodes[r];
+  	     for(var r in this.result) {
+  		 ans[r] = this.graph.nodes[r];
   	     }
   	     return ans;
   	 },
+  	 is_empty: function() {
+  	     for(var n in this.result) {
+  		 return false;
+  	     }
+  	     return true;
+  	 },
+  	 highlight_is_empty: function() {
+  	     for(var n in this.highlightset) {
+  		 return false;
+  	     }
+  	     return true;
+  	 },
   	 highlightset: function() {
   	     var ans = {};
-  	     for(var r of this.highlight) {
+  	     for(var r in this.highlight) {
   		 ans[r] = true;
   	     }
   	     console.log(ans);
   	     return ans;
   	 },
   	 best_highlights: function() {
-  	     var nodes_by_deg = [];
-  	     for(var n in this.highlightset) {
-  		 var targets = {};
-  		 for(var label in this.nodes[n].edges.has) {
-  		     for(var edge of this.nodes[n].edges.has[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 for(var label in this.nodes[n].edges.is) {
-  		     for(var edge of this.nodes[n].edges.is[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 var deg = 0;
-  		 for(var t in targets) {
-  		     deg++;
-  		 }
-  		 nodes_by_deg.push({"node":n,"degree":deg});
-  	     }
-  	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
-  	     return nodes_by_deg.slice(0,10);
+  	     return this.subgraph.subgraph(this.highlightset).best_nodes().slice(0,10);
+  	 },
+  	 subgraph: function() {
+  	     if(!this.ready) return;
+  	     console.log("GGGGGG",this.graph);
+  	     return this.graph;
   	 },
   	 best_nodes: function() {
-  	     var nodes_by_deg = [];
-  	     for(var n in this.resultset) {
-  		 var targets = {};
-  		 for(var label in this.nodes[n].edges.has) {
-  		     for(var edge of this.nodes[n].edges.has[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 for(var label in this.nodes[n].edges.is) {
-  		     for(var edge of this.nodes[n].edges.is[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 var deg = 0;
-  		 for(var t in targets) {
-  		     deg++;
-  		 }
-  		 nodes_by_deg.push({"node":n,"degree":deg});
-  	     }
-  	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
-  	     return nodes_by_deg.slice(0,10);
+  	     console.log("BN",this.ready);
+  	     if(!this.ready) return [];
+  	     return this.subgraph.best_nodes().slice(0,10);
   	 },
   	 best_edges: function() {
-  	     var edges_with_count = {};
-  	     for(var n in this.resultset) {
-  		 // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target
-  		 for(var label in this.nodes[n].edges.has) {
-  		     if(!(label in edges_with_count)) {
-  			 edges_with_count[label] = 0;
-  		     }
-  		     for(var edge of this.nodes[n].edges.has[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     edges_with_count[label]++;
-  			 }
-  		     }
-  		 }
-  	     }
-  	     var edges_by_count = [];
-  	     for(var e in edges_with_count) {
-  		 edges_by_count.push({"edge":e,"count":edges_with_count[e]});
-  	     }
-  	     edges_by_count.sort(function(a, b){return b.count-a.count;});
-  	     return edges_by_count.slice(0,10);
+  	     return this.subgraph.best_labels().slice(0,10);
   	 },
-  	 ...mapState(['nodes', 'node_data']),
+  	 ...mapState(['graph','ready', 'node_data'])
        },
        data() {
   	 return {
@@ -11766,6 +11712,10 @@
   	 }
        },
        methods: {
+  	 goto_node: function(e) {
+  	     console.log("GOTO",e);
+  	     this.$router.push("/node/"+e);
+  	 },
   	 add_to_query: function(qry) {
   	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
   		 this.query = "("+this.query+"),"+qry;
@@ -11798,14 +11748,16 @@
   		 this.errormsg = e.toString();
   		 return [];
   	     }
-  	     return Vue$1.category_search(q, nodeset);
+  	     console.log("QQ",q,this.graph);
+  	     return this.graph.search(nodeset, q);
   	 },
   	 search: function() {
   	     if(this.query.trim().length == 0) {
   		 this.query = "*";
   	     }
-  	     var query_result = this.run_search(this.query, this.nodes);
-  	     console.log(query_result);
+  	     this.graph.debug_search = true;
+  	     var query_result = this.run_search(this.query,this.nodeset);
+  	     console.log("RES",query_result);
   	     if(query_result.length == 0) {
   		 return;
   	     }
@@ -11814,13 +11766,12 @@
   	     }
   	     else {
   		 this.result = query_result;
-  		 console.log("RES",this.result);
-  		 for(var i = 0; i < this.result.length; i++){
-  		     if(this.nodes[this.result[i]].name == this.query.trim()) {
-  			 this.$router.push('/node/'+this.result[i]);
-  			 break;
-  		     }
-  		 }
+  		 /* for(var i = 0; i < this.result.length; i++){
+  		    if(this.nodes[this.result[i]].name == this.query.trim()) {
+  		    this.$router.push('/node/'+this.result[i]);
+  		    break;
+  		    }
+  		    }*/
   	     }
   	 },
   	 do_highlight: function() {
@@ -11923,12 +11874,13 @@
                   { staticStyle: { float: "left", width: "100%" } },
                   [
                     _c("br"),
-                    _vm.result.length > 0
+                    !_vm.is_empty
                       ? _c("graph-index", {
                           attrs: {
                             nodeset: _vm.resultset,
                             highlight: _vm.highlightset
-                          }
+                          },
+                          on: { clickedNode: _vm.goto_node }
                         })
                       : _vm._e()
                   ],
@@ -12054,7 +12006,7 @@
             : _vm._e(),
           _c("br"),
           _c("br"),
-          _vm.highlight.length == 0
+          _vm.highlight_is_empty
             ? _c(
                 "div",
                 [
@@ -12070,9 +12022,9 @@
                               click: function($event) {
                                 _vm.add_to_query(
                                   "((=" +
-                                    _vm.nodes[n.node].name +
+                                    _vm.graph.nodes[n.node].name +
                                     ")[2], !(=" +
-                                    _vm.nodes[n.node].name +
+                                    _vm.graph.nodes[n.node].name +
                                     "))"
                                 );
                               }
@@ -12087,7 +12039,7 @@
                             on: {
                               click: function($event) {
                                 _vm.add_to_query(
-                                  "!(=" + _vm.nodes[n.node].name + ")"
+                                  "!(=" + _vm.graph.nodes[n.node].name + ")"
                                 );
                               }
                             }
@@ -12102,16 +12054,19 @@
                           on: {
                             click: function($event) {
                               _vm.set_highlight(
-                                "(=" + _vm.nodes[n.node].name + ")[1]"
+                                "(=" + _vm.graph.nodes[n].name + ")[1]"
                               );
                             }
                           }
                         },
                         [
                           _vm._v(
-                            _vm._s(_vm.nodes[n.node].name) +
+                            _vm._s(_vm.graph.nodes[n].name) +
                               " (" +
-                              _vm._s(n.degree) +
+                              _vm._s(
+                                _vm.graph.nodes[n]["_outdegree"] +
+                                  _vm.graph.nodes[n]["_indegree"]
+                              ) +
                               ")"
                           )
                         ]
@@ -12122,7 +12077,7 @@
                 2
               )
             : _vm._e(),
-          _vm.highlight.length > 0
+          !_vm.highlight_is_empty
             ? _c(
                 "div",
                 [
@@ -12138,9 +12093,9 @@
                               click: function($event) {
                                 _vm.add_to_query(
                                   "((=" +
-                                    _vm.nodes[n.node].name +
+                                    _vm.graph.nodes[n.node].name +
                                     ")[2], !(=" +
-                                    _vm.nodes[n.node].name +
+                                    _vm.graph.nodes[n.node].name +
                                     "))"
                                 );
                               }
@@ -12155,7 +12110,7 @@
                             on: {
                               click: function($event) {
                                 _vm.add_to_query(
-                                  "!(=" + _vm.nodes[n.node].name + ")"
+                                  "!(=" + _vm.graph.nodes[n.node].name + ")"
                                 );
                               }
                             }
@@ -12170,16 +12125,19 @@
                           on: {
                             click: function($event) {
                               _vm.set_highlight(
-                                "(=" + _vm.nodes[n.node].name + ")[1]"
+                                "(=" + _vm.graph.nodes[n].name + ")[1]"
                               );
                             }
                           }
                         },
                         [
                           _vm._v(
-                            _vm._s(_vm.nodes[n.node].name) +
+                            _vm._s(_vm.graph.nodes[n].name) +
                               " (" +
-                              _vm._s(n.degree) +
+                              _vm._s(
+                                _vm.graph.nodes[n]["_outdegree"] +
+                                  _vm.graph.nodes[n]["_indegree"]
+                              ) +
                               ")"
                           )
                         ]
@@ -12232,7 +12190,7 @@
                     }
                   }
                 },
-                [_vm._v(_vm._s(e.edge) + " (" + _vm._s(e.count) + ")")]
+                [_vm._v(_vm._s(e.label) + " (" + _vm._s(e.count) + ")")]
               )
             ])
           })
@@ -12247,11 +12205,11 @@
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-7e95ab42_0", { source: "\n.sidebar-item[data-v-7e95ab42] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-7e95ab42] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-7e95ab42] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-7e95ab42]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-7e95ab42]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AAkSA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"browse_container\" style=\"float:left;width:70%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span>{{query}}</span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-eraser\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"result.length > 0\"></graph-index>\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"text\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:keyup.enter=\"do_highlight\" />\n\t\t<span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span v-on:click=\"clear_highlight()\" class=\"close_x\"><span class=\"fas fa-backspace\"></span></span>\n\t\t<span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\t    <div v-if=\"highlight.length == 0\">\n\t\t<b>Top nodes</b>\n\t\t<div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + nodes[n.node].name + ')[1]')\">{{nodes[n.node].name}} ({{n.degree}})</a> \n\t\t</div>\n\t    </div>\n\t    <div v-if=\"highlight.length > 0\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + nodes[n.node].name + ')[1]')\">{{nodes[n.node].name}} ({{n.degree}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.edge + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.edge + ')')\">{{e.edge}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: { \n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r of this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var nodes_by_deg = [];\n\t     for(var n in this.highlightset) {\n\t\t var targets = {}\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     for(var edge of this.nodes[n].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t for(var label in this.nodes[n].edges.is) {\n\t\t     for(var edge of this.nodes[n].edges.is[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t var deg = 0;\n\t\t for(var t in targets) {\n\t\t     deg++;\n\t\t }\n\t\t nodes_by_deg.push({\"node\":n,\"degree\":deg});\n\t     }\n\t     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });\n\t     return nodes_by_deg.slice(0,10);\n\t },\n\t best_nodes: function() {\n\t     var nodes_by_deg = [];\n\t     for(var n in this.resultset) {\n\t\t var targets = {}\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     for(var edge of this.nodes[n].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t for(var label in this.nodes[n].edges.is) {\n\t\t     for(var edge of this.nodes[n].edges.is[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t var deg = 0;\n\t\t for(var t in targets) {\n\t\t     deg++;\n\t\t }\n\t\t nodes_by_deg.push({\"node\":n,\"degree\":deg});\n\t     }\n\t     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });\n\t     return nodes_by_deg.slice(0,10);\n\t },\n\t best_edges: function() {\n\t     var edges_with_count = {};\n\t     for(var n in this.resultset) {\n\t\t var count = 0;\n\t\t // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     if(!(label in edges_with_count)) {\n\t\t\t edges_with_count[label] = 0\n\t\t     }\n\t\t     for(var edge of this.nodes[n].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     edges_with_count[label]++;\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     var edges_by_count = [];\n\t     for(var e in edges_with_count) {\n\t\t edges_by_count.push({\"edge\":e,\"count\":edges_with_count[e]})\n\t     }\n\t     edges_by_count.sort(function(a, b){return b.count-a.count;});\n\t     return edges_by_count.slice(0,10);\n\t },\n\t ...mapState(['nodes', 'node_data']),\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t }\n     },\n     watch: {\n\t nodes: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.search();\n\t     });\n\t }\n     },\n     methods: {\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     return Vue.category_search(q, nodeset);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     var query_result = this.run_search(this.query, this.nodes)\n\t     console.log(query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t console.log(\"RES\",this.result);\n\t\t for(var i = 0; i < this.result.length; i++){\n\t\t     if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t\t this.$router.push('/node/'+this.result[i]);\n\t\t\t break;\n\t\t     }\n\t\t }\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t clear_filter: function() {\n\t     this.query = '*';\n\t     this.search();\n\t     this.do_highlight();\n\t }\n     },\n     mounted: function() {\n\t this.query = '*';\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-8b3abb70_0", { source: "\n.sidebar-item[data-v-8b3abb70] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-8b3abb70] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-8b3abb70] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-8b3abb70]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-8b3abb70]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AAiPA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"browse_container\" style=\"float:left;width:70%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span>{{query}}</span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-eraser\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:clickedNode=\"goto_node\"></graph-index>\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"text\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:keyup.enter=\"do_highlight\" />\n\t\t<span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span v-on:click=\"clear_highlight()\" class=\"close_x\"><span class=\"fas fa-backspace\"></span></span>\n\t\t<span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\t    <div v-if=\"highlight_is_empty\">\n\t\t<b>Top nodes</b>\n\t\t<div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n.node].name + ')[2], !(=' + graph.nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1]')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n.node].name + ')[2], !(=' + graph.nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1]')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.edge + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.edge + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r in this.result) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.result) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     return this.subgraph.subgraph(this.highlightset).best_nodes().slice(0,10);\n\t },\n\t subgraph: function() {\n\t     if(!this.ready) return;\n\t     console.log(\"GGGGGG\",this.graph);\n\t     return this.graph;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t ...mapState(['graph','ready', 'node_data'])\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t }\n     },\n     watch: {\n\t nodes: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.search();\n\t     });\n\t }\n     },\n     methods: {\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     return this.graph.search(nodeset, q);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.nodeset)\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t /* for(var i = 0; i < this.result.length; i++){\n\t\t    if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t    this.$router.push('/node/'+this.result[i]);\n\t\t    break;\n\t\t    }\n\t\t    }*/\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t clear_filter: function() {\n\t     this.query = '*';\n\t     this.search();\n\t     this.do_highlight();\n\t }\n     },\n     mounted: function() {\n\t this.query = '*';\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-7e95ab42";
+    const __vue_scope_id__$3 = "data-v-8b3abb70";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -12303,6 +12261,1155 @@
       ]
   });
 
+  /* parser generated by jison 0.4.18 */
+  /*
+    Returns a Parser object of the following structure:
+
+    Parser: {
+      yy: {}
+    }
+
+    Parser.prototype: {
+      yy: {},
+      trace: function(),
+      symbols_: {associative list: name ==> number},
+      terminals_: {associative list: number ==> name},
+      productions_: [...],
+      performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate, $$, _$),
+      table: [...],
+      defaultActions: {...},
+      parseError: function(str, hash),
+      parse: function(input),
+
+      lexer: {
+          EOF: 1,
+          parseError: function(str, hash),
+          setInput: function(input),
+          input: function(),
+          unput: function(str),
+          more: function(),
+          less: function(n),
+          pastInput: function(),
+          upcomingInput: function(),
+          showPosition: function(),
+          test_match: function(regex_match_array, rule_index),
+          next: function(),
+          lex: function(),
+          begin: function(condition),
+          popState: function(),
+          _currentRules: function(),
+          topState: function(),
+          pushState: function(condition),
+
+          options: {
+              ranges: boolean           (optional: true ==> token location info will include a .range[] member)
+              flex: boolean             (optional: true ==> flex-like lexing behaviour where the rules are tested exhaustively to find the longest match)
+              backtrack_lexer: boolean  (optional: true ==> lexer regexes are tested in order and for each matching regex the action code is invoked; the lexer terminates the scan when a token is returned by the action code)
+          },
+
+          performAction: function(yy, yy_, $avoiding_name_collisions, YY_START),
+          rules: [...],
+          conditions: {associative list: name ==> set},
+      }
+    }
+
+
+    token location info (@$, _$, etc.): {
+      first_line: n,
+      last_line: n,
+      first_column: n,
+      last_column: n,
+      range: [start_number, end_number]       (where the numbers are indexes into the input string, regular zero-based)
+    }
+
+
+    the parseError function receives a 'hash' object with these members for lexer and parser errors: {
+      text:        (matched text)
+      token:       (the produced terminal token, if any)
+      line:        (yylineno)
+    }
+    while parser (grammar) errors will also provide these members, i.e. parser errors deliver a superset of attributes: {
+      loc:         (yylloc)
+      expected:    (string describing the set of expected tokens)
+      recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
+    }
+  */
+  var query$1 = (function(){
+  var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,5],$V2=[1,11],$V3=[1,6],$V4=[1,7],$V5=[1,8],$V6=[1,9],$V7=[1,10],$V8=[1,13],$V9=[1,14],$Va=[1,16],$Vb=[1,17],$Vc=[5,12,24,25],$Vd=[5,9,10,12,14,22,24,25],$Ve=[5,9,10,12,14,22,24,25,28];
+  var parser = {trace: function trace () { },
+  yy: {},
+  symbols_: {"error":2,"query":3,"q":4,"EOF":5,"name":6,"HAS":7,"IS":8,":":9,"OF":10,"(":11,")":12,".":13,"CMP":14,"BEFORE":15,"DATE":16,"AFTER":17,"=":18,"!":19,"[":20,"NUM":21,"]":22,"..":23,",":24,"/":25,"words":26,"*":27,"STR":28,"$accept":0,"$end":1},
+  terminals_: {2:"error",5:"EOF",7:"HAS",8:"IS",9:":",10:"OF",11:"(",12:")",13:".",14:"CMP",15:"BEFORE",16:"DATE",17:"AFTER",18:"=",19:"!",20:"[",21:"NUM",22:"]",23:"..",24:",",25:"/",27:"*",28:"STR"},
+  productions_: [0,[3,2],[4,1],[4,2],[4,2],[4,4],[4,4],[4,6],[4,6],[4,4],[4,3],[4,3],[4,2],[4,2],[4,4],[4,6],[4,8],[4,10],[4,8],[4,10],[4,12],[4,12],[4,3],[4,3],[4,3],[6,1],[6,1],[26,2],[26,1]],
+  performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
+  /* this == yyval */
+
+  var $0 = $$.length - 1;
+  switch (yystate) {
+  case 1:
+   return $$[$0-1]; 
+  case 2:
+  this.$ = ["name",$$[$0]];
+  break;
+  case 3:
+  this.$ = ["edge",{"name":$$[$0],"dir":"has"}];
+  break;
+  case 4:
+  this.$ = ["edge",{"name":$$[$0],"dir":"is"}];
+  break;
+  case 5:
+  this.$ = ["edge",{"name":$$[$0-2],"dir":"has","query":["name",$$[$0]]}];
+  break;
+  case 6:
+  this.$ = ["edge",{"name":$$[$0-3],"dir":"is","query":["name",$$[$0]]}];
+  break;
+  case 7:
+  this.$ = ["edge",{"name":$$[$0-4],"dir":"has","query":$$[$0-1]}];
+  break;
+  case 8:
+  this.$ = ["edge",{"name":$$[$0-5],"dir":"is","query":$$[$0-1]}];
+  break;
+  case 9:
+  this.$ = ["prop",[$$[$0-2],$$[$0-1],$$[$0]]];
+  break;
+  case 10:
+  this.$ = ["before",$$[$0]];
+  break;
+  case 11:
+  this.$ = ["after",$$[$0]];
+  break;
+  case 12:
+  this.$ = ["exactly",$$[$0]];
+  break;
+  case 13:
+  this.$ = ["not",[["name",$$[$0]]]];
+  break;
+  case 14:
+  this.$ = ["not",[$$[$0-1]]];
+  break;
+  case 15:
+  this.$ = ["nbhd",[$$[$0-4],0,parseInt($$[$0-1]),"any","*"]];
+  break;
+  case 16:
+  this.$ = ["nbhd",[$$[$0-6],0,parseInt($$[$0-3]),"any",$$[$0-1]]];
+  break;
+  case 17:
+  this.$ = ["nbhd",[$$[$0-8],0,parseInt($$[$0-5]),$$[$0-3],$$[$0-1]]];
+  break;
+  case 18:
+  this.$ = ["nbhd",[$$[$0-6],parseInt($$[$0-3]),parseInt($$[$0-1]),"any","*"]];
+  break;
+  case 19:
+  this.$ = ["nbhd",[$$[$0-8],parseInt($$[$0-5]),parseInt($$[$0-3]),"any",$$[$0-1]]];
+  break;
+  case 20: case 21:
+  this.$ = ["nbhd",[$$[$0-10],parseInt($$[$0-7]),parseInt($$[$0-5]),$$[$0-3],$$[$0-1]]];
+  break;
+  case 22:
+  this.$ = $$[$0-1];
+  break;
+  case 23:
+  this.$ = ["and",[$$[$0-2], $$[$0]]];
+  break;
+  case 24:
+  this.$ = ["or",[$$[$0-2], $$[$0]]];
+  break;
+  case 25:
+  this.$ = $$[$0];
+  break;
+  case 26:
+  this.$ = "*";
+  break;
+  case 27:
+  this.$ = $$[$0-1] +" "+ $$[$0];
+  break;
+  case 28:
+  this.$ = $$[$0];
+  break;
+  }
+  },
+  table: [{3:1,4:2,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},{1:[3]},{5:[1,15],24:$Va,25:$Vb},o($Vc,[2,2],{10:[1,18]}),{6:19,26:12,27:$V8,28:$V9},{6:20,26:12,27:$V8,28:$V9},{6:21,26:12,27:$V8,28:$V9},{9:[1,22]},{9:[1,23]},{6:24,26:12,27:$V8,28:$V9},{6:25,11:[1,26],26:12,27:$V8,28:$V9},{4:27,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},o($Vd,[2,25],{28:[1,28]}),o($Vd,[2,26]),o($Ve,[2,28]),{1:[2,1]},{4:29,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},{4:30,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},{9:[1,31]},o($Vc,[2,3],{9:[1,32]}),o($Vc,[2,4]),{14:[1,33]},{16:[1,34]},{16:[1,35]},o($Vc,[2,12]),o($Vc,[2,13]),{4:36,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},{12:[1,37],24:$Va,25:$Vb},o($Ve,[2,27]),o($Vc,[2,23]),o([5,12,25],[2,24],{24:$Va}),{6:38,11:[1,39],26:12,27:$V8,28:$V9},{6:40,11:[1,41],26:12,27:$V8,28:$V9},{6:42,26:12,27:$V8,28:$V9},o($Vc,[2,10]),o($Vc,[2,11]),{12:[1,43],24:$Va,25:$Vb},o($Vc,[2,22],{20:[1,44]}),o($Vc,[2,6]),{4:45,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},o($Vc,[2,5]),{4:46,6:3,7:$V0,8:$V1,11:$V2,13:$V3,15:$V4,17:$V5,18:$V6,19:$V7,26:12,27:$V8,28:$V9},o($Vc,[2,9]),o($Vc,[2,14]),{21:[1,47]},{12:[1,48],24:$Va,25:$Vb},{12:[1,49],24:$Va,25:$Vb},{9:[1,51],22:[1,50],23:[1,52]},o($Vc,[2,8]),o($Vc,[2,7]),o($Vc,[2,15]),{6:53,26:12,27:$V8,28:$V9},{21:[1,54]},{9:[1,56],22:[1,55]},{9:[1,58],22:[1,57]},o($Vc,[2,16]),{6:59,26:12,27:$V8,28:$V9},o($Vc,[2,18]),{6:60,7:[1,62],8:[1,61],26:12,27:$V8,28:$V9},{22:[1,63]},{22:[1,64]},{9:[1,65]},{9:[1,66]},o($Vc,[2,17]),o($Vc,[2,19]),{6:67,26:12,27:$V8,28:$V9},{6:68,26:12,27:$V8,28:$V9},{22:[1,69]},{22:[1,70]},o($Vc,[2,20]),o($Vc,[2,21])],
+  defaultActions: {15:[2,1]},
+  parseError: function parseError (str, hash) {
+      if (hash.recoverable) {
+          this.trace(str);
+      } else {
+          var error = new Error(str);
+          error.hash = hash;
+          throw error;
+      }
+  },
+  parse: function parse(input) {
+      var self = this, stack = [0], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, TERROR = 2, EOF = 1;
+      var args = lstack.slice.call(arguments, 1);
+      var lexer = Object.create(this.lexer);
+      var sharedState = { yy: {} };
+      for (var k in this.yy) {
+          if (Object.prototype.hasOwnProperty.call(this.yy, k)) {
+              sharedState.yy[k] = this.yy[k];
+          }
+      }
+      lexer.setInput(input, sharedState.yy);
+      sharedState.yy.lexer = lexer;
+      sharedState.yy.parser = this;
+      if (typeof lexer.yylloc == 'undefined') {
+          lexer.yylloc = {};
+      }
+      var yyloc = lexer.yylloc;
+      lstack.push(yyloc);
+      var ranges = lexer.options && lexer.options.ranges;
+      if (typeof sharedState.yy.parseError === 'function') {
+          this.parseError = sharedState.yy.parseError;
+      } else {
+          this.parseError = Object.getPrototypeOf(this).parseError;
+      }
+      
+          var lex = function () {
+              var token;
+              token = lexer.lex() || EOF;
+              if (typeof token !== 'number') {
+                  token = self.symbols_[token] || token;
+              }
+              return token;
+          };
+      var symbol, preErrorSymbol, state, action, r, yyval = {}, p, len, newState, expected;
+      while (true) {
+          state = stack[stack.length - 1];
+          if (this.defaultActions[state]) {
+              action = this.defaultActions[state];
+          } else {
+              if (symbol === null || typeof symbol == 'undefined') {
+                  symbol = lex();
+              }
+              action = table[state] && table[state][symbol];
+          }
+                      if (typeof action === 'undefined' || !action.length || !action[0]) {
+                  var errStr = '';
+                  expected = [];
+                  for (p in table[state]) {
+                      if (this.terminals_[p] && p > TERROR) {
+                          expected.push('\'' + this.terminals_[p] + '\'');
+                      }
+                  }
+                  if (lexer.showPosition) {
+                      errStr = 'Parse error on line ' + (yylineno + 1) + ':\n' + lexer.showPosition() + '\nExpecting ' + expected.join(', ') + ', got \'' + (this.terminals_[symbol] || symbol) + '\'';
+                  } else {
+                      errStr = 'Parse error on line ' + (yylineno + 1) + ': Unexpected ' + (symbol == EOF ? 'end of input' : '\'' + (this.terminals_[symbol] || symbol) + '\'');
+                  }
+                  this.parseError(errStr, {
+                      text: lexer.match,
+                      token: this.terminals_[symbol] || symbol,
+                      line: lexer.yylineno,
+                      loc: yyloc,
+                      expected: expected
+                  });
+              }
+          if (action[0] instanceof Array && action.length > 1) {
+              throw new Error('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
+          }
+          switch (action[0]) {
+          case 1:
+              stack.push(symbol);
+              vstack.push(lexer.yytext);
+              lstack.push(lexer.yylloc);
+              stack.push(action[1]);
+              symbol = null;
+              if (!preErrorSymbol) {
+                  yyleng = lexer.yyleng;
+                  yytext = lexer.yytext;
+                  yylineno = lexer.yylineno;
+                  yyloc = lexer.yylloc;
+              } else {
+                  symbol = preErrorSymbol;
+                  preErrorSymbol = null;
+              }
+              break;
+          case 2:
+              len = this.productions_[action[1]][1];
+              yyval.$ = vstack[vstack.length - len];
+              yyval._$ = {
+                  first_line: lstack[lstack.length - (len || 1)].first_line,
+                  last_line: lstack[lstack.length - 1].last_line,
+                  first_column: lstack[lstack.length - (len || 1)].first_column,
+                  last_column: lstack[lstack.length - 1].last_column
+              };
+              if (ranges) {
+                  yyval._$.range = [
+                      lstack[lstack.length - (len || 1)].range[0],
+                      lstack[lstack.length - 1].range[1]
+                  ];
+              }
+              r = this.performAction.apply(yyval, [
+                  yytext,
+                  yyleng,
+                  yylineno,
+                  sharedState.yy,
+                  action[1],
+                  vstack,
+                  lstack
+              ].concat(args));
+              if (typeof r !== 'undefined') {
+                  return r;
+              }
+              if (len) {
+                  stack = stack.slice(0, -1 * len * 2);
+                  vstack = vstack.slice(0, -1 * len);
+                  lstack = lstack.slice(0, -1 * len);
+              }
+              stack.push(this.productions_[action[1]][0]);
+              vstack.push(yyval.$);
+              lstack.push(yyval._$);
+              newState = table[stack[stack.length - 2]][stack[stack.length - 1]];
+              stack.push(newState);
+              break;
+          case 3:
+              return true;
+          }
+      }
+      return true;
+  }};
+  /* generated by jison-lex 0.3.4 */
+  var lexer = (function(){
+  var lexer = ({
+
+  EOF:1,
+
+  parseError:function parseError(str, hash) {
+          if (this.yy.parser) {
+              this.yy.parser.parseError(str, hash);
+          } else {
+              throw new Error(str);
+          }
+      },
+
+  // resets the lexer, sets new input
+  setInput:function (input, yy) {
+          this.yy = yy || this.yy || {};
+          this._input = input;
+          this._more = this._backtrack = this.done = false;
+          this.yylineno = this.yyleng = 0;
+          this.yytext = this.matched = this.match = '';
+          this.conditionStack = ['INITIAL'];
+          this.yylloc = {
+              first_line: 1,
+              first_column: 0,
+              last_line: 1,
+              last_column: 0
+          };
+          if (this.options.ranges) {
+              this.yylloc.range = [0,0];
+          }
+          this.offset = 0;
+          return this;
+      },
+
+  // consumes and returns one char from the input
+  input:function () {
+          var ch = this._input[0];
+          this.yytext += ch;
+          this.yyleng++;
+          this.offset++;
+          this.match += ch;
+          this.matched += ch;
+          var lines = ch.match(/(?:\r\n?|\n).*/g);
+          if (lines) {
+              this.yylineno++;
+              this.yylloc.last_line++;
+          } else {
+              this.yylloc.last_column++;
+          }
+          if (this.options.ranges) {
+              this.yylloc.range[1]++;
+          }
+
+          this._input = this._input.slice(1);
+          return ch;
+      },
+
+  // unshifts one char (or a string) into the input
+  unput:function (ch) {
+          var len = ch.length;
+          var lines = ch.split(/(?:\r\n?|\n)/g);
+
+          this._input = ch + this._input;
+          this.yytext = this.yytext.substr(0, this.yytext.length - len);
+          //this.yyleng -= len;
+          this.offset -= len;
+          var oldLines = this.match.split(/(?:\r\n?|\n)/g);
+          this.match = this.match.substr(0, this.match.length - 1);
+          this.matched = this.matched.substr(0, this.matched.length - 1);
+
+          if (lines.length - 1) {
+              this.yylineno -= lines.length - 1;
+          }
+          var r = this.yylloc.range;
+
+          this.yylloc = {
+              first_line: this.yylloc.first_line,
+              last_line: this.yylineno + 1,
+              first_column: this.yylloc.first_column,
+              last_column: lines ?
+                  (lines.length === oldLines.length ? this.yylloc.first_column : 0)
+                   + oldLines[oldLines.length - lines.length].length - lines[0].length :
+                this.yylloc.first_column - len
+          };
+
+          if (this.options.ranges) {
+              this.yylloc.range = [r[0], r[0] + this.yyleng - len];
+          }
+          this.yyleng = this.yytext.length;
+          return this;
+      },
+
+  // When called from action, caches matched text and appends it on next action
+  more:function () {
+          this._more = true;
+          return this;
+      },
+
+  // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
+  reject:function () {
+          if (this.options.backtrack_lexer) {
+              this._backtrack = true;
+          } else {
+              return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n' + this.showPosition(), {
+                  text: "",
+                  token: null,
+                  line: this.yylineno
+              });
+
+          }
+          return this;
+      },
+
+  // retain first n characters of the match
+  less:function (n) {
+          this.unput(this.match.slice(n));
+      },
+
+  // displays already matched input, i.e. for error messages
+  pastInput:function () {
+          var past = this.matched.substr(0, this.matched.length - this.match.length);
+          return (past.length > 20 ? '...':'') + past.substr(-20).replace(/\n/g, "");
+      },
+
+  // displays upcoming input, i.e. for error messages
+  upcomingInput:function () {
+          var next = this.match;
+          if (next.length < 20) {
+              next += this._input.substr(0, 20-next.length);
+          }
+          return (next.substr(0,20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
+      },
+
+  // displays the character position where the lexing error occurred, i.e. for error messages
+  showPosition:function () {
+          var pre = this.pastInput();
+          var c = new Array(pre.length + 1).join("-");
+          return pre + this.upcomingInput() + "\n" + c + "^";
+      },
+
+  // test the lexed token: return FALSE when not a match, otherwise return token
+  test_match:function(match, indexed_rule) {
+          var token,
+              lines,
+              backup;
+
+          if (this.options.backtrack_lexer) {
+              // save context
+              backup = {
+                  yylineno: this.yylineno,
+                  yylloc: {
+                      first_line: this.yylloc.first_line,
+                      last_line: this.last_line,
+                      first_column: this.yylloc.first_column,
+                      last_column: this.yylloc.last_column
+                  },
+                  yytext: this.yytext,
+                  match: this.match,
+                  matches: this.matches,
+                  matched: this.matched,
+                  yyleng: this.yyleng,
+                  offset: this.offset,
+                  _more: this._more,
+                  _input: this._input,
+                  yy: this.yy,
+                  conditionStack: this.conditionStack.slice(0),
+                  done: this.done
+              };
+              if (this.options.ranges) {
+                  backup.yylloc.range = this.yylloc.range.slice(0);
+              }
+          }
+
+          lines = match[0].match(/(?:\r\n?|\n).*/g);
+          if (lines) {
+              this.yylineno += lines.length;
+          }
+          this.yylloc = {
+              first_line: this.yylloc.last_line,
+              last_line: this.yylineno + 1,
+              first_column: this.yylloc.last_column,
+              last_column: lines ?
+                           lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length :
+                           this.yylloc.last_column + match[0].length
+          };
+          this.yytext += match[0];
+          this.match += match[0];
+          this.matches = match;
+          this.yyleng = this.yytext.length;
+          if (this.options.ranges) {
+              this.yylloc.range = [this.offset, this.offset += this.yyleng];
+          }
+          this._more = false;
+          this._backtrack = false;
+          this._input = this._input.slice(match[0].length);
+          this.matched += match[0];
+          token = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]);
+          if (this.done && this._input) {
+              this.done = false;
+          }
+          if (token) {
+              return token;
+          } else if (this._backtrack) {
+              // recover context
+              for (var k in backup) {
+                  this[k] = backup[k];
+              }
+              return false; // rule action called reject() implying the next rule should be tested instead.
+          }
+          return false;
+      },
+
+  // return next match in input
+  next:function () {
+          if (this.done) {
+              return this.EOF;
+          }
+          if (!this._input) {
+              this.done = true;
+          }
+
+          var token,
+              match,
+              tempMatch,
+              index;
+          if (!this._more) {
+              this.yytext = '';
+              this.match = '';
+          }
+          var rules = this._currentRules();
+          for (var i = 0; i < rules.length; i++) {
+              tempMatch = this._input.match(this.rules[rules[i]]);
+              if (tempMatch && (!match || tempMatch[0].length > match[0].length)) {
+                  match = tempMatch;
+                  index = i;
+                  if (this.options.backtrack_lexer) {
+                      token = this.test_match(tempMatch, rules[i]);
+                      if (token !== false) {
+                          return token;
+                      } else if (this._backtrack) {
+                          match = false;
+                          continue; // rule action called reject() implying a rule MISmatch.
+                      } else {
+                          // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+                          return false;
+                      }
+                  } else if (!this.options.flex) {
+                      break;
+                  }
+              }
+          }
+          if (match) {
+              token = this.test_match(match, rules[index]);
+              if (token !== false) {
+                  return token;
+              }
+              // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
+              return false;
+          }
+          if (this._input === "") {
+              return this.EOF;
+          } else {
+              return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. Unrecognized text.\n' + this.showPosition(), {
+                  text: "",
+                  token: null,
+                  line: this.yylineno
+              });
+          }
+      },
+
+  // return next match that has a token
+  lex:function lex () {
+          var r = this.next();
+          if (r) {
+              return r;
+          } else {
+              return this.lex();
+          }
+      },
+
+  // activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
+  begin:function begin (condition) {
+          this.conditionStack.push(condition);
+      },
+
+  // pop the previously active lexer condition state off the condition stack
+  popState:function popState () {
+          var n = this.conditionStack.length - 1;
+          if (n > 0) {
+              return this.conditionStack.pop();
+          } else {
+              return this.conditionStack[0];
+          }
+      },
+
+  // produce the lexer rule set which is active for the currently active lexer condition state
+  _currentRules:function _currentRules () {
+          if (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1]) {
+              return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
+          } else {
+              return this.conditions["INITIAL"].rules;
+          }
+      },
+
+  // return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
+  topState:function topState (n) {
+          n = this.conditionStack.length - 1 - Math.abs(n || 0);
+          if (n >= 0) {
+              return this.conditionStack[n];
+          } else {
+              return "INITIAL";
+          }
+      },
+
+  // alias for begin(condition)
+  pushState:function pushState (condition) {
+          this.begin(condition);
+      },
+
+  // return the number of states currently on the stack
+  stateStackSize:function stateStackSize() {
+          return this.conditionStack.length;
+      },
+  options: {},
+  performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
+  switch($avoiding_name_collisions) {
+  case 0:/* skip whitespace */
+  break;
+  case 1:return 19
+  case 2:return 18
+  case 3:return '-'
+  case 4:return 27
+  case 5:return 25
+  case 6:return ';'
+  case 7:return 9
+  case 8:return 24
+  case 9:return 13
+  case 10:return 23
+  case 11:return 11
+  case 12:return 12
+  case 13:return 20
+  case 14:return 22
+  case 15:return 15
+  case 16:return 17
+  case 17:return 7
+  case 18:return 8
+  case 19:return 10
+  case 20:return 'C'
+  case 21:return 16
+  case 22:return 21
+  case 23:return 14
+  case 24:return 28
+  case 25:return 5
+  case 26:return 'INVALID'
+  }
+  },
+  rules: [/^(?:\s+)/,/^(?:!)/,/^(?:(?!==)=)/,/^(?:-)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:(?!\.\.)\.)/,/^(?:\.\.)/,/^(?:\()/,/^(?:\))/,/^(?:\[)/,/^(?:\])/,/^(?:before\b)/,/^(?:after\b)/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:[0-9]{4}-[0-9]{2}-[0-9]{2})/,/^(?:[0-9][0-9]*)/,/^(?:==|>=|<=)/,/^(?:(?!has)(?!of)(?!is)(?!before)(?!after)[^*;/,:.()! <>=~[\]]+)/,/^(?:$)/,/^(?:.)/],
+  conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26],"inclusive":true}}
+  });
+  return lexer;
+  })();
+  parser.lexer = lexer;
+  function Parser () {
+    this.yy = {};
+  }
+  Parser.prototype = parser;parser.Parser = Parser;
+  return new Parser;
+  })();
+
+  class CatGraph {
+      constructor(nodes, edges) {
+  	this.nodes = {};
+  	this.edges = {};
+  	this.index_edge_label = {};
+  	this.debug_search = false;
+  	for(var n of nodes) {
+  	    this.add_node(n);
+  	}
+  	for(var e of edges) {
+  	    this.add_edge(e);
+  	}
+      }
+      static verify_keys(obj, keys) {
+  	for(var k of keys) {
+  	    if(!(k in obj)) { throw ("Did not find expected key: "+k); }
+  	}
+      }
+      static compare(comparator, val1, val2) {
+  	var comparators = {
+  	    '==': CatGraph.cmp_eq,
+  	    '!=': CatGraph.cmp_neq,
+  	    '<': CatGraph.cmp_lt,
+  	    '>': CatGraph.cmp_gt,
+  	    '<=': CatGraph.cmp_leq,
+  	    '>=': CatGraph.cmp_geq,
+  	    '~': CatGraph.cmp_like,
+  	    //'!': CatGraph.cmp_null,
+  	    '!!': CatGraph.cmp_nonnull
+  	};
+  	if (!(comparator in comparators)) {
+  	    throw ("Invalid comparator: "+comparator);
+  	}
+  	return comparators[comparator](val1, val2);
+      }
+      static cmp_eq(x, y) {
+  	return x == y;
+      }
+      static cmp_neq(x, y) {
+  	return x != y;
+      }
+      static cmp_lt(x, y) {
+  	return x < y;
+      }
+      static cmp_gt(x, y) {
+  	return x > y;
+      }
+      static cmp_leq(x, y) {
+  	return x <= y;
+      }
+      static cmp_geq(x, y) {
+  	return x >= y;
+      }
+      static cmp_like(x, y) {
+  	return x.indexOf(y) != -1;
+      }
+      static cmp_null(x, y) {
+  	return x;
+      }
+      static cmp_nonnull(x, y) {
+  	return !x;
+      }
+      subgraph(nodeset) {
+  	console.log("SG",nodeset);
+  	var new_nodes = [];
+  	var new_edges = [];
+  	for(var n in nodeset) {
+  	    new_nodes.push(this.nodes[n]);
+  	}
+  	for(var eid in this.edges) {
+  	    if(!(this.edges[eid]["_from"] in nodeset) || !(this.edges[eid]["_to"] in nodeset)) {
+  		continue;
+  	    }
+  	    new_edges.push(this.edges[eid]);
+  	}
+  	return new CatGraph(new_nodes, new_edges);
+      }
+      sigma_graph() {
+  	var ans = {nodes:[],edges:[]};
+  	for(var n in this.nodes) {
+  	    ans.nodes.push({"key":n,attributes:{"label":this.nodes[n].name, "color":"#00f"}});
+  	}
+  	for(var eid in this.edges) {
+  	    var e = this.edges[eid];
+  	    ans.edges.push({"source":e["_from"],"target":e["_to"],attributes:{"label":e.label}});
+  	}
+  	return ans;
+      }
+      best_nodes(nodeset) {
+  	if(!nodeset) nodeset = this.nodes;
+  	var node_arr = [];
+  	for(var n in nodeset) {
+  	    node_arr.push(n);
+  	}
+  	var self = this;
+  	node_arr.sort(function(m, n){ return (self.nodes[n]._indegree + self.nodes[n]._outdegree)-(self.nodes[m]._indegree + self.nodes[m]._outdegree); });
+  	return node_arr;
+      }
+      best_labels(nodeset) {
+  	if(!nodeset) nodeset = this.nodes;
+  	var labels = {};
+  	var label_arr = [];
+  	for(var eid in this.edges) {
+  	    // Skip edges where either the source or target is outside the specified nodeset
+  	    if(!(this.edges[eid]["_from"] in nodeset) || !(this.edges[eid]["_to"] in nodeset)) {
+  		continue;
+  	    }
+  	    var l = this.edges[eid].label;
+  	    if(!(l in labels)){
+  		labels[l] = 0;
+  		label_arr.push({"label":l,"count":0});
+  	    }
+  	    labels[l]++;
+  	}
+  	for(var i = 0; i < label_arr.length; i++) {
+  	    label_arr[i].count = labels[label_arr[i].label];
+  	}
+  	label_arr.sort(function(x, y){ return labels[y]-labels[x]; });
+  	return label_arr;
+      }
+      add_node(node) {
+  	CatGraph.verify_keys(node, ["_id","name"]);
+  	let id = node["_id"];
+  	node["_indegree"] = 0;
+  	node["_outdegree"] = 0;
+  	this.nodes[id] = node;
+  	this.index_edge_label[id] = {};
+      }
+      add_edge(edge) {
+  	CatGraph.verify_keys(edge, ["_id","_from","_to","label"]);
+  	let edgeid = edge["_id"];
+  	let srcid = edge["_from"];
+  	let tgtid = edge["_to"];
+  	let label = edge["label"];
+  	
+  	CatGraph.verify_keys(this.nodes, [srcid, tgtid]);
+
+  	// Edge is valid; source and dest nodes exist. Now we can start adding
+  	
+  	if(!(label in this.index_edge_label[tgtid])) { this.index_edge_label[tgtid][label] = {"in":[],"out":[]}; }
+  	if(!(label in this.index_edge_label[srcid])) { this.index_edge_label[srcid][label] = {"in":[],"out":[]}; }
+  	this.index_edge_label[tgtid][label]["in"].push(edgeid);
+  	this.index_edge_label[srcid][label]["out"].push(edgeid);
+  	this.edges[edgeid] = edge;
+  	this.nodes[srcid]["_outdegree"]++;
+  	this.nodes[tgtid]["_indegree"]++;
+      }
+
+      // Begin searching functions
+
+      // Begin search helper functions
+
+      // Search for nodes within resultset that have an adjacent edge of
+      // label <label> in the specified direction <dir>
+      search_dir_label_helper(resultset, dir, label) {
+  	var ans = {};
+  	for(var n in resultset) {
+  	    if(!(n in this.index_edge_label)) {
+  		continue;
+  	    }
+  	    if(label in this.index_edge_label[n][dir]) {
+  		// In this case, we get all outbound edges of the specified label
+  		for(var nodeid in this.index_edge_label[n][dir][label]) {
+  		    if(!(nodeid in resultset)) { continue; }
+  		    ans[nodeid] = true;
+  		}
+  	    }
+  	}
+  	return ans;
+      }
+
+      // Get neighbourhood of nodeset at steps distance away
+      // - nodeset = the current set of nodes in the answer whose neighbours have already been explored -- the INTERIOR of the result
+      // - frontier = the current set of nodes in the answer whose neighbours have not already been explored -- the BOUNDARY of the result
+      // - steps = the number of steps to
+      // - dir = "in", "out", "any" for edge direction
+      // - lab = "*" (for any label) or a label specifying which edges to follow
+      // - dist = the number of steps we've taken to get to this point (i.e. everything in nodeset is less than dist from the starting point, and everything in frontier is exactly dist from the starting point)
+      // Returns: a map {node id : distance from starting nodeset}
+      search_nbhd_helper(resultset, nodeset, steps, frontier, dir, lab, dist) {
+  	if(this.debug_search) {
+  	    console.log(steps, dir, lab);
+  	    this.log_nodeset("INTERIOR ", nodeset);
+  	    this.log_nodeset("BOUNDARY ", frontier);
+  	}
+  	// If steps is not positive, then we just return the nodeset (
+  	if(steps <= 0) {
+  	    for(var n in frontier) {
+  		nodeset[n] = dist;
+  	    }
+  	    return nodeset;
+  	}
+  	if(!frontier) {
+  	    frontier = nodeset;
+  	    nodeset = {};
+  	}
+  	// Check if the frontier is empty
+  	var no_new = true;
+  	for(var n in frontier) {
+  	    no_new = false;
+  	    break;
+  	}
+  	if(no_new) {
+  	    return nodeset;
+  	}
+
+  	// Now we start computing the neighbourhood
+  	var new_frontier = {};
+  	var new_nodeset = {};
+  	for(var n in nodeset) {
+  	    // The distance to everything in the interior nodeset was already known
+  	    new_nodeset[n] = nodeset[n];
+  	}
+  	for(var n in frontier) {
+  	    // The distance to everything on the boundary is exactly dist
+  	    new_nodeset[n] = dist;
+  	}
+  	for(var n in frontier) {
+  	    if(!(n in resultset)) continue;
+  	    for(var label in this.index_edge_label[n]) {
+  		// If we're not searching for this particular label, skip
+  		if(lab != "*" && lab != label) {
+  		    continue;
+  		}
+  		// 
+  		for(var direction in this.index_edge_label[n][label]) {
+  		    // If we're not searching for edges in this direction, skip
+  		    if(dir != "any" && dir != direction) {
+  			continue;
+  		    }
+  		    console.log("S",label,JSON.stringify(this.index_edge_label[n][label]));
+  		    for(var edgeid of this.index_edge_label[n][label][direction]) {
+  			var tgtid = "";
+  			if(direction == "out") {
+  			    tgtid = this.edges[edgeid]["_to"];
+  			}
+  			else if(direction == "in") {
+  			    tgtid = this.edges[edgeid]["_from"];
+  			}
+  			// Before we add this result to the new
+  			// frontier, we need to verify that it is BOTH
+  			// not yet visited, and that it is in the
+  			// ambient resultset we're searching
+  			if(!(tgtid in new_nodeset) && (tgtid in resultset)) {
+  			    new_frontier[tgtid] = true;
+  			}
+  		    }
+  		}
+  	    }
+  	}
+  	return this.search_nbhd_helper(resultset, new_nodeset, steps-1, new_frontier, dir, lab, dist+1);
+      }
+      
+      search(resultset, q) {
+  	if(!resultset) {
+  	    resultset = {};
+  	    for(var n in this.nodes) {
+  		resultset[n] = true;
+  	    }
+  	}
+  	if(this.debug_search) { this.log_nodeset("BEFORE: "+ JSON.stringify(q), resultset); }
+  	var result = {};
+  	if(!q || q.length == 0){
+  	    for(var n in this.nodes){
+  		ans[n] = true;
+  	    }
+  	}
+  	else if(q[0] == "and"){
+  	    // ["and", [subquery1, subquery2, ...]]
+  	    result = this.search(resultset, q[1][0]);
+  	    for(var i = 1; i < q[1].length; i++){
+  		result = this.search(result, q[1][i]);
+  	    }
+  	}
+  	else if(q[0] == "or"){
+  	    // ["or", [subquery1, subquery2, ...]]
+  	    for(var i = 0; i < q[1].length; i++){
+  		var next_result = this.search(resultset, q[1][i]);
+  		result = this.search_union(result,next_result);
+  	    }
+  	}
+  	else if(q[0] == "not"){
+  	    // ["not", [subquery]]
+  	    result = this.search_not(resultset, this.search(resultset, q[1][0]));
+  	}
+  	else if(q[0] == "edge"){
+  	    // ["edge", {"name":<name>, "dir":<dir>, "query":<subquery>}]
+  	    var edge = q[1];
+  	    // First, get the elements of the resultset that match the
+  	    // query (or full resultset) as potential targets:
+  	    var targets = resultset;
+  	    if("query" in q[1]) {
+  		targets = this.search(resultset, q[1].query);
+  	    }
+  	    console.log("T",JSON.stringify(targets));
+  	    // Then query for edges from this nodeset:
+  	    result = this.search_nbhd(resultset, targets, 1, 1, q[1].dir, q[1].name);
+  	}
+  	else if(q[0] == "nbhd"){
+  	    // ["nbhd", [<subquery>, <min_steps>, <max_steps>, <direction>, <label>]]
+  	    var subquery = q[1][0];
+  	    var min_steps = q[1][1];
+  	    var max_steps = q[1][2];
+  	    var dir = q[1][3];
+  	    var lab = q[1][4];
+  	    var targets = this.search(resultset, subquery);
+  	    result = this.search_nbhd(resultset, targets, min_steps, max_steps, dir, lab);
+  	}
+  	else if(q[0] == "name"){
+  	    //["name", <name>]
+  	    var name = q[1].toLowerCase();
+  	    for(var n in resultset){
+  		if(name == "*" || this.nodes[n].name.toLowerCase().indexOf(name) >= 0){
+  		    result[n] = true;
+  		}
+  	    }
+  	}
+  	else if(q[0] == "exactly"){
+  	    // ["exactly",<name>]
+  	    var name = q[1].toLowerCase();
+  	    for(var n in resultset){
+  		if(this.nodes[n].name.toLowerCase() == name){
+  		    result[n] = true;
+  		}
+  	    }
+  	}
+  	else if(q[0] == "prop"){
+  	    // ["prop", [<prop_name>, <comparator>, <val>]]
+  	    // comparator is one of '==', '!=', '<', '>', '<=', '>=', '~'
+  	    var prop_name = q[1][0].toLowerCase();
+  	    var prop_cmp = q[1][1];
+  	    var prop_val = q[1][2];
+  	    if (['==', '!=', '<', '>', '<=', '>=', '~', '!'].indexOf(prop_cmp) == -1) {
+  		throw ("Invalid comparator: "+prop_cmp);
+  	    }
+  	    for(var n in resultset){
+  		var real_val = this.nodes[n][prop_name];
+  		if(CatGraph.compare(prop_cmp, real_val, prop_val)) {
+  		    result[n] = true;
+  		}
+  	    }
+  	}
+  	else if(q[0] == "before"){
+  	    // ["before", <date>]
+  	    var cutoff_date = date_from_string(q[1]);
+  	    for(var n in resultset){
+  		if(!(nodes[n].date)) continue;
+  		var d = date_from_string(nodes[n].date);
+  		if(d && d < cutoff_date){
+  		    result.push(n);
+  		}
+  	    }
+  	}
+  	else if(q[0] == "after"){
+  	    // ["after", <date>]
+  	    var cutoff_date = date_from_string(q[1]);
+  	    for(var n in resultset){
+  		if(!(nodes[n].date)) continue;
+  		var d = date_from_string(nodes[n].date);
+  		if(d && d > cutoff_date){
+  		    result.push(n);
+  		}
+  	    }
+  	}
+  	else {
+  	    console.log("Unrecognised query type:",q[0]);
+  	}
+  	if(this.debug_search) { this.log_nodeset("AFTER: " + JSON.stringify(q), result); }	
+  	return result;
+      }
+      
+      log_nodeset(msg, nodeset) {
+  	console.log(msg);
+  	for(var n in nodeset) {
+  	    console.log(this.nodes[n].name);
+  	}
+      }
+      
+      // Begin actual search functions
+      
+      // // <nodeset1>, <nodeset2>
+      // search_and(resultset, nodeset1, nodeset2) {
+      // 	var ans = {};
+      // 	for(var n in nodeset1) {
+      // 	    if(n in nodeset2 && n in resultset) { ans[n] = true; }
+      // 	}
+      // 	return ans;
+      // }
+
+      // <nodeset1> / <nodeset2>
+      search_union(resultset, nodeset1, nodeset2) {
+  	var ans = {};
+  	for(var n in nodeset2) {
+  	    if(n in resultset) ans[n] = true;
+  	}
+  	for(var n in nodeset1) {
+  	    if(!(n in nodeset2) && n in resultset) { ans[n] = true; }
+  	}
+  	return ans;
+      }
+
+      // !(<nodeset)
+      search_not(resultset, nodeset) {
+  	var ans = {};
+  	for(var n in resultset) { if(!(n in nodeset)) { ans[n] = true; } }
+  	return ans;
+      }
+
+      // <nodeset>[<min_steps>..<max_steps>:<direction>:<label>]
+      // Aliases:
+      // - <nodeset>[<max_steps>]                         = <nodeset>[0..<max_steps>:any:*]
+      // - <nodeset>[<max_steps>:<label>]                 = <nodeset>[0..<max_steps>:any:<label>]
+      // - <nodeset>[<max_steps>:<direction>:<label>]     = <nodeset>[0..<max_steps>:<direction>:<label>]
+      // - <nodeset>[<min_steps>..<max_steps>]            = <nodeset>[<min_steps>..<max_steps>:any:*]
+      // - <nodeset>[<min_steps>..<max_steps>:<label>]    = <nodeset>[<min_steps>..<max_steps>:any:<label>]
+      // --> ["nbhd", [<subquery>, <min_steps>, <max_steps>, <direction>, <label>]]
+      search_nbhd(resultset, nodeset, min_steps, max_steps, direction, label) {
+  	if(direction == "has") {
+  	    direction = "in";
+  	}
+  	else if(direction == "is") {
+  	    direction = "out";
+  	}
+  	else if(direction != "any"){
+  	    throw ("Invalid direction: "+direction);
+  	}
+  	var knbhd = this.search_nbhd_helper(resultset, {}, max_steps, nodeset, direction, label, 0);
+  	console.log("K",JSON.stringify(knbhd));
+  	var ans = {};
+  	for(var nodeid in knbhd) {
+  	    if(min_steps <= knbhd[nodeid] && knbhd[nodeid] <= max_steps) {
+  		ans[nodeid] = knbhd[nodeid];
+  	    }
+  	}
+  	return ans;
+      }
+
+      // "has <label>: <nodeset>"
+      search_has(resultset, nodeset, label) {
+  	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "has", label);
+      }
+
+      // "is <label> of: <nodeset>"
+      search_is(resultset, nodeset, label) {
+  	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "is", label);
+      }
+      
+      // "is <label>" = "an inbound edge of label <label> exists to this node"
+      search_has_label(dir, label) {
+  	return this.search_dir_label_helper(resultset, "in", label)
+      }
+
+      // "has <label>" = "an outbound edge of label <label> exists from this node"
+      search_has_label(resultset, label) {
+  	return this.search_dir_label_helper(resultset, "out", label)
+      }
+
+      // End of search functions
+
+      // Begin report functions
+
+      report_count(nodeset) {
+  	var ans = 0;
+  	for(var n in nodeset) {
+  	    ans++;
+  	}
+  	return ans;
+      }
+      
+      // End report functions
+  }
+
   Vue$1.use(index_esm);
 
   var store = new index_esm.Store({
@@ -12310,7 +13417,7 @@
   	query: 'is category',
   	ready: false,
   	current: '',
-  	nodes: {},
+  	graph: {},
   	recent: [],
   	node_data: {},
   	plugin_data: {}
@@ -12415,8 +13522,10 @@
   	    // 	state.recent.splice(idx, 1);
   	    // }
   	},
-  	METADATA: (state, nodes) => {
-  	    state.nodes = nodes;
+  	METADATA: (state, g) => {
+  	    //state.nodes = nodes;
+  	    console.log("MD",g);
+  	    state.graph = new CatGraph(g["nodes"], g["edges"]);
   	    state.recent = [];
   	    state.ready = true;
   	    state.query = "is category";
@@ -12655,7 +13764,7 @@
   		 'labels': best_labels
   	     };
   	 },
-  	 ...mapState(['nodes']),
+  	 ...mapState(['graph']),
   	 ...mapGetters(['sorted','sortedby'])
        },
        methods: {
@@ -13040,11 +14149,11 @@
     /* style */
     const __vue_inject_styles__$4 = function (inject) {
       if (!inject) return
-      inject("data-v-0d2523a4_0", { source: "\n.sortkey_selected[data-v-0d2523a4] {\n    text-decoration:underline;\n}\n.node-index-menu[data-v-0d2523a4] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-0d2523a4] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-0d2523a4] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-0d2523a4] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AA8RA;IACA,yBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span>\n\t\t<span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t</span>\n\t\t<span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t<span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t    </h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" v-bind:sortkey=\"sort_method\" v-bind:sortasc=\"sort_is_ascending\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes\n\t\t    <span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t    </span>\n\t\t    <span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t    </span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t    <span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t\t</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"n in sorted_nodes\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{nodeset[n].name}} <span v-if=\"'date' in nodeset[n]\" style=\"font-size:.5em;color:#666;\">{{nodeset[n].date}}</span></router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in sorted(labeldata.disconnected)\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodeset[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {},\n\t     'sort_method': 'name',\n\t     'sort_is_ascending': true\n\t }\n     },\n     computed: {\n\t sorted_nodes: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return this.sortedby(this.nodeset, ans, this.sort_method, this.sort_is_ascending)\n\t },\n\t nodelist: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return ans;\n\t },\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t].target;\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t].target;\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t // Intuitively, we are going to arrange the |count|\n\t\t // nodes in a rectangle with |has| or |is| columns. This\n\t\t // is the most \"discriminitave\" if the rectangle is a\n\t\t // square, i.e. |has| or |is| is close to sqrt(|count|).\n\t\t     \n\t\t // However, we also want to normalise for number of\n\t\t // nodes, to a point, and we want to penalise being too close to the useless values of \n\n\t\t var N = all_labels[l].count;\n\t\t var tgt = Math.sqrt(N);\n\t\t var scores = [];\n\t\t var ns = [all_labels[l].has.length, all_labels[l].is.length]\n\t\t for(var i = 0; i < 2; i++) {\n\t\t     var n = ns[i];\n\t\t     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better\n\t\t     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better\n\t\t     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)\n\t\t     var score = nodes_score*(tgt_score + avoid_ends_score);\n\t\t     \n\t\t     console.log(\"D\",l,i,tgt_score, avoid_ends_score, nodes_score,score)   \n\t\t     scores.push(score);\n\t\t }\n\t\t return Math.max(scores[0], scores[1]);\n\t     }\n\t     console.log(\"ALAL\",all_labels);\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t // We want to sort in increa\n\t\t if(da < db) return 1; // Sort a before b\n\t\t if(da > db) return -1; // Sort b before a\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i].target;\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i].target;\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['nodes']),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t sortasc: function(ascending) {\n\t     Vue.set(this, 'sort_is_ascending', ascending);\n\t },\n\t sortby: function(key) {\n\t     Vue.set(this, 'sort_method', key);\n\t },\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .sortkey_selected {\n     text-decoration:underline;\n }\n \n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-b751439e_0", { source: "\n.sortkey_selected[data-v-b751439e] {\n    text-decoration:underline;\n}\n.node-index-menu[data-v-b751439e] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-b751439e] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-b751439e] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-b751439e] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AA8RA;IACA,yBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span>\n\t\t<span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t</span>\n\t\t<span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t<span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t    </h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" v-bind:sortkey=\"sort_method\" v-bind:sortasc=\"sort_is_ascending\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes\n\t\t    <span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t    </span>\n\t\t    <span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t    </span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t    <span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t\t</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"n in sorted_nodes\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{nodeset[n].name}} <span v-if=\"'date' in nodeset[n]\" style=\"font-size:.5em;color:#666;\">{{nodeset[n].date}}</span></router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in sorted(labeldata.disconnected)\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodeset[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {},\n\t     'sort_method': 'name',\n\t     'sort_is_ascending': true\n\t }\n     },\n     computed: {\n\t sorted_nodes: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return this.sortedby(this.nodeset, ans, this.sort_method, this.sort_is_ascending)\n\t },\n\t nodelist: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return ans;\n\t },\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t].target;\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t].target;\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t // Intuitively, we are going to arrange the |count|\n\t\t // nodes in a rectangle with |has| or |is| columns. This\n\t\t // is the most \"discriminitave\" if the rectangle is a\n\t\t // square, i.e. |has| or |is| is close to sqrt(|count|).\n\t\t     \n\t\t // However, we also want to normalise for number of\n\t\t // nodes, to a point, and we want to penalise being too close to the useless values of \n\n\t\t var N = all_labels[l].count;\n\t\t var tgt = Math.sqrt(N);\n\t\t var scores = [];\n\t\t var ns = [all_labels[l].has.length, all_labels[l].is.length]\n\t\t for(var i = 0; i < 2; i++) {\n\t\t     var n = ns[i];\n\t\t     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better\n\t\t     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better\n\t\t     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)\n\t\t     var score = nodes_score*(tgt_score + avoid_ends_score);\n\t\t     \n\t\t     console.log(\"D\",l,i,tgt_score, avoid_ends_score, nodes_score,score)   \n\t\t     scores.push(score);\n\t\t }\n\t\t return Math.max(scores[0], scores[1]);\n\t     }\n\t     console.log(\"ALAL\",all_labels);\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t // We want to sort in increa\n\t\t if(da < db) return 1; // Sort a before b\n\t\t if(da > db) return -1; // Sort b before a\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i].target;\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i].target;\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['graph']),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t sortasc: function(ascending) {\n\t     Vue.set(this, 'sort_is_ascending', ascending);\n\t },\n\t sortby: function(key) {\n\t     Vue.set(this, 'sort_method', key);\n\t },\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .sortkey_selected {\n     text-decoration:underline;\n }\n \n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$4 = "data-v-0d2523a4";
+    const __vue_scope_id__$4 = "data-v-b751439e";
     /* module identifier */
     const __vue_module_identifier__$4 = undefined;
     /* functional template */
@@ -19914,7 +21023,7 @@
   	 resultset: function() {
   	     var ans = {};
   	     for(var r of this.result) {
-  		 ans[r] = this.nodes[r];
+  		 ans[r] = this.graph.nodes[r];
   	     }
   	     return ans;
   	 },
@@ -19927,87 +21036,21 @@
   	     return ans;
   	 },
   	 best_highlights: function() {
-  	     var nodes_by_deg = [];
-  	     for(var n in this.highlightset) {
-  		 var targets = {};
-  		 for(var label in this.nodes[n].edges.has) {
-  		     for(var edge of this.nodes[n].edges.has[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 for(var label in this.nodes[n].edges.is) {
-  		     for(var edge of this.nodes[n].edges.is[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 var deg = 0;
-  		 for(var t in targets) {
-  		     deg++;
-  		 }
-  		 nodes_by_deg.push({"node":n,"degree":deg});
-  	     }
-  	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
-  	     return nodes_by_deg.slice(0,10);
+  	     return this.subgraph.subgraph(this.highlightset).best_nodes().slice(0,10);
+  	 },
+  	 subgraph: function() {
+  	     if(!this.ready) return;
+  	     console.log("GGGGGG",this.graph);
+  	     return this.graph;
   	 },
   	 best_nodes: function() {
-  	     var nodes_by_deg = [];
-  	     for(var n in this.resultset) {
-  		 var targets = {};
-  		 for(var label in this.nodes[n].edges.has) {
-  		     for(var edge of this.nodes[n].edges.has[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 for(var label in this.nodes[n].edges.is) {
-  		     for(var edge of this.nodes[n].edges.is[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     targets[target] = true;
-  			 }
-  		     }
-  		 }
-  		 var deg = 0;
-  		 for(var t in targets) {
-  		     deg++;
-  		 }
-  		 nodes_by_deg.push({"node":n,"degree":deg});
-  	     }
-  	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
-  	     return nodes_by_deg.slice(0,10);
+  	     if(!this.ready) return [];
+  	     this.subgraph.best_nodes().slice(0,10);
   	 },
   	 best_edges: function() {
-  	     var edges_with_count = {};
-  	     for(var n in this.resultset) {
-  		 // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target
-  		 for(var label in this.nodes[n].edges.has) {
-  		     if(!(label in edges_with_count)) {
-  			 edges_with_count[label] = 0;
-  		     }
-  		     for(var edge of this.nodes[n].edges.has[label]) {
-  			 var target = edge.target;
-  			 if(target in this.resultset) {
-  			     edges_with_count[label]++;
-  			 }
-  		     }
-  		 }
-  	     }
-  	     var edges_by_count = [];
-  	     for(var e in edges_with_count) {
-  		 edges_by_count.push({"edge":e,"count":edges_with_count[e]});
-  	     }
-  	     edges_by_count.sort(function(a, b){return b.count-a.count;});
-  	     return edges_by_count.slice(0,10);
+  	     return this.subgraph.best_labels().slice(0,10);
   	 },
-
+  	 ...mapState(['graph','ready']),
        },
        data() {
   	 return {
@@ -20052,6 +21095,8 @@
   	     this.do_highlight();
   	 },
   	 run_search: function(qry, nodeset) {
+  	     if(!this.ready) return [];
+  	     this.graph.debug_search = true;
   	     this.entered_query = qry;
   	     this.errormsg = "";
   	     if(qry.trim().length == 0) {
@@ -20064,13 +21109,14 @@
   		 this.errormsg = e.toString();
   		 return [];
   	     }
-  	     return Vue$1.category_search(q, nodeset);
+  	     console.log("QQ",q,this.graph);
+  	     return this.graph.search(nodeset, q);
   	 },
   	 search: function() {
   	     if(this.query.trim().length == 0) {
   		 this.query = "*";
   	     }
-  	     var query_result = this.run_search(this.query, this.nodes);
+  	     var query_result = this.run_search(this.query);
   	     console.log(query_result);
   	     if(query_result.length == 0) {
   		 return;
@@ -20081,12 +21127,12 @@
   	     else {
   		 this.result = query_result;
   		 console.log("RES",this.result);
-  		 for(var i = 0; i < this.result.length; i++){
-  		     if(this.nodes[this.result[i]].name == this.query.trim()) {
-  			 this.$router.push('/node/'+this.result[i]);
-  			 break;
-  		     }
-  		 }
+  		 /* for(var i = 0; i < this.result.length; i++){
+  		    if(this.nodes[this.result[i]].name == this.query.trim()) {
+  		    this.$router.push('/node/'+this.result[i]);
+  		    break;
+  		    }
+  		    }*/
   	     }
   	 },
   	 do_highlight: function() {
@@ -20195,9 +21241,12 @@
                                 { attrs: { to: "./node/" + n.node } },
                                 [
                                   _vm._v(
-                                    _vm._s(_vm.nodes[n.node].name) +
+                                    _vm._s(_vm.graph.nodes[n].name) +
                                       " (" +
-                                      _vm._s(n.degree) +
+                                      _vm._s(
+                                        _vm.graph.nodes[n]["_outdegree"] +
+                                          _vm.graph.nodes[n]["_indegree"]
+                                      ) +
                                       ")"
                                   )
                                 ]
@@ -20255,16 +21304,19 @@
                         on: {
                           click: function($event) {
                             _vm.set_highlight(
-                              "(=" + _vm.nodes[n.node].name + ")[1]"
+                              "(=" + _vm.graph.nodes[n].name + ")[1]"
                             );
                           }
                         }
                       },
                       [
                         _vm._v(
-                          _vm._s(_vm.nodes[n.node].name) +
+                          _vm._s(_vm.graph.nodes[n].name) +
                             " (" +
-                            _vm._s(n.degree) +
+                            _vm._s(
+                              _vm.graph.nodes[n]["_outdegree"] +
+                                _vm.graph.nodes[n]["_indegree"]
+                            ) +
                             ")"
                         )
                       ]
@@ -20283,7 +21335,7 @@
                           on: {
                             click: function($event) {
                               _vm.add_to_query(
-                                "(has " + e.edge + " / is " + e.edge + ")"
+                                "(has " + e.label + " / is " + e.label + ")"
                               );
                             }
                           }
@@ -20296,7 +21348,7 @@
                           staticClass: "badge_button",
                           on: {
                             click: function($event) {
-                              _vm.add_to_query("!(is " + e.edge + ")");
+                              _vm.add_to_query("!(is " + e.label + ")");
                             }
                           }
                         },
@@ -20309,11 +21361,11 @@
                         attrs: { href: "#" },
                         on: {
                           click: function($event) {
-                            _vm.set_highlight("(is " + e.edge + ")");
+                            _vm.set_highlight("(is " + e.label + ")");
                           }
                         }
                       },
-                      [_vm._v(_vm._s(e.edge) + " (" + _vm._s(e.count) + ")")]
+                      [_vm._v(_vm._s(e.label) + " (" + _vm._s(e.count) + ")")]
                     )
                   ])
                 })
@@ -20451,11 +21503,11 @@
     /* style */
     const __vue_inject_styles__$9 = function (inject) {
       if (!inject) return
-      inject("data-v-4ddbaeeb_0", { source: "\n.sidebar-item[data-v-4ddbaeeb] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-4ddbaeeb] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-4ddbaeeb] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AAqQA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n    <div class=\"searchbar\"> \n\t<input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t<span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\n\n\t<div v-if=\"mode=='graph'\">\n\t    <div style=\"float:left;width:20%;\">\n\t\t<div v-if=\"highlight.length > 0\">\n\t\t    <b>Highlighted</b>\n\t\t    <div v-for=\"n in best_highlights\" class=\"sidebar-item\">\n\t\t\t<router-link :to=\"'./node/'+ n.node\">{{nodes[n.node].name}} ({{n.degree}})</router-link>\n\t\t    </div>\n\t\t    <hr />\n\t\t</div>\n\t\t<b>Top nodes</b>\n\t\t<div v-for=\"n in best_nodes\" class=\"sidebar-item\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + nodes[n.node].name + ')[1]')\">{{nodes[n.node].name}} ({{n.degree}})</a> \n\t\t</div>\n\t\t<hr />\n\t\t<b>Top labels</b>\n\t\t<div v-for=\"e in best_edges\" class=\"sidebar-item\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.edge + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(is ' + e.edge + ')')\">{{e.edge}} ({{e.count}})</a>\n\t\t</div>\n\t    </div>\n\t    <div style=\"float:left;width:80%;\">\n\t\t<div style=\"float:left\">Highlight: <input type=\"text\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:keyup.enter=\"do_highlight\" />\n\t\t    <span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t    <span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t    <span v-on:click=\"clear_highlight()\" class=\"close_x\"><span class=\"fas fa-backspace\"></span></span>\n\t\t    <span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t    <span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t\t</div><br /><br />\n\t\t<graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"result.length > 0\" v-on:clickedNode=\"goto_node\"></graph-index>\n\t    </div>\n\t</div>\n\t<div v-if=\"mode=='list'\">\n\t    <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     props: ['nodes','initquery'],\n     computed: { \n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r of this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var nodes_by_deg = [];\n\t     for(var n in this.highlightset) {\n\t\t var targets = {}\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     for(var edge of this.nodes[n].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t for(var label in this.nodes[n].edges.is) {\n\t\t     for(var edge of this.nodes[n].edges.is[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t var deg = 0;\n\t\t for(var t in targets) {\n\t\t     deg++;\n\t\t }\n\t\t nodes_by_deg.push({\"node\":n,\"degree\":deg});\n\t     }\n\t     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });\n\t     return nodes_by_deg.slice(0,10);\n\t },\n\t best_nodes: function() {\n\t     var nodes_by_deg = [];\n\t     for(var n in this.resultset) {\n\t\t var targets = {}\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     for(var edge of this.nodes[n].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t for(var label in this.nodes[n].edges.is) {\n\t\t     for(var edge of this.nodes[n].edges.is[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     targets[target] = true;\n\t\t\t }\n\t\t     }\n\t\t }\n\t\t var deg = 0;\n\t\t for(var t in targets) {\n\t\t     deg++;\n\t\t }\n\t\t nodes_by_deg.push({\"node\":n,\"degree\":deg});\n\t     }\n\t     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });\n\t     return nodes_by_deg.slice(0,10);\n\t },\n\t best_edges: function() {\n\t     var edges_with_count = {};\n\t     for(var n in this.resultset) {\n\t\t var count = 0;\n\t\t // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target\n\t\t for(var label in this.nodes[n].edges.has) {\n\t\t     if(!(label in edges_with_count)) {\n\t\t\t edges_with_count[label] = 0\n\t\t     }\n\t\t     for(var edge of this.nodes[n].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t if(target in this.resultset) {\n\t\t\t     edges_with_count[label]++;\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     var edges_by_count = [];\n\t     for(var e in edges_with_count) {\n\t\t edges_by_count.push({\"edge\":e,\"count\":edges_with_count[e]})\n\t     }\n\t     edges_by_count.sort(function(a, b){return b.count-a.count;});\n\t     return edges_by_count.slice(0,10);\n\t },\n\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t }\n     },\n     watch: {\n\t nodes: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.search();\n\t     });\n\t }\n     },\n     methods: {\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     return Vue.category_search(q, nodeset);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     var query_result = this.run_search(this.query, this.nodes)\n\t     console.log(query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t console.log(\"RES\",this.result);\n\t\t for(var i = 0; i < this.result.length; i++){\n\t\t     if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t\t this.$router.push('/node/'+this.result[i]);\n\t\t\t break;\n\t\t     }\n\t\t }\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t }\n     },\n     mounted: function() {\n\t this.query = this.initquery;\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-1e8c2104_0", { source: "\n.sidebar-item[data-v-1e8c2104] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-1e8c2104] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-1e8c2104] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/search/search.vue"],"names":[],"mappings":";AAqMA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA","file":"search.vue","sourcesContent":["<template>\n    <div class=\"searchbar\"> \n\t<input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" />\n\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t<span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\n\n\t<div v-if=\"mode=='graph'\">\n\t    <div style=\"float:left;width:20%;\">\n\t\t<div v-if=\"highlight.length > 0\">\n\t\t    <b>Highlighted</b>\n\t\t    <div v-for=\"n in best_highlights\" class=\"sidebar-item\">\n\t\t\t<router-link :to=\"'./node/'+ n.node\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</router-link>\n\t\t    </div>\n\t\t    <hr />\n\t\t</div>\n\t\t<b>Top nodes</b>\n\t\t<div v-for=\"n in best_nodes\" class=\"sidebar-item\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + nodes[n.node].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1]')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t\t<hr />\n\t\t<b>Top labels</b>\n\t\t<div v-for=\"e in best_edges\" class=\"sidebar-item\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t\t</div>\n\t    </div>\n\t    <div style=\"float:left;width:80%;\">\n\t\t<div style=\"float:left\">Highlight: <input type=\"text\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:keyup.enter=\"do_highlight\" />\n\t\t    <span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t    <span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t    <span v-on:click=\"clear_highlight()\" class=\"close_x\"><span class=\"fas fa-backspace\"></span></span>\n\t\t    <span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t    <span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t\t</div><br /><br />\n\t\t<graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"result.length > 0\" v-on:clickedNode=\"goto_node\"></graph-index>\n\t    </div>\n\t</div>\n\t<div v-if=\"mode=='list'\">\n\t    <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'search',\n     props: ['nodes','initquery'],\n     computed: { \n\t resultset: function() {\n\t     var ans = {};\n\t     for(var r of this.result) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r of this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     return this.subgraph.subgraph(this.highlightset).best_nodes().slice(0,10);\n\t },\n\t subgraph: function() {\n\t     if(!this.ready) return;\n\t     console.log(\"GGGGGG\",this.graph);\n\t     return this.graph;\n\t },\n\t best_nodes: function() {\n\t     if(!this.ready) return [];\n\t     this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t ...mapState(['graph','ready']),\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t }\n     },\n     watch: {\n\t nodes: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.search();\n\t     });\n\t }\n     },\n     methods: {\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return [];\n\t     this.graph.debug_search = true;\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     return this.graph.search(nodeset, q);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     var query_result = this.run_search(this.query)\n\t     console.log(query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t console.log(\"RES\",this.result);\n\t\t /* for(var i = 0; i < this.result.length; i++){\n\t\t    if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t    this.$router.push('/node/'+this.result[i]);\n\t\t    break;\n\t\t    }\n\t\t    }*/\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t }\n     },\n     mounted: function() {\n\t this.query = this.initquery;\n\t this.search();\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$9 = "data-v-4ddbaeeb";
+    const __vue_scope_id__$9 = "data-v-1e8c2104";
     /* module identifier */
     const __vue_module_identifier__$9 = undefined;
     /* functional template */
@@ -33489,36 +34541,14 @@
   	     }
   	     return ans;
   	 },
+  	 subgraph: function() {
+  	     return this.graph.subgraph(this.nodeset);
+  	 },
   	 graph_data: function() {
-  	     var ans = {nodes:[],edges:[]};
-  	     var edgeset = {};
-  	     for(var id in this.nodeset) {
-  		 console.log("NODE",id,name);
-  		 ans.nodes.push({"key":id,attributes:{"label":this.nodeset[id].name, "color":"#00f"}});
-  		 if(!(this.nodeset[id].edges)) continue;
-  		 for(var label in this.nodeset[id].edges.has) {
-  		     for(var edge of this.nodeset[id].edges.has[label]) {
-  			 var target = edge.target;
-  			 console.log("EDGE",edge,id,target);
-  			 if(target in this.nodeset) {
-  			     var eid = `${id}_${target}_${label}`;
-  			     if(eid in edgeset) {
-  				 edgeset[eid].attributes.label += ", " + label;
-  			     }
-  			     else {
-  				 edgeset[eid] = {"source":id,"target":target,attributes:{"label":label}};
-  			     }
-  			 }
-  		     }
-  		 }
-  	     }
-  	     for(var eid in edgeset) {
-  		 ans.edges.push(edgeset[eid]);
-  	     }
-  	     return ans;
+  	     return this.subgraph.sigma_graph();
   	 },
   	 ...mapState([
-  	     'nodes'
+  	     'graph'
   	 ]),
   	 ...mapGetters(['sorted','sortedby'])
        },
@@ -33555,32 +34585,32 @@
   		 clearTimeout(this.layout_timer);
   		 this.layout_timer = null;
   	     }
-  	     this.graph.clear();
-  	     this.graph.import(this.graph_data);
-  	     this.graph.nodes().forEach(node => {
-  		 this.graph.mergeNodeAttributes(node, {
+  	     this.graph_display.clear();
+  	     this.graph_display.import(this.graph_data);
+  	     this.graph_display.nodes().forEach(node => {
+  		 this.graph_display.mergeNodeAttributes(node, {
   		     x: Math.random(),
   		     y: Math.random(),
-  		     size: Math.max(3,Math.min(this.graph.degree(node), 8)),
+  		     size: Math.max(3,Math.min(this.graph_display.degree(node), 8)),
   		     color: node in this.highlight ? "#f00" : "#00f"
   		 });
   	     });
   	     
-  	     var settings = graphologyLayoutForceatlas2.inferSettings(this.graph);
+  	     var settings = graphologyLayoutForceatlas2.inferSettings(this.graph_display);
   	     console.log(settings);
   	     settings.slowDown = 10;
   	     //saneSettings.strongGravityMode = true;
   	     //saneSettings.gravity = 3;
-  	     this.layout = new FA2Layout(this.graph, {settings: settings});
+  	     this.layout = new FA2Layout(this.graph_display, {settings: settings});
   	     this.layout.start();
   	     var self = this;
   	     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));
   	 },
   	 update_highlight: function() {
   	     console.log("updating highlight",this.highlight);
-  	     this.graph.nodes().forEach(node => {
+  	     this.graph_display.nodes().forEach(node => {
   		 console.log("N",node, node in this.highlight);
-  		 this.graph.mergeNodeAttributes(node, {color: node in this.highlight ? "#f00" : "#00f"});
+  		 this.graph_display.mergeNodeAttributes(node, {color: node in this.highlight ? "#f00" : "#00f"});
   	     });
   	     
   	 }
@@ -33588,8 +34618,8 @@
        mounted: function () {
   	 this.$nextTick(function () {
   	     console.log("initing graph container");
-  	     this.graph = new DirectedGraph({multi: true});
-  	     this.renderer = new WebGLRenderer(this.graph, document.getElementById("graph_container"), {
+  	     this.graph_display = new DirectedGraph({multi: true});
+  	     this.renderer = new WebGLRenderer(this.graph_display, document.getElementById("graph_container"), {
   		 defaultEdgeType: 'arrow',
   		 defaultEdgeColor: '#888',
   		 renderEdgeLabels: true,
@@ -33637,8 +34667,8 @@
   		     camera.viewportToGraph(self.renderer, e.x, e.y)
   		 );
 
-  		 self.graph.setNodeAttribute(draggedNode, 'x', pos.x);
-  		 self.graph.setNodeAttribute(draggedNode, 'y', pos.y);
+  		 self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);
+  		 self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);
   	     });
 
   	     this.update_graph();
@@ -33672,11 +34702,11 @@
     /* style */
     const __vue_inject_styles__$a = function (inject) {
       if (!inject) return
-      inject("data-v-d60dedc4_0", { source: "\n.graph_index[data-v-d60dedc4] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n}\n#graph_container[data-v-d60dedc4] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n    color: unset;\n    border: 1px solid #ccc;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/graph.vue"],"names":[],"mappings":";AA2LA;IACA,WAAA;IACA,eAAA;IACA,WAAA;AACA;AACA;IACA,WAAA;IACA,eAAA;IACA,WAAA;IACA,YAAA;IACA,sBAAA;AACA","file":"graph.vue","sourcesContent":["<template>\n    <div class=\"graph_index\">\n\t<div id=\"graph_container\"></div>\n    </div>\n</template>\n\n<script>\n import {DirectedGraph} from 'graphology';\n import FA2 from 'graphology-layout-forceatlas2';\n import FA2Layout from 'graphology-layout-forceatlas2/worker';\n import WebGLRenderer from 'sigma/renderers/webgl';\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'graph-index',\n     props: ['nodeset','highlight'],\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var id in this.nodeset) {\n\t\t ans++;\n\t     }\n\t     return ans;\n\t },\n\t graph_data: function() {\n\t     var ans = {nodes:[],edges:[]};\n\t     var edgeset = {};\n\t     for(var id in this.nodeset) {\n\t\t console.log(\"NODE\",id,name);\n\t\t ans.nodes.push({\"key\":id,attributes:{\"label\":this.nodeset[id].name, \"color\":\"#00f\"}})\n\t\t if(!(this.nodeset[id].edges)) continue;\n\t\t for(var label in this.nodeset[id].edges.has) {\n\t\t     for(var edge of this.nodeset[id].edges.has[label]) {\n\t\t\t var target = edge.target;\n\t\t\t console.log(\"EDGE\",edge,id,target);\n\t\t\t if(target in this.nodeset) {\n\t\t\t     var eid = `${id}_${target}_${label}`;\n\t\t\t     if(eid in edgeset) {\n\t\t\t\t edgeset[eid].attributes.label += \", \" + label;\n\t\t\t     }\n\t\t\t     else {\n\t\t\t\t edgeset[eid] = {\"source\":id,\"target\":target,attributes:{\"label\":label}};\n\t\t\t     }\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     for(var eid in edgeset) {\n\t\t ans.edges.push(edgeset[eid]);\n\t     }\n\t     return ans;\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     watch: {\n\t nodeset: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_graph();\n\t     });\n\t },\n\t highlight: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_highlight();\n\t     });\n\t }\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i].target;\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t update_graph: function() {\n\t     if(this.layout) {\n\t\t this.layout.stop();\n\t\t this.layout = null;\n\t     }\n\t     if(this.layout_timer) {\n\t\t clearTimeout(this.layout_timer);\n\t\t this.layout_timer = null;\n\t     }\n\t     this.graph.clear();\n\t     this.graph.import(this.graph_data);\n\t     this.graph.nodes().forEach(node => {\n\t\t this.graph.mergeNodeAttributes(node, {\n\t\t     x: Math.random(),\n\t\t     y: Math.random(),\n\t\t     size: Math.max(3,Math.min(this.graph.degree(node), 8)),\n\t\t     color: node in this.highlight ? \"#f00\" : \"#00f\"\n\t\t });\n\t     });\n\t     \n\t     var settings = FA2.inferSettings(this.graph);\n\t     console.log(settings);\n\t     settings.slowDown = 10;\n\t     //saneSettings.strongGravityMode = true;\n\t     //saneSettings.gravity = 3;\n\t     this.layout = new FA2Layout(this.graph, {settings: settings});\n\t     this.layout.start();\n\t     var self = this;\n\t     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));\n\t },\n\t update_highlight: function() {\n\t     console.log(\"updating highlight\",this.highlight);\n\t     this.graph.nodes().forEach(node => {\n\t\t console.log(\"N\",node, node in this.highlight);\n\t\t this.graph.mergeNodeAttributes(node, {color: node in this.highlight ? \"#f00\" : \"#00f\"});\n\t     });\n\t     \n\t }\n     },\n     mounted: function () {\n\t this.$nextTick(function () {\n\t     console.log(\"initing graph container\");\n\t     this.graph = new DirectedGraph({multi: true});\n\t     this.renderer = new WebGLRenderer(this.graph, document.getElementById(\"graph_container\"), {\n\t\t defaultEdgeType: 'arrow',\n\t\t defaultEdgeColor: '#888',\n\t\t renderEdgeLabels: true,\n\t\t labelSize: 12,\n\t\t labelGrid: {\n\t\t     cell: {\n\t\t\t width: 40,\n\t\t\t height: 20\n\t\t     },\n\t\t     renderedSizeThreshold: 1}});\n\t     const camera = this.renderer.getCamera();\n\t     const captor = this.renderer.getMouseCaptor();\n\n\t     // State\n\t     let draggedNode = null, dragging = false;\n\n\t     var self = this;\n\t     \n\t     this.renderer.on('downNode', (e) => {\n\t\t dragging = true;\n\t\t console.log(\"down\",e);\n\t\t draggedNode = e.node;\n\t\t camera.disable();\n\t     });\n\n\t     this.renderer.on('clickNode', (e) => {\n\t\t console.log(\"nav\",e.node);\n\t\t //this.$router.push(\"/node/\"+e.node);\n\t\t this.$emit(\"clickedNode\",e.node)\n\t     });\n\n\t     captor.on('mouseup', e => {\n\t\t dragging = false;\n\t\t console.log(\"up\",e);\n\t\t draggedNode = null;\n\t\t camera.enable();\n\t     });\n\n\t     captor.on('mousemove', e => {\n\t\t if (!dragging)\n\t\t     return;\n\n\t\t // Get new position of node\n\t\t const pos = self.renderer.normalizationFunction.inverse(\n\t\t     camera.viewportToGraph(self.renderer, e.x, e.y)\n\t\t );\n\n\t\t self.graph.setNodeAttribute(draggedNode, 'x', pos.x);\n\t\t self.graph.setNodeAttribute(draggedNode, 'y', pos.y);\n\t     });\n\n\t     this.update_graph();\n\t     this.update_highlight();\n\t });\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .graph_index {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n }\n #graph_container {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n     color: unset;\n     border: 1px solid #ccc;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-0f865908_0", { source: "\n.graph_index[data-v-0f865908] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n}\n#graph_container[data-v-0f865908] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n    color: unset;\n    border: 1px solid #ccc;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/graph.vue"],"names":[],"mappings":";AAqKA;IACA,WAAA;IACA,eAAA;IACA,WAAA;AACA;AACA;IACA,WAAA;IACA,eAAA;IACA,WAAA;IACA,YAAA;IACA,sBAAA;AACA","file":"graph.vue","sourcesContent":["<template>\n    <div class=\"graph_index\">\n\t<div id=\"graph_container\"></div>\n    </div>\n</template>\n\n<script>\n import {DirectedGraph} from 'graphology';\n import FA2 from 'graphology-layout-forceatlas2';\n import FA2Layout from 'graphology-layout-forceatlas2/worker';\n import WebGLRenderer from 'sigma/renderers/webgl';\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'graph-index',\n     props: ['nodeset','highlight'],\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var id in this.nodeset) {\n\t\t ans++;\n\t     }\n\t     return ans;\n\t },\n\t subgraph: function() {\n\t     return this.graph.subgraph(this.nodeset);\n\t },\n\t graph_data: function() {\n\t     return this.subgraph.sigma_graph();\n\t },\n\t ...mapState([\n\t     'graph'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     watch: {\n\t nodeset: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_graph();\n\t     });\n\t },\n\t highlight: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_highlight();\n\t     });\n\t }\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i].target;\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t update_graph: function() {\n\t     if(this.layout) {\n\t\t this.layout.stop();\n\t\t this.layout = null;\n\t     }\n\t     if(this.layout_timer) {\n\t\t clearTimeout(this.layout_timer);\n\t\t this.layout_timer = null;\n\t     }\n\t     this.graph_display.clear();\n\t     this.graph_display.import(this.graph_data);\n\t     this.graph_display.nodes().forEach(node => {\n\t\t this.graph_display.mergeNodeAttributes(node, {\n\t\t     x: Math.random(),\n\t\t     y: Math.random(),\n\t\t     size: Math.max(3,Math.min(this.graph_display.degree(node), 8)),\n\t\t     color: node in this.highlight ? \"#f00\" : \"#00f\"\n\t\t });\n\t     });\n\t     \n\t     var settings = FA2.inferSettings(this.graph_display);\n\t     console.log(settings);\n\t     settings.slowDown = 10;\n\t     //saneSettings.strongGravityMode = true;\n\t     //saneSettings.gravity = 3;\n\t     this.layout = new FA2Layout(this.graph_display, {settings: settings});\n\t     this.layout.start();\n\t     var self = this;\n\t     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));\n\t },\n\t update_highlight: function() {\n\t     console.log(\"updating highlight\",this.highlight);\n\t     this.graph_display.nodes().forEach(node => {\n\t\t console.log(\"N\",node, node in this.highlight);\n\t\t this.graph_display.mergeNodeAttributes(node, {color: node in this.highlight ? \"#f00\" : \"#00f\"});\n\t     });\n\t     \n\t }\n     },\n     mounted: function () {\n\t this.$nextTick(function () {\n\t     console.log(\"initing graph container\");\n\t     this.graph_display = new DirectedGraph({multi: true});\n\t     this.renderer = new WebGLRenderer(this.graph_display, document.getElementById(\"graph_container\"), {\n\t\t defaultEdgeType: 'arrow',\n\t\t defaultEdgeColor: '#888',\n\t\t renderEdgeLabels: true,\n\t\t labelSize: 12,\n\t\t labelGrid: {\n\t\t     cell: {\n\t\t\t width: 40,\n\t\t\t height: 20\n\t\t     },\n\t\t     renderedSizeThreshold: 1}});\n\t     const camera = this.renderer.getCamera();\n\t     const captor = this.renderer.getMouseCaptor();\n\n\t     // State\n\t     let draggedNode = null, dragging = false;\n\n\t     var self = this;\n\t     \n\t     this.renderer.on('downNode', (e) => {\n\t\t dragging = true;\n\t\t console.log(\"down\",e);\n\t\t draggedNode = e.node;\n\t\t camera.disable();\n\t     });\n\n\t     this.renderer.on('clickNode', (e) => {\n\t\t console.log(\"nav\",e.node);\n\t\t //this.$router.push(\"/node/\"+e.node);\n\t\t this.$emit(\"clickedNode\",e.node)\n\t     });\n\n\t     captor.on('mouseup', e => {\n\t\t dragging = false;\n\t\t console.log(\"up\",e);\n\t\t draggedNode = null;\n\t\t camera.enable();\n\t     });\n\n\t     captor.on('mousemove', e => {\n\t\t if (!dragging)\n\t\t     return;\n\n\t\t // Get new position of node\n\t\t const pos = self.renderer.normalizationFunction.inverse(\n\t\t     camera.viewportToGraph(self.renderer, e.x, e.y)\n\t\t );\n\n\t\t self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);\n\t\t self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);\n\t     });\n\n\t     this.update_graph();\n\t     this.update_highlight();\n\t });\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .graph_index {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n }\n #graph_container {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n     color: unset;\n     border: 1px solid #ccc;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$a = "data-v-d60dedc4";
+    const __vue_scope_id__$a = "data-v-0f865908";
     /* module identifier */
     const __vue_module_identifier__$a = undefined;
     /* functional template */
@@ -46064,898 +47094,8 @@
       undefined
     );
 
-  /* parser generated by jison 0.4.18 */
-  /*
-    Returns a Parser object of the following structure:
-
-    Parser: {
-      yy: {}
-    }
-
-    Parser.prototype: {
-      yy: {},
-      trace: function(),
-      symbols_: {associative list: name ==> number},
-      terminals_: {associative list: number ==> name},
-      productions_: [...],
-      performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate, $$, _$),
-      table: [...],
-      defaultActions: {...},
-      parseError: function(str, hash),
-      parse: function(input),
-
-      lexer: {
-          EOF: 1,
-          parseError: function(str, hash),
-          setInput: function(input),
-          input: function(),
-          unput: function(str),
-          more: function(),
-          less: function(n),
-          pastInput: function(),
-          upcomingInput: function(),
-          showPosition: function(),
-          test_match: function(regex_match_array, rule_index),
-          next: function(),
-          lex: function(),
-          begin: function(condition),
-          popState: function(),
-          _currentRules: function(),
-          topState: function(),
-          pushState: function(condition),
-
-          options: {
-              ranges: boolean           (optional: true ==> token location info will include a .range[] member)
-              flex: boolean             (optional: true ==> flex-like lexing behaviour where the rules are tested exhaustively to find the longest match)
-              backtrack_lexer: boolean  (optional: true ==> lexer regexes are tested in order and for each matching regex the action code is invoked; the lexer terminates the scan when a token is returned by the action code)
-          },
-
-          performAction: function(yy, yy_, $avoiding_name_collisions, YY_START),
-          rules: [...],
-          conditions: {associative list: name ==> set},
-      }
-    }
-
-
-    token location info (@$, _$, etc.): {
-      first_line: n,
-      last_line: n,
-      first_column: n,
-      last_column: n,
-      range: [start_number, end_number]       (where the numbers are indexes into the input string, regular zero-based)
-    }
-
-
-    the parseError function receives a 'hash' object with these members for lexer and parser errors: {
-      text:        (matched text)
-      token:       (the produced terminal token, if any)
-      line:        (yylineno)
-    }
-    while parser (grammar) errors will also provide these members, i.e. parser errors deliver a superset of attributes: {
-      loc:         (yylloc)
-      expected:    (string describing the set of expected tokens)
-      recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
-    }
-  */
-  var query$1 = (function(){
-  var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,4],$V1=[1,5],$V2=[1,11],$V3=[1,6],$V4=[1,7],$V5=[1,8],$V6=[1,9],$V7=[1,10],$V8=[1,13],$V9=[1,14],$Va=[1,16],$Vb=[1,17],$Vc=[5,12,22,23],$Vd=[5,9,10,12,22,23],$Ve=[5,9,10,12,22,23,26];
-  var parser = {trace: function trace () { },
-  yy: {},
-  symbols_: {"error":2,"query":3,"q":4,"EOF":5,"name":6,"HAS":7,"IS":8,":":9,"OF":10,"(":11,")":12,".":13,"BEFORE":14,"DATE":15,"AFTER":16,"=":17,"!":18,"[":19,"NUM":20,"]":21,",":22,"/":23,"words":24,"*":25,"STR":26,"$accept":0,"$end":1},
-  terminals_: {2:"error",5:"EOF",7:"HAS",8:"IS",9:":",10:"OF",11:"(",12:")",13:".",14:"BEFORE",15:"DATE",16:"AFTER",17:"=",18:"!",19:"[",20:"NUM",21:"]",22:",",23:"/",25:"*",26:"STR"},
-  productions_: [0,[3,2],[4,1],[4,2],[4,2],[4,4],[4,4],[4,6],[4,6],[4,4],[4,3],[4,3],[4,2],[4,2],[4,4],[4,6],[4,3],[4,3],[4,3],[6,1],[6,1],[24,2],[24,1]],
-  performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
-  /* this == yyval */
-
-  var $0 = $$.length - 1;
-  switch (yystate) {
-  case 1:
-   return $$[$0-1]; 
-  case 2:
-  this.$ = ["name",$$[$0]];
-  break;
-  case 3:
-  this.$ = ["edge",{"name":$$[$0],"dir":"has"}];
-  break;
-  case 4:
-  this.$ = ["edge",{"name":$$[$0],"dir":"is"}];
-  break;
-  case 5:
-  this.$ = ["edge",{"name":$$[$0-2],"dir":"has","query":["name",$$[$0]]}];
-  break;
-  case 6:
-  this.$ = ["edge",{"name":$$[$0-3],"dir":"is","query":["name",$$[$0]]}];
-  break;
-  case 7:
-  this.$ = ["edge",{"name":$$[$0-4],"dir":"has","query":$$[$0-1]}];
-  break;
-  case 8:
-  this.$ = ["edge",{"name":$$[$0-5],"dir":"is","query":$$[$0-1]}];
-  break;
-  case 9:
-  this.$ = ["propeq",[$$[$0-2],$$[$0]]];
-  break;
-  case 10:
-  this.$ = ["before",$$[$0]];
-  break;
-  case 11:
-  this.$ = ["after",$$[$0]];
-  break;
-  case 12:
-  this.$ = ["exactly",$$[$0]];
-  break;
-  case 13:
-  this.$ = ["not",[["name",$$[$0]]]];
-  break;
-  case 14:
-  this.$ = ["not",[$$[$0-1]]];
-  break;
-  case 15:
-  this.$ = ["nbhd",[$$[$0-4],parseInt($$[$0-1])]];
-  break;
-  case 16:
-  this.$ = $$[$0-1];
-  break;
-  case 17:
-  this.$ = ["and",[$$[$0-2], $$[$0]]];
-  break;
-  case 18:
-  this.$ = ["or",[$$[$0-2], $$[$0]]];
-  break;
-  case 19:
-  this.$ = $$[$0];
-  break;
-  case 20:
-  this.$ = "*";
-  break;
-  case 21:
-  this.$ = $$[$0-1] +" "+ $$[$0];
-  break;
-  case 22:
-  this.$ = $$[$0];
-  break;
-  }
-  },
-  table: [{3:1,4:2,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},{1:[3]},{5:[1,15],22:$Va,23:$Vb},o($Vc,[2,2],{10:[1,18]}),{6:19,24:12,25:$V8,26:$V9},{6:20,24:12,25:$V8,26:$V9},{6:21,24:12,25:$V8,26:$V9},{9:[1,22]},{9:[1,23]},{6:24,24:12,25:$V8,26:$V9},{6:25,11:[1,26],24:12,25:$V8,26:$V9},{4:27,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},o($Vd,[2,19],{26:[1,28]}),o($Vd,[2,20]),o($Ve,[2,22]),{1:[2,1]},{4:29,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},{4:30,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},{9:[1,31]},o($Vc,[2,3],{9:[1,32]}),o($Vc,[2,4]),{9:[1,33]},{15:[1,34]},{15:[1,35]},o($Vc,[2,12]),o($Vc,[2,13]),{4:36,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},{12:[1,37],22:$Va,23:$Vb},o($Ve,[2,21]),o($Vc,[2,17]),o([5,12,23],[2,18],{22:$Va}),{6:38,11:[1,39],24:12,25:$V8,26:$V9},{6:40,11:[1,41],24:12,25:$V8,26:$V9},{6:42,24:12,25:$V8,26:$V9},o($Vc,[2,10]),o($Vc,[2,11]),{12:[1,43],22:$Va,23:$Vb},o($Vc,[2,16],{19:[1,44]}),o($Vc,[2,6]),{4:45,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},o($Vc,[2,5]),{4:46,6:3,7:$V0,8:$V1,11:$V2,13:$V3,14:$V4,16:$V5,17:$V6,18:$V7,24:12,25:$V8,26:$V9},o($Vc,[2,9]),o($Vc,[2,14]),{20:[1,47]},{12:[1,48],22:$Va,23:$Vb},{12:[1,49],22:$Va,23:$Vb},{21:[1,50]},o($Vc,[2,8]),o($Vc,[2,7]),o($Vc,[2,15])],
-  defaultActions: {15:[2,1]},
-  parseError: function parseError (str, hash) {
-      if (hash.recoverable) {
-          this.trace(str);
-      } else {
-          var error = new Error(str);
-          error.hash = hash;
-          throw error;
-      }
-  },
-  parse: function parse(input) {
-      var self = this, stack = [0], vstack = [null], lstack = [], table = this.table, yytext = '', yylineno = 0, yyleng = 0, TERROR = 2, EOF = 1;
-      var args = lstack.slice.call(arguments, 1);
-      var lexer = Object.create(this.lexer);
-      var sharedState = { yy: {} };
-      for (var k in this.yy) {
-          if (Object.prototype.hasOwnProperty.call(this.yy, k)) {
-              sharedState.yy[k] = this.yy[k];
-          }
-      }
-      lexer.setInput(input, sharedState.yy);
-      sharedState.yy.lexer = lexer;
-      sharedState.yy.parser = this;
-      if (typeof lexer.yylloc == 'undefined') {
-          lexer.yylloc = {};
-      }
-      var yyloc = lexer.yylloc;
-      lstack.push(yyloc);
-      var ranges = lexer.options && lexer.options.ranges;
-      if (typeof sharedState.yy.parseError === 'function') {
-          this.parseError = sharedState.yy.parseError;
-      } else {
-          this.parseError = Object.getPrototypeOf(this).parseError;
-      }
-      
-          var lex = function () {
-              var token;
-              token = lexer.lex() || EOF;
-              if (typeof token !== 'number') {
-                  token = self.symbols_[token] || token;
-              }
-              return token;
-          };
-      var symbol, preErrorSymbol, state, action, r, yyval = {}, p, len, newState, expected;
-      while (true) {
-          state = stack[stack.length - 1];
-          if (this.defaultActions[state]) {
-              action = this.defaultActions[state];
-          } else {
-              if (symbol === null || typeof symbol == 'undefined') {
-                  symbol = lex();
-              }
-              action = table[state] && table[state][symbol];
-          }
-                      if (typeof action === 'undefined' || !action.length || !action[0]) {
-                  var errStr = '';
-                  expected = [];
-                  for (p in table[state]) {
-                      if (this.terminals_[p] && p > TERROR) {
-                          expected.push('\'' + this.terminals_[p] + '\'');
-                      }
-                  }
-                  if (lexer.showPosition) {
-                      errStr = 'Parse error on line ' + (yylineno + 1) + ':\n' + lexer.showPosition() + '\nExpecting ' + expected.join(', ') + ', got \'' + (this.terminals_[symbol] || symbol) + '\'';
-                  } else {
-                      errStr = 'Parse error on line ' + (yylineno + 1) + ': Unexpected ' + (symbol == EOF ? 'end of input' : '\'' + (this.terminals_[symbol] || symbol) + '\'');
-                  }
-                  this.parseError(errStr, {
-                      text: lexer.match,
-                      token: this.terminals_[symbol] || symbol,
-                      line: lexer.yylineno,
-                      loc: yyloc,
-                      expected: expected
-                  });
-              }
-          if (action[0] instanceof Array && action.length > 1) {
-              throw new Error('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
-          }
-          switch (action[0]) {
-          case 1:
-              stack.push(symbol);
-              vstack.push(lexer.yytext);
-              lstack.push(lexer.yylloc);
-              stack.push(action[1]);
-              symbol = null;
-              if (!preErrorSymbol) {
-                  yyleng = lexer.yyleng;
-                  yytext = lexer.yytext;
-                  yylineno = lexer.yylineno;
-                  yyloc = lexer.yylloc;
-              } else {
-                  symbol = preErrorSymbol;
-                  preErrorSymbol = null;
-              }
-              break;
-          case 2:
-              len = this.productions_[action[1]][1];
-              yyval.$ = vstack[vstack.length - len];
-              yyval._$ = {
-                  first_line: lstack[lstack.length - (len || 1)].first_line,
-                  last_line: lstack[lstack.length - 1].last_line,
-                  first_column: lstack[lstack.length - (len || 1)].first_column,
-                  last_column: lstack[lstack.length - 1].last_column
-              };
-              if (ranges) {
-                  yyval._$.range = [
-                      lstack[lstack.length - (len || 1)].range[0],
-                      lstack[lstack.length - 1].range[1]
-                  ];
-              }
-              r = this.performAction.apply(yyval, [
-                  yytext,
-                  yyleng,
-                  yylineno,
-                  sharedState.yy,
-                  action[1],
-                  vstack,
-                  lstack
-              ].concat(args));
-              if (typeof r !== 'undefined') {
-                  return r;
-              }
-              if (len) {
-                  stack = stack.slice(0, -1 * len * 2);
-                  vstack = vstack.slice(0, -1 * len);
-                  lstack = lstack.slice(0, -1 * len);
-              }
-              stack.push(this.productions_[action[1]][0]);
-              vstack.push(yyval.$);
-              lstack.push(yyval._$);
-              newState = table[stack[stack.length - 2]][stack[stack.length - 1]];
-              stack.push(newState);
-              break;
-          case 3:
-              return true;
-          }
-      }
-      return true;
-  }};
-  /* generated by jison-lex 0.3.4 */
-  var lexer = (function(){
-  var lexer = ({
-
-  EOF:1,
-
-  parseError:function parseError(str, hash) {
-          if (this.yy.parser) {
-              this.yy.parser.parseError(str, hash);
-          } else {
-              throw new Error(str);
-          }
-      },
-
-  // resets the lexer, sets new input
-  setInput:function (input, yy) {
-          this.yy = yy || this.yy || {};
-          this._input = input;
-          this._more = this._backtrack = this.done = false;
-          this.yylineno = this.yyleng = 0;
-          this.yytext = this.matched = this.match = '';
-          this.conditionStack = ['INITIAL'];
-          this.yylloc = {
-              first_line: 1,
-              first_column: 0,
-              last_line: 1,
-              last_column: 0
-          };
-          if (this.options.ranges) {
-              this.yylloc.range = [0,0];
-          }
-          this.offset = 0;
-          return this;
-      },
-
-  // consumes and returns one char from the input
-  input:function () {
-          var ch = this._input[0];
-          this.yytext += ch;
-          this.yyleng++;
-          this.offset++;
-          this.match += ch;
-          this.matched += ch;
-          var lines = ch.match(/(?:\r\n?|\n).*/g);
-          if (lines) {
-              this.yylineno++;
-              this.yylloc.last_line++;
-          } else {
-              this.yylloc.last_column++;
-          }
-          if (this.options.ranges) {
-              this.yylloc.range[1]++;
-          }
-
-          this._input = this._input.slice(1);
-          return ch;
-      },
-
-  // unshifts one char (or a string) into the input
-  unput:function (ch) {
-          var len = ch.length;
-          var lines = ch.split(/(?:\r\n?|\n)/g);
-
-          this._input = ch + this._input;
-          this.yytext = this.yytext.substr(0, this.yytext.length - len);
-          //this.yyleng -= len;
-          this.offset -= len;
-          var oldLines = this.match.split(/(?:\r\n?|\n)/g);
-          this.match = this.match.substr(0, this.match.length - 1);
-          this.matched = this.matched.substr(0, this.matched.length - 1);
-
-          if (lines.length - 1) {
-              this.yylineno -= lines.length - 1;
-          }
-          var r = this.yylloc.range;
-
-          this.yylloc = {
-              first_line: this.yylloc.first_line,
-              last_line: this.yylineno + 1,
-              first_column: this.yylloc.first_column,
-              last_column: lines ?
-                  (lines.length === oldLines.length ? this.yylloc.first_column : 0)
-                   + oldLines[oldLines.length - lines.length].length - lines[0].length :
-                this.yylloc.first_column - len
-          };
-
-          if (this.options.ranges) {
-              this.yylloc.range = [r[0], r[0] + this.yyleng - len];
-          }
-          this.yyleng = this.yytext.length;
-          return this;
-      },
-
-  // When called from action, caches matched text and appends it on next action
-  more:function () {
-          this._more = true;
-          return this;
-      },
-
-  // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
-  reject:function () {
-          if (this.options.backtrack_lexer) {
-              this._backtrack = true;
-          } else {
-              return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).\n' + this.showPosition(), {
-                  text: "",
-                  token: null,
-                  line: this.yylineno
-              });
-
-          }
-          return this;
-      },
-
-  // retain first n characters of the match
-  less:function (n) {
-          this.unput(this.match.slice(n));
-      },
-
-  // displays already matched input, i.e. for error messages
-  pastInput:function () {
-          var past = this.matched.substr(0, this.matched.length - this.match.length);
-          return (past.length > 20 ? '...':'') + past.substr(-20).replace(/\n/g, "");
-      },
-
-  // displays upcoming input, i.e. for error messages
-  upcomingInput:function () {
-          var next = this.match;
-          if (next.length < 20) {
-              next += this._input.substr(0, 20-next.length);
-          }
-          return (next.substr(0,20) + (next.length > 20 ? '...' : '')).replace(/\n/g, "");
-      },
-
-  // displays the character position where the lexing error occurred, i.e. for error messages
-  showPosition:function () {
-          var pre = this.pastInput();
-          var c = new Array(pre.length + 1).join("-");
-          return pre + this.upcomingInput() + "\n" + c + "^";
-      },
-
-  // test the lexed token: return FALSE when not a match, otherwise return token
-  test_match:function(match, indexed_rule) {
-          var token,
-              lines,
-              backup;
-
-          if (this.options.backtrack_lexer) {
-              // save context
-              backup = {
-                  yylineno: this.yylineno,
-                  yylloc: {
-                      first_line: this.yylloc.first_line,
-                      last_line: this.last_line,
-                      first_column: this.yylloc.first_column,
-                      last_column: this.yylloc.last_column
-                  },
-                  yytext: this.yytext,
-                  match: this.match,
-                  matches: this.matches,
-                  matched: this.matched,
-                  yyleng: this.yyleng,
-                  offset: this.offset,
-                  _more: this._more,
-                  _input: this._input,
-                  yy: this.yy,
-                  conditionStack: this.conditionStack.slice(0),
-                  done: this.done
-              };
-              if (this.options.ranges) {
-                  backup.yylloc.range = this.yylloc.range.slice(0);
-              }
-          }
-
-          lines = match[0].match(/(?:\r\n?|\n).*/g);
-          if (lines) {
-              this.yylineno += lines.length;
-          }
-          this.yylloc = {
-              first_line: this.yylloc.last_line,
-              last_line: this.yylineno + 1,
-              first_column: this.yylloc.last_column,
-              last_column: lines ?
-                           lines[lines.length - 1].length - lines[lines.length - 1].match(/\r?\n?/)[0].length :
-                           this.yylloc.last_column + match[0].length
-          };
-          this.yytext += match[0];
-          this.match += match[0];
-          this.matches = match;
-          this.yyleng = this.yytext.length;
-          if (this.options.ranges) {
-              this.yylloc.range = [this.offset, this.offset += this.yyleng];
-          }
-          this._more = false;
-          this._backtrack = false;
-          this._input = this._input.slice(match[0].length);
-          this.matched += match[0];
-          token = this.performAction.call(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.length - 1]);
-          if (this.done && this._input) {
-              this.done = false;
-          }
-          if (token) {
-              return token;
-          } else if (this._backtrack) {
-              // recover context
-              for (var k in backup) {
-                  this[k] = backup[k];
-              }
-              return false; // rule action called reject() implying the next rule should be tested instead.
-          }
-          return false;
-      },
-
-  // return next match in input
-  next:function () {
-          if (this.done) {
-              return this.EOF;
-          }
-          if (!this._input) {
-              this.done = true;
-          }
-
-          var token,
-              match,
-              tempMatch,
-              index;
-          if (!this._more) {
-              this.yytext = '';
-              this.match = '';
-          }
-          var rules = this._currentRules();
-          for (var i = 0; i < rules.length; i++) {
-              tempMatch = this._input.match(this.rules[rules[i]]);
-              if (tempMatch && (!match || tempMatch[0].length > match[0].length)) {
-                  match = tempMatch;
-                  index = i;
-                  if (this.options.backtrack_lexer) {
-                      token = this.test_match(tempMatch, rules[i]);
-                      if (token !== false) {
-                          return token;
-                      } else if (this._backtrack) {
-                          match = false;
-                          continue; // rule action called reject() implying a rule MISmatch.
-                      } else {
-                          // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
-                          return false;
-                      }
-                  } else if (!this.options.flex) {
-                      break;
-                  }
-              }
-          }
-          if (match) {
-              token = this.test_match(match, rules[index]);
-              if (token !== false) {
-                  return token;
-              }
-              // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
-              return false;
-          }
-          if (this._input === "") {
-              return this.EOF;
-          } else {
-              return this.parseError('Lexical error on line ' + (this.yylineno + 1) + '. Unrecognized text.\n' + this.showPosition(), {
-                  text: "",
-                  token: null,
-                  line: this.yylineno
-              });
-          }
-      },
-
-  // return next match that has a token
-  lex:function lex () {
-          var r = this.next();
-          if (r) {
-              return r;
-          } else {
-              return this.lex();
-          }
-      },
-
-  // activates a new lexer condition state (pushes the new lexer condition state onto the condition stack)
-  begin:function begin (condition) {
-          this.conditionStack.push(condition);
-      },
-
-  // pop the previously active lexer condition state off the condition stack
-  popState:function popState () {
-          var n = this.conditionStack.length - 1;
-          if (n > 0) {
-              return this.conditionStack.pop();
-          } else {
-              return this.conditionStack[0];
-          }
-      },
-
-  // produce the lexer rule set which is active for the currently active lexer condition state
-  _currentRules:function _currentRules () {
-          if (this.conditionStack.length && this.conditionStack[this.conditionStack.length - 1]) {
-              return this.conditions[this.conditionStack[this.conditionStack.length - 1]].rules;
-          } else {
-              return this.conditions["INITIAL"].rules;
-          }
-      },
-
-  // return the currently active lexer condition state; when an index argument is provided it produces the N-th previous condition state, if available
-  topState:function topState (n) {
-          n = this.conditionStack.length - 1 - Math.abs(n || 0);
-          if (n >= 0) {
-              return this.conditionStack[n];
-          } else {
-              return "INITIAL";
-          }
-      },
-
-  // alias for begin(condition)
-  pushState:function pushState (condition) {
-          this.begin(condition);
-      },
-
-  // return the number of states currently on the stack
-  stateStackSize:function stateStackSize() {
-          return this.conditionStack.length;
-      },
-  options: {},
-  performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
-  switch($avoiding_name_collisions) {
-  case 0:/* skip whitespace */
-  break;
-  case 1:return 18
-  case 2:return 17
-  case 3:return '-'
-  case 4:return 25
-  case 5:return 23
-  case 6:return ';'
-  case 7:return 9
-  case 8:return 22
-  case 9:return 13
-  case 10:return 11
-  case 11:return 12
-  case 12:return 19
-  case 13:return 21
-  case 14:return 14
-  case 15:return 16
-  case 16:return 7
-  case 17:return 8
-  case 18:return 10
-  case 19:return 'C'
-  case 20:return 15
-  case 21:return 20
-  case 22:return 26
-  case 23:return 5
-  case 24:return 'INVALID'
-  }
-  },
-  rules: [/^(?:\s+)/,/^(?:!)/,/^(?:=)/,/^(?:-)/,/^(?:\*)/,/^(?:\/)/,/^(?:;)/,/^(?::)/,/^(?:,)/,/^(?:\.)/,/^(?:\()/,/^(?:\))/,/^(?:\[)/,/^(?:\])/,/^(?:before\b)/,/^(?:after\b)/,/^(?:has\b)/,/^(?:is\b)/,/^(?:of\b)/,/^(?:c\b)/,/^(?:[0-9]{4}-[0-9]{2}-[0-9]{2})/,/^(?:[0-9][0-9]*)/,/^(?:(?!has)(?!of)(?!is)(?!before)(?!after)[^*;/,:.()! ]+)/,/^(?:$)/,/^(?:.)/],
-  conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],"inclusive":true}}
-  });
-  return lexer;
-  })();
-  parser.lexer = lexer;
-  function Parser () {
-    this.yy = {};
-  }
-  Parser.prototype = parser;parser.Parser = Parser;
-  return new Parser;
-  })();
-
-  var intersect_lists = function(l1,l2){
-      var ans = [];
-      var l1_dict = {};
-      for(var i = 0; i < l1.length; i++){
-  	l1_dict[l1[i]] = true;
-      }
-      for(var j = 0; j < l2.length; j++){
-  	if(l1_dict[l2[j]]) {
-  	    ans.push(l2[j]);
-  	}
-      }
-      return ans;
-  };
-
-  var union_lists = function(l1,l2){
-      var result = [].concat(l1).concat(l2);
-      var ans_dict = {};
-      var ans = [];
-      for(var i = 0; i < result.length; i++) {
-  	ans_dict[result[i]] = true;
-      }
-      for(var x in ans_dict) {
-  	ans.push(x);
-      }
-      return ans;
-  };
-
-  // removes everything in l2 from l1
-  var remove_all = function(l1,l2){
-      var result = [];
-      for(var i = 0; i < l1.length; i++){
-  	var found = false;
-  	for(var j = 0; j < l2.length; j++){
-  	    if(l1[i] == l2[j]){
-  		found = true;
-  		break;
-  	    }
-  	}
-  	if(!found) result.push(l1[i]);
-      }
-      return result;
-  };
-
-  var date_from_string = function(d) {
-      var arr = d.split("-");
-      if(arr.length != 3) return null;
-      return new Date(parseInt(arr[0]), parseInt(arr[1])-1, parseInt(arr[2]));
-  };
-
-  var neighbourhood = function(nodeset, steps, nodes, frontier) {
-      if(steps <= 0) {
-  	for(var n in frontier) {
-  	    nodeset[n] = true;
-  	}
-  	return nodeset;
-      }
-      if(!frontier) {
-  	frontier = nodeset;
-  	nodeset = {};
-      }
-      // Check if the frontier is empty
-      var no_new = true;
-      for(var n in frontier) {
-  	no_new = false;
-  	break;
-      }
-      if(no_new) {
-  	return nodeset;
-      }
-      var new_frontier = {};
-      var new_nodeset = {};
-      for(var n in nodeset) {
-  	new_nodeset[n] = true;
-      }
-      for(var n in frontier) {
-  	new_nodeset[n] = true;
-      }
-      for(var n in frontier) {
-  	if(!(n in nodes)) continue;
-  	for(var label in nodes[n].edges.has) {
-  	    for(var edge of nodes[n].edges.has[label]) {
-  		var target = edge.target;
-  		if(!(target in new_nodeset)) {
-  		    // if the target is not in the set we've visited or that we're visiting, we'll visit it on the next round
-  		    new_frontier[target] = true;
-  		}
-  	    }
-  	}
-  	for(var label in nodes[n].edges.is) {
-  	    for(var edge of nodes[n].edges.is[label]) {
-  		var target = edge.target;
-  		if(!(target in new_nodeset)) {
-  		    // if the target is not in the set we've visited or that we're visiting, we'll visit it on the next round
-  		    new_frontier[target] = true;
-  		}
-  	    }
-  	}
-      }
-      return neighbourhood(new_nodeset, steps-1, nodes, new_frontier);
-  };
-
-  var search = function(q, nodes){
-      console.log("Q",q);
-      var result = [];
-      if(!q || q.length == 0){
-  	for(var n in nodes){
-  	    result.push(n);
-  	}
-      }
-      else if(q[0] == "and"){
-  	result = search(q[1][0],nodes);
-  	for(var i = 1; i < q[1].length; i++){
-  	    console.log("q",q[1][i]);
-  	    var nodeset = {};
-  	    for(var n of result) {
-  		if(n in nodes) {
-  		    nodeset[n] = nodes[n];
-  		}
-  	    }
-  	    console.log("NS",nodeset);
-  	    res = search(q[1][i],nodeset);
-  	    result = intersect_lists(result,res);
-  	    console.log("AND RES",q[1][i],result);
-  	}
-      }
-      else if(q[0] == "or"){
-  	for(var i = 0; i < q[1].length; i++){
-  	    var res = search(q[1][i],nodes);
-  	    result = union_lists(result,res);
-  	}
-      }
-      else if(q[0] == "not"){
-  	result = Object.keys(nodes);
-  	for(var i = 0; i < q[1].length; i++){
-  	    var res = search(q[1][i],nodes);
-  	    result = remove_all(result,res);
-  	}
-      }
-      else if(q[0] == "edge"){
-  	var edge = q[1];
-  	var res = search(edge.query,nodes);
-  	for(var i = 0; i < res.length; i++){
-  	    var node_id = res[i];
-  	    for(var n in nodes){
-  		if(edge.name == "*"){
-  		    var found = false;
-  		    for(var label in nodes[n].edges[edge.dir]){
-  			for(var e of nodes[n].edges[edge.dir][label]) {
-  			    if(e.target == node_id) {
-  				found = true;
-  				result = union_lists(result,[n]);
-  				break;
-  			    }
-  			    if(found) break;
-  			}
-  		    }
-  		}
-  		else if(edge.name in nodes[n].edges[edge.dir]) {
-  		    for(var e of nodes[n].edges[edge.dir][edge.name]) {
-  			if(e.target == node_id) {
-  			    result = union_lists(result,[n]);
-  			    break;
-  			}
-  		    }
-  		    result = union_lists(result,[n]);
-  		}
-  	    }
-  	}
-      }
-      else if(q[0] == "nbhd"){
-  	var subquery = q[1][0];
-  	var steps = q[1][1];
-  	var res = search(subquery,nodes);
-  	var nodeset = {};
-  	for(var n of res) {
-  	    nodeset[n] = true;
-  	}
-  	var ans_dict = neighbourhood(nodeset, steps, nodes);
-  	for(var n in ans_dict) {
-  	    result.push(n);
-  	}
-      }
-      else if(q[0] == "name"){
-  	var name = q[1].toLowerCase();
-  	for(var n in nodes){
-  	    if(name == "*" || nodes[n].name.toLowerCase().indexOf(name) >= 0){
-  		result.push(n);
-  	    }
-  	}
-      }
-      else if(q[0] == "exactly"){
-  	var name = q[1].toLowerCase();
-  	for(var n in nodes){
-  	    if(nodes[n].name.toLowerCase() == name){
-  		result.push(n);
-  	    }
-  	}
-      }
-      else if(q[0] == "prop"){
-  	var prop_name = q[1][0].toLowerCase();
-  	var prop_val = q[1][1].toLowerCase();
-  	for(var n in nodes){
-  	    if(nodes[n][prop_name] && nodes[n][prop_name].toLowerCase().indexOf(prop_val) >= 0){
-  		result.push(n);
-  	    }
-  	}
-      }
-      else if(q[0] == "before"){
-  	var cutoff_date = date_from_string(q[1]);
-  	for(var n in nodes){
-  	    if(!(nodes[n].date)) continue;
-  	    var d = date_from_string(nodes[n].date);
-  	    if(d && d < cutoff_date){
-  		result.push(n);
-  	    }
-  	}
-      }
-      else if(q[0] == "after"){
-  	var cutoff_date = date_from_string(q[1]);
-  	for(var n in nodes){
-  	    if(!(nodes[n].date)) continue;
-  	    var d = date_from_string(nodes[n].date);
-  	    if(d && d > cutoff_date){
-  		result.push(n);
-  	    }
-  	}
-      }
-      else {
-  	console.log("Unrecognised query type:",q[0]);
-      }
-      return result;
-  };
+  // import Query from './components/search/module/query.js'
+  // import Search from './components/search/module/search.js'
 
   Vue$1.config.productionTip = true;
 
@@ -46979,7 +47119,6 @@
   Vue$1.category_search_plugin = Vue$1.component('search', SearchDisplay);
 
   Vue$1.category_query = new query$1.Parser();
-  Vue$1.category_search = search;
 
   Vue$1.run_plugins = function(comp){
       for(var p in Vue$1.category_plugins) {

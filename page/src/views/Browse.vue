@@ -11,7 +11,7 @@
 	    <div v-if="mode=='graph'">
 		<div style="float:left;width:100%;">
 		    <br />
-		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="result.length > 0" v-on:clickedNode="goto_node"></graph-index>
+		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="!is_empty" v-on:clickedNode="goto_node"></graph-index>
 		</div>
 	    </div>
 	    <div v-if="mode=='list'">
@@ -30,24 +30,24 @@
 
 	    <span class="search-error" v-if="errormsg.length > 0">{{errormsg}}</span>
 	    <br /><br />
-	    <div v-if="highlight.length == 0">
+	    <div v-if="highlight_is_empty">
 		<b>Top nodes</b>
 		<div v-for="n in best_nodes" class="query_result">
 		    <div style="display:inline-block;">
-			<span class="badge_button" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">+</span>
-			<span class="badge_button" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">-</span>
+			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n.node].name + ')[2], !(=' + graph.nodes[n.node].name + '))')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n.node].name + ')')">-</span>
 		    </div>
-		    <a href="#" v-on:click="set_highlight('(=' + nodes[n.node].name + ')[1]')">{{nodes[n.node].name}} ({{n.degree}})</a> 
+		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1]')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
 		</div>
 	    </div>
-	    <div v-if="highlight.length > 0">
+	    <div v-if="!highlight_is_empty">
 		<b>Top nodes in result</b>
 		<div v-for="n in best_highlights" class="query_result">
 		    <div style="display:inline-block;">
-			<span class="badge_button" v-on:click="add_to_query('((=' + nodes[n.node].name + ')[2], !(=' + nodes[n.node].name + '))')">+</span>
-			<span class="badge_button" v-on:click="add_to_query('!(=' + nodes[n.node].name + ')')">-</span>
+			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n.node].name + ')[2], !(=' + graph.nodes[n.node].name + '))')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n.node].name + ')')">-</span>
 		    </div>
-		    <a href="#" v-on:click="set_highlight('(=' + nodes[n.node].name + ')[1]')">{{nodes[n.node].name}} ({{n.degree}})</a> 
+		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1]')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
 		</div>
 	    </div>
 	    <hr />
@@ -57,7 +57,7 @@
 		    <span class="badge_button" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">+</span>
 		    <span class="badge_button" v-on:click="add_to_query('!(is ' + e.edge + ')')">-</span>
 		</div>
-		<a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.edge}} ({{e.count}})</a>
+		<a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.label}} ({{e.count}})</a>
 	    </div>
 	</div>
     </div>
@@ -69,105 +69,51 @@
 
  export default {
      name: 'browse',
-     computed: { 
+     computed: {
 	 resultset: function() {
 	     var ans = {};
-	     for(var r of this.result) {
-		 ans[r] = this.nodes[r];
+	     for(var r in this.result) {
+		 ans[r] = this.graph.nodes[r];
 	     }
 	     return ans;
 	 },
+	 is_empty: function() {
+	     for(var n in this.result) {
+		 return false;
+	     }
+	     return true;
+	 },
+	 highlight_is_empty: function() {
+	     for(var n in this.highlightset) {
+		 return false;
+	     }
+	     return true;
+	 },
 	 highlightset: function() {
 	     var ans = {};
-	     for(var r of this.highlight) {
+	     for(var r in this.highlight) {
 		 ans[r] = true;
 	     }
 	     console.log(ans);
 	     return ans;
 	 },
 	 best_highlights: function() {
-	     var nodes_by_deg = [];
-	     for(var n in this.highlightset) {
-		 var targets = {}
-		 for(var label in this.nodes[n].edges.has) {
-		     for(var edge of this.nodes[n].edges.has[label]) {
-			 var target = edge.target;
-			 if(target in this.resultset) {
-			     targets[target] = true;
-			 }
-		     }
-		 }
-		 for(var label in this.nodes[n].edges.is) {
-		     for(var edge of this.nodes[n].edges.is[label]) {
-			 var target = edge.target;
-			 if(target in this.resultset) {
-			     targets[target] = true;
-			 }
-		     }
-		 }
-		 var deg = 0;
-		 for(var t in targets) {
-		     deg++;
-		 }
-		 nodes_by_deg.push({"node":n,"degree":deg});
-	     }
-	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
-	     return nodes_by_deg.slice(0,10);
+	     return this.subgraph.subgraph(this.highlightset).best_nodes().slice(0,10);
+	 },
+	 subgraph: function() {
+	     if(!this.ready) return;
+	     console.log("GGGGGG",this.graph);
+	     return this.graph;
 	 },
 	 best_nodes: function() {
-	     var nodes_by_deg = [];
-	     for(var n in this.resultset) {
-		 var targets = {}
-		 for(var label in this.nodes[n].edges.has) {
-		     for(var edge of this.nodes[n].edges.has[label]) {
-			 var target = edge.target;
-			 if(target in this.resultset) {
-			     targets[target] = true;
-			 }
-		     }
-		 }
-		 for(var label in this.nodes[n].edges.is) {
-		     for(var edge of this.nodes[n].edges.is[label]) {
-			 var target = edge.target;
-			 if(target in this.resultset) {
-			     targets[target] = true;
-			 }
-		     }
-		 }
-		 var deg = 0;
-		 for(var t in targets) {
-		     deg++;
-		 }
-		 nodes_by_deg.push({"node":n,"degree":deg});
-	     }
-	     nodes_by_deg.sort(function(a, b){ return b.degree - a.degree; });
-	     return nodes_by_deg.slice(0,10);
+	     console.log("BN",this.ready);
+	     if(!this.ready) return [];
+	     return this.subgraph.best_nodes().slice(0,10);
 	 },
 	 best_edges: function() {
-	     var edges_with_count = {};
-	     for(var n in this.resultset) {
-		 var count = 0;
-		 // only need to count the has direction since the is direction will be accounted for when iterating over the has edges of the target
-		 for(var label in this.nodes[n].edges.has) {
-		     if(!(label in edges_with_count)) {
-			 edges_with_count[label] = 0
-		     }
-		     for(var edge of this.nodes[n].edges.has[label]) {
-			 var target = edge.target;
-			 if(target in this.resultset) {
-			     edges_with_count[label]++;
-			 }
-		     }
-		 }
-	     }
-	     var edges_by_count = [];
-	     for(var e in edges_with_count) {
-		 edges_by_count.push({"edge":e,"count":edges_with_count[e]})
-	     }
-	     edges_by_count.sort(function(a, b){return b.count-a.count;});
-	     return edges_by_count.slice(0,10);
+	     return this.subgraph.best_labels().slice(0,10);
 	 },
-	 ...mapState(['nodes', 'node_data']),
+	 ...mapState(['graph','ready', 'node_data'])
      },
      data() {
 	 return {
@@ -224,14 +170,16 @@
 		 this.errormsg = e.toString();
 		 return [];
 	     }
-	     return Vue.category_search(q, nodeset);
+	     console.log("QQ",q,this.graph);
+	     return this.graph.search(nodeset, q);
 	 },
 	 search: function() {
 	     if(this.query.trim().length == 0) {
 		 this.query = "*";
 	     }
-	     var query_result = this.run_search(this.query, this.nodes)
-	     console.log(query_result);
+	     this.graph.debug_search = true;
+	     var query_result = this.run_search(this.query,this.nodeset)
+	     console.log("RES",query_result);
 	     if(query_result.length == 0) {
 		 return;
 	     }
@@ -240,13 +188,12 @@
 	     }
 	     else {
 		 this.result = query_result;
-		 console.log("RES",this.result);
-		 for(var i = 0; i < this.result.length; i++){
-		     if(this.nodes[this.result[i]].name == this.query.trim()) {
-			 this.$router.push('/node/'+this.result[i]);
-			 break;
-		     }
-		 }
+		 /* for(var i = 0; i < this.result.length; i++){
+		    if(this.nodes[this.result[i]].name == this.query.trim()) {
+		    this.$router.push('/node/'+this.result[i]);
+		    break;
+		    }
+		    }*/
 	     }
 	 },
 	 do_highlight: function() {

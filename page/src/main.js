@@ -23,8 +23,11 @@ import JSAVRPlugin from './plugins/jsavr.vue'
 // import FA2Layout from 'graphology-layout-forceatlas2/worker';
 // import WebGLRenderer from 'sigma/renderers/webgl';
  
-import Query from './components/search/module/query.js'
-import Search from './components/search/module/search.js'
+import Query from './graph/query.mjs'
+import Graph from './graph/graph.mjs'
+
+// import Query from './components/search/module/query.js'
+// import Search from './components/search/module/search.js'
 
 Vue.config.productionTip = true;
 
@@ -48,7 +51,6 @@ Vue.category_plugins = {
 Vue.category_search_plugin = Vue.component('search', SearchDisplay);
 
 Vue.category_query = new Query.Parser();
-Vue.category_search = Search;
 
 Vue.run_plugins = function(comp){
     for(var p in Vue.category_plugins) {

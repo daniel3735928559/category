@@ -259,7 +259,7 @@
 		 'labels': best_labels
 	     };
 	 },
-	 ...mapState(['nodes']),
+	 ...mapState(['graph']),
 	 ...mapGetters(['sorted','sortedby'])
      },
      methods: {

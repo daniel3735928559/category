@@ -403,6 +403,9 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
             query = '(for doc in nodes limit 2000 return doc)'
         q = md_query.replace("QUERYGOESHERE",query)
 
+        q = """let es = (for e in edges return e)
+let ns = (for n in nodes return n)
+return {"nodes":ns,"edges":es}"""
         print("AQL:",q)
         
         # make aql query to arangdb

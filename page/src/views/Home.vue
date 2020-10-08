@@ -5,7 +5,7 @@
 	  <span v-on:click="new_node()" class="close_x"><span class="fas fa-plus"></span></span>
 	</div>
 
-	<search initquery="*" :nodes="nodes" />
+	<search initquery="*" />
   </div>
 </template>
 
@@ -16,7 +16,6 @@
  export default {
      name: 'home',
      computed: mapState([
-	 'nodes'
      ]),
      methods: {
 	 new_node: function(event){

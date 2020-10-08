@@ -100,7 +100,6 @@ var neighbourhood = function(nodeset, steps, nodes, frontier) {
 }
 
 var search = function(q, nodes){
-    console.log("Q",q);
     var result = [];
     if(!q || q.length == 0){
 	for(var n in nodes){

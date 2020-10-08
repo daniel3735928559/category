@@ -24,36 +24,14 @@
 	     }
 	     return ans;
 	 },
+	 subgraph: function() {
+	     return this.graph.subgraph(this.nodeset);
+	 },
 	 graph_data: function() {
-	     var ans = {nodes:[],edges:[]};
-	     var edgeset = {};
-	     for(var id in this.nodeset) {
-		 console.log("NODE",id,name);
-		 ans.nodes.push({"key":id,attributes:{"label":this.nodeset[id].name, "color":"#00f"}})
-		 if(!(this.nodeset[id].edges)) continue;
-		 for(var label in this.nodeset[id].edges.has) {
-		     for(var edge of this.nodeset[id].edges.has[label]) {
-			 var target = edge.target;
-			 console.log("EDGE",edge,id,target);
-			 if(target in this.nodeset) {
-			     var eid = `${id}_${target}_${label}`;
-			     if(eid in edgeset) {
-				 edgeset[eid].attributes.label += ", " + label;
-			     }
-			     else {
-				 edgeset[eid] = {"source":id,"target":target,attributes:{"label":label}};
-			     }
-			 }
-		     }
-		 }
-	     }
-	     for(var eid in edgeset) {
-		 ans.edges.push(edgeset[eid]);
-	     }
-	     return ans;
+	     return this.subgraph.sigma_graph();
 	 },
 	 ...mapState([
-	     'nodes'
+	     'graph'
 	 ]),
 	 ...mapGetters(['sorted','sortedby'])
      },
@@ -90,32 +68,32 @@
 		 clearTimeout(this.layout_timer);
 		 this.layout_timer = null;
 	     }
-	     this.graph.clear();
-	     this.graph.import(this.graph_data);
-	     this.graph.nodes().forEach(node => {
-		 this.graph.mergeNodeAttributes(node, {
+	     this.graph_display.clear();
+	     this.graph_display.import(this.graph_data);
+	     this.graph_display.nodes().forEach(node => {
+		 this.graph_display.mergeNodeAttributes(node, {
 		     x: Math.random(),
 		     y: Math.random(),
-		     size: Math.max(3,Math.min(this.graph.degree(node), 8)),
+		     size: Math.max(3,Math.min(this.graph_display.degree(node), 8)),
 		     color: node in this.highlight ? "#f00" : "#00f"
 		 });
 	     });
 	     
-	     var settings = FA2.inferSettings(this.graph);
+	     var settings = FA2.inferSettings(this.graph_display);
 	     console.log(settings);
 	     settings.slowDown = 10;
 	     //saneSettings.strongGravityMode = true;
 	     //saneSettings.gravity = 3;
-	     this.layout = new FA2Layout(this.graph, {settings: settings});
+	     this.layout = new FA2Layout(this.graph_display, {settings: settings});
 	     this.layout.start();
 	     var self = this;
 	     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));
 	 },
 	 update_highlight: function() {
 	     console.log("updating highlight",this.highlight);
-	     this.graph.nodes().forEach(node => {
+	     this.graph_display.nodes().forEach(node => {
 		 console.log("N",node, node in this.highlight);
-		 this.graph.mergeNodeAttributes(node, {color: node in this.highlight ? "#f00" : "#00f"});
+		 this.graph_display.mergeNodeAttributes(node, {color: node in this.highlight ? "#f00" : "#00f"});
 	     });
 	     
 	 }
@@ -123,8 +101,8 @@
      mounted: function () {
 	 this.$nextTick(function () {
 	     console.log("initing graph container");
-	     this.graph = new DirectedGraph({multi: true});
-	     this.renderer = new WebGLRenderer(this.graph, document.getElementById("graph_container"), {
+	     this.graph_display = new DirectedGraph({multi: true});
+	     this.renderer = new WebGLRenderer(this.graph_display, document.getElementById("graph_container"), {
 		 defaultEdgeType: 'arrow',
 		 defaultEdgeColor: '#888',
 		 renderEdgeLabels: true,
@@ -172,8 +150,8 @@
 		     camera.viewportToGraph(self.renderer, e.x, e.y)
 		 );
 
-		 self.graph.setNodeAttribute(draggedNode, 'x', pos.x);
-		 self.graph.setNodeAttribute(draggedNode, 'y', pos.y);
+		 self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);
+		 self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);
 	     });
 
 	     this.update_graph();

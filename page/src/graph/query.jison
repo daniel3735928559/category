@@ -7,15 +7,15 @@
 
 \s+			          /* skip whitespace */
 "!"         			  return '!'
-"="         			  return '='
+(?!"==")"="         			  return '='
 "-"                               return '-'
 "*"         			  return '*'
 "/"                    		  return '/'
 ";"                    		  return ';'
 ":"                    		  return ':'
 ","                    		  return ','
-"."                   		  return '.'
-".."                   		  return '..'
+(?!"..")"."                   	  return '.'
+".."				  return '..'
 "("                    		  return '('
 ")"                    		  return ')'
 "["                    		  return '['
@@ -28,8 +28,9 @@
 "c"		       	      	  return 'C'
 [0-9]{4}"-"[0-9]{2}"-"[0-9]{2}        return 'DATE'
 [0-9][0-9]*                       return 'NUM'
-(\>|\<|\>=|\<=|==|!=|~|!!)        return 'CMP'
-(?!has)(?!of)(?!is)(?!before)(?!after)[^*;/,:.()! <>=~]+       return 'STR'
+"=="|">="|"<=" return 'CMP'
+//(\>|\<|\>=|\<=|==|!=|~|!!)        return 'CMP'
+(?!has)(?!of)(?!is)(?!before)(?!after)[^*;/,:.()! <>=~[\]]+       return 'STR'
 <<EOF>>                	       	  return 'EOF'
 .                      		  return 'INVALID'
 
@@ -86,8 +87,10 @@ q
         {$$ = ["nbhd",[$2,parseInt($5),parseInt($7),"any","*"]];}
     | '(' q ')' '[' NUM '..' NUM ':' name ']'
         {$$ = ["nbhd",[$2,parseInt($5),parseInt($7),"any",$9]];}
-    | '(' q ')' '[' NUM '..' NUM ':' name ':' name ']'
-        {$$ = ["nbhd",[$2,parseInt($5),parseInt($7),$19,$11]];}
+    | '(' q ')' '[' NUM '..' NUM ':' IS ':' name ']'
+        {$$ = ["nbhd",[$2,parseInt($5),parseInt($7),$9,$11]];}
+    | '(' q ')' '[' NUM '..' NUM ':' HAS ':' name ']'
+        {$$ = ["nbhd",[$2,parseInt($5),parseInt($7),$9,$11]];}
     | '(' q ')'
         {$$ = $2;}
     | q ',' q
