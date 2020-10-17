@@ -25,7 +25,7 @@
 	 };
      },
      watch: {
-	 node(prev, next) {
+	 node(next, prev) {
 	     console.log("NEW NODE???", prev, next);
 	     this.get_node(next);
 	 }
@@ -39,8 +39,9 @@
 	     var self = this;
 	     console.log("GET",n);
 	     this.$store.dispatch('get_node', n).then(response => {
-		 console.log("response",response);
+		 console.log("response",self.node_data[n]);
 		 self.data = self.node_data[n];
+		 this.$forceUpdate();
              }, error => {
 		 console.error("ERROR", error)
              });

@@ -7,7 +7,7 @@
 		    <span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
 		    <span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n].name + ')')">-</span>
 		</div>
-		<a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
+		<a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> 
 	    </div>
 	    <hr />
 	    <b>Top labels</b>
@@ -22,10 +22,15 @@
 	<div class="browse_container" style="float:left;width:50%;">
 	    <div class="filterquery">
 		<!-- <input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" /> -->
-		<span>{{query}}</span>
-		<span v-on:click="clear_filter()" class="close_x"><span class="fas fa-eraser"></span></span>
+		<span><input type="search" id="query_input" v-model="query" v-on:search="run_search" v-on:keyup.enter="run_search" /></span>
+		<span v-on:click="clear_filter()" class="close_x"><span class="fas fa-globe"></span></span>
 		<span v-on:click="mode='list'" class="close_x"><span class="fas fa-list"></span></span>
 		<span v-on:click="mode='graph'" class="close_x"><span class="fas fa-project-diagram"></span></span>
+		<span style="float:right">Display:</span>
+		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
+		<span v-on:click="add_to_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
+		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-eye-slash"></span></span>
+		<span style="float:right">Highlight:</span>
 	    </div>
 	    <div v-if="mode=='graph'">
 		<div style="float:left;width:100%;">
@@ -37,13 +42,9 @@
 		<node-index :nodeset="resultset" v-if="result.length > 0"></node-index>
 	    </div>
 	</div>
-	<div class="querypanel" style="float:left;width:20%;padding-left:10px;">
+	<div class="querypanel" style="float:left;width:30%;padding-left:10px;">
 	    <div style="float:left">
 		<input type="search" id="highlight_input" v-model="highlight_query" v-on:search="do_highlight" v-on:keyup.enter="do_highlight" />
-		<span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
-		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
-		<span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
-		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
 	    </div>
 
 	    <span class="search-error" v-if="errormsg.length > 0">{{errormsg}}</span>
