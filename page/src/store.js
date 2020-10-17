@@ -16,12 +16,12 @@ export default new Vuex.Store({
     },
     getters: {
 	neighbours: state => node_id => {
-	    let node = state.nodes[node_id];
+	    let node = state.graph.nodes[node_id];
 	    var ans = {};
 	    for(var d in node.edges) {
 		for(var l in node.edges[d]) {
 		    for(var edge of node.edges[d][l]) {
-			ans[edge.target] = state.nodes[edge.target];
+			ans[edge.target] = state.graph.nodes[edge.target];
 		    }
 		}
 	    }
@@ -29,13 +29,13 @@ export default new Vuex.Store({
 	},
 	sorted: state => nodelist => {
 	    return nodelist.sort(function(a, b){
-		if('index' in state.nodes[a] && 'index' in state.nodes[b]) {
-		    return parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index);
+		if('index' in state.graph.nodes[a] && 'index' in state.graph.nodes[b]) {
+		    return parseInt(state.graph.nodes[a].index) - parseInt(state.graph.nodes[b].index);
 		}
-		else if('date' in state.nodes[a] && 'date' in state.nodes[b]) {
-		    return state.nodes[a].date.localeCompare(state.nodes[b].date);
+		else if('date' in state.graph.nodes[a] && 'date' in state.graph.nodes[b]) {
+		    return state.graph.nodes[a].date.localeCompare(state.graph.nodes[b].date);
 		}
-		else return state.nodes[a].name.localeCompare(state.nodes[b].name);
+		else return state.graph.nodes[a].name.localeCompare(state.graph.nodes[b].name);
 	    });
 	},
 	sortedby: state => (nodeset, nodelist, key, ascending) => {
@@ -68,8 +68,8 @@ export default new Vuex.Store({
 	    console.log('caching',nodes);
 	    if(state.ready) {
 		for(var node_id in nodes){
-		    if(state.nodes[node_id].auto) {
-			state.nodes[node_id].snippet = "[index node]";
+		    if(state.graph.nodes[node_id].auto) {
+			state.graph.nodes[node_id].snippet = "[index node]";
 		    }
 		    state.node_data[node_id] = nodes[node_id];
 		}
@@ -115,7 +115,6 @@ export default new Vuex.Store({
 	    // }
 	},
 	METADATA: (state, g) => {
-	    //state.nodes = nodes;
 	    console.log("MD",g);
 	    state.graph = new CatGraph(g["nodes"], g["edges"])
 	    state.recent = [];
@@ -138,6 +137,27 @@ export default new Vuex.Store({
 	},
 	go: (context, node_id) => {
 	    context.commit('GO', node_id);
+	},
+	get_node: (context, node_id) => {
+	    console.log("fetching",node_id);
+	    var fetch_headers = new Headers();
+	    fetch_headers.append('pragma', 'no-cache');
+	    fetch_headers.append('cache-control', 'no-cache');
+	    
+	    var fetch_params = {
+		method: 'GET',
+		headers: fetch_headers,
+	    };
+	    return new Promise((resolve, reject) => {
+		fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
+		    response.text().then(function(data){
+			var to_cache = {};
+			to_cache[node_id] = data;
+			context.commit('CACHE',to_cache);
+			resolve();
+		    });
+		});
+	    });
 	},
 	refresh_metadata: (context) => {
 	    var fetch_headers = new Headers();

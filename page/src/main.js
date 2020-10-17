@@ -10,6 +10,7 @@ import HistoryDisplay from './components/history.vue'
 import EdgeDisplay from './components/edges.vue'
 import SearchDisplay from './components/search/search.vue'
 import GraphIndex from './components/graph.vue'
+import Read from './components/read.vue'
 
 import LocPlugin from './plugins/loc.vue'
 import VideoPlugin from './plugins/video.vue'
@@ -31,6 +32,7 @@ import Graph from './graph/graph.mjs'
 
 Vue.config.productionTip = true;
 
+Vue.component('read', Read);
 Vue.component('graphIndex', GraphIndex);
 Vue.component('nodeIndex', NodeIndex);
 Vue.component('labelIndex', LabelIndex);

@@ -11696,14 +11696,17 @@
   	     return this.subgraph.best_nodes().slice(0,10);
   	 },
   	 best_edges: function() {
+  	     console.log("RRR",this.ready);
   	     if(!this.ready) return [];
   	     return this.subgraph.best_labels().slice(0,10);
   	 },
-  	 ...mapState(['graph','ready', 'node_data'])
+  	 ...mapState(['graph', 'ready', 'node_data'])
        },
        data() {
   	 return {
   	     entered_query: '',
+  	     preview_mode: false,
+  	     preview_node: '',
   	     query: this.$route.params.query ? atob(this.$route.params.query) : '*',
   	     preview_id: this.$route.params.id || '',
   	     highlight_query: '',
@@ -11726,7 +11729,9 @@
        methods: {
   	 goto_node: function(e) {
   	     console.log("GOTO",e);
-  	     this.$router.push("/node/"+e);
+  	     this.preview_node = e;
+  	     this.preview_mode = true;
+  	     // this.$router.push("/node/"+e);
   	 },
   	 add_to_query: function(qry) {
   	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
@@ -11784,6 +11789,7 @@
   		 this.highlight = {};
   		 this.subgraph = this.graph.subgraph(this.result);
   		 this.do_highlight();
+  		 this.$forceUpdate();
   		 /* for(var i = 0; i < this.result.length; i++){
   		    if(this.nodes[this.result[i]].name == this.query.trim()) {
   		    this.$router.push('/node/'+this.result[i]);
@@ -11848,8 +11854,129 @@
       _c(
         "div",
         {
+          staticClass: "querypanel",
+          staticStyle: { float: "left", width: "20%", "padding-left": "10px" }
+        },
+        [
+          _c("b", [_vm._v("Top nodes")]),
+          _vm._l(_vm.best_nodes, function(n) {
+            return _c("div", { staticClass: "query_result" }, [
+              _c("div", { staticStyle: { display: "inline-block" } }, [
+                _c(
+                  "span",
+                  {
+                    staticClass: "badge_button",
+                    on: {
+                      click: function($event) {
+                        _vm.add_to_query(
+                          "((=" +
+                            _vm.graph.nodes[n].name +
+                            ")[2], !(=" +
+                            _vm.graph.nodes[n].name +
+                            "))"
+                        );
+                      }
+                    }
+                  },
+                  [_vm._v("+")]
+                ),
+                _c(
+                  "span",
+                  {
+                    staticClass: "badge_button",
+                    on: {
+                      click: function($event) {
+                        _vm.add_to_query("!(=" + _vm.graph.nodes[n].name + ")");
+                      }
+                    }
+                  },
+                  [_vm._v("-")]
+                )
+              ]),
+              _c(
+                "a",
+                {
+                  attrs: { href: "#" },
+                  on: {
+                    click: function($event) {
+                      _vm.set_highlight(
+                        "(=" +
+                          _vm.graph.nodes[n].name +
+                          ")[1], !(=" +
+                          _vm.graph.nodes[n].name +
+                          ")"
+                      );
+                    }
+                  }
+                },
+                [
+                  _vm._v(
+                    _vm._s(_vm.graph.nodes[n].name) +
+                      " (" +
+                      _vm._s(
+                        _vm.graph.nodes[n]["_outdegree"] +
+                          _vm.graph.nodes[n]["_indegree"]
+                      ) +
+                      ")"
+                  )
+                ]
+              )
+            ])
+          }),
+          _c("hr"),
+          _c("b", [_vm._v("Top labels")]),
+          _vm._l(_vm.best_edges, function(e) {
+            return _c("div", { staticClass: "query_result" }, [
+              _c("div", { staticStyle: { display: "inline-block" } }, [
+                _c(
+                  "span",
+                  {
+                    staticClass: "badge_button",
+                    on: {
+                      click: function($event) {
+                        _vm.add_to_query(
+                          "(has " + e.label + " / is " + e.label + ")"
+                        );
+                      }
+                    }
+                  },
+                  [_vm._v("+")]
+                ),
+                _c(
+                  "span",
+                  {
+                    staticClass: "badge_button",
+                    on: {
+                      click: function($event) {
+                        _vm.add_to_query("!(is " + e.label + ")");
+                      }
+                    }
+                  },
+                  [_vm._v("-")]
+                )
+              ]),
+              _c(
+                "a",
+                {
+                  attrs: { href: "#" },
+                  on: {
+                    click: function($event) {
+                      _vm.set_highlight("(is " + e.label + ")");
+                    }
+                  }
+                },
+                [_vm._v(_vm._s(e.label) + " (" + _vm._s(e.count) + ")")]
+              )
+            ])
+          })
+        ],
+        2
+      ),
+      _c(
+        "div",
+        {
           staticClass: "browse_container",
-          staticStyle: { float: "left", width: "70%" }
+          staticStyle: { float: "left", width: "50%" }
         },
         [
           _c("div", { staticClass: "filterquery" }, [
@@ -11929,7 +12056,7 @@
         "div",
         {
           staticClass: "querypanel",
-          staticStyle: { float: "left", width: "30%", "padding-left": "10px" }
+          staticStyle: { float: "left", width: "20%", "padding-left": "10px" }
         },
         [
           _c("div", { staticStyle: { float: "left" } }, [
@@ -12019,80 +12146,29 @@
             : _vm._e(),
           _c("br"),
           _c("br"),
-          _c(
-            "div",
-            [
-              _c("b", [_vm._v("Top nodes")]),
-              _vm._l(_vm.best_nodes, function(n) {
-                return _c("div", { staticClass: "query_result" }, [
-                  _c("div", { staticStyle: { display: "inline-block" } }, [
-                    _c(
-                      "span",
-                      {
-                        staticClass: "badge_button",
-                        on: {
-                          click: function($event) {
-                            _vm.add_to_query(
-                              "((=" +
-                                _vm.graph.nodes[n].name +
-                                ")[2], !(=" +
-                                _vm.graph.nodes[n].name +
-                                "))"
-                            );
-                          }
-                        }
-                      },
-                      [_vm._v("+")]
-                    ),
-                    _c(
-                      "span",
-                      {
-                        staticClass: "badge_button",
-                        on: {
-                          click: function($event) {
-                            _vm.add_to_query(
-                              "!(=" + _vm.graph.nodes[n].name + ")"
-                            );
-                          }
-                        }
-                      },
-                      [_vm._v("-")]
-                    )
-                  ]),
+          _vm.preview_mode
+            ? _c(
+                "div",
+                [
                   _c(
-                    "a",
+                    "span",
                     {
-                      attrs: { href: "#" },
+                      staticClass: "close_x",
+                      staticStyle: { float: "right" },
                       on: {
                         click: function($event) {
-                          _vm.set_highlight(
-                            "(=" +
-                              _vm.graph.nodes[n].name +
-                              ")[1], !(=" +
-                              _vm.graph.nodes[n].name +
-                              ")"
-                          );
+                          _vm.preview_mode = false;
                         }
                       }
                     },
-                    [
-                      _vm._v(
-                        _vm._s(_vm.graph.nodes[n].name) +
-                          " (" +
-                          _vm._s(
-                            _vm.graph.nodes[n]["_outdegree"] +
-                              _vm.graph.nodes[n]["_indegree"]
-                          ) +
-                          ")"
-                      )
-                    ]
-                  )
-                ])
-              })
-            ],
-            2
-          ),
-          !_vm.highlight_is_empty
+                    [_c("span", { staticClass: "fas fa-times" })]
+                  ),
+                  _c("read", { attrs: { node: _vm.preview_node } })
+                ],
+                1
+              )
+            : _vm._e(),
+          !_vm.highlight_is_empty && !_vm.preview_mode
             ? _c(
                 "div",
                 [
@@ -12167,54 +12243,8 @@
                 2
               )
             : _vm._e(),
-          _c("hr"),
-          _c("b", [_vm._v("Top labels")]),
-          _vm._l(_vm.best_edges, function(e) {
-            return _c("div", { staticClass: "query_result" }, [
-              _c("div", { staticStyle: { display: "inline-block" } }, [
-                _c(
-                  "span",
-                  {
-                    staticClass: "badge_button",
-                    on: {
-                      click: function($event) {
-                        _vm.add_to_query(
-                          "(has " + e.label + " / is " + e.label + ")"
-                        );
-                      }
-                    }
-                  },
-                  [_vm._v("+")]
-                ),
-                _c(
-                  "span",
-                  {
-                    staticClass: "badge_button",
-                    on: {
-                      click: function($event) {
-                        _vm.add_to_query("!(is " + e.label + ")");
-                      }
-                    }
-                  },
-                  [_vm._v("-")]
-                )
-              ]),
-              _c(
-                "a",
-                {
-                  attrs: { href: "#" },
-                  on: {
-                    click: function($event) {
-                      _vm.set_highlight("(is " + e.label + ")");
-                    }
-                  }
-                },
-                [_vm._v(_vm._s(e.label) + " (" + _vm._s(e.count) + ")")]
-              )
-            ])
-          })
-        ],
-        2
+          _c("hr")
+        ]
       )
     ])
   };
@@ -12224,11 +12254,11 @@
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-67f2d29a_0", { source: "\n.sidebar-item[data-v-67f2d29a] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-67f2d29a] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-67f2d29a] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-67f2d29a]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-67f2d29a]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AAwQA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"browse_container\" style=\"float:left;width:70%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span>{{query}}</span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-eraser\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:clickedNode=\"goto_node\"></graph-index>\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"search\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:search=\"do_highlight\" v-on:keyup.enter=\"do_highlight\" />\n\t\t<span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\t    <div>\n\t\t<b>Top nodes</b>\n\t\t<div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t resultset: function() {\n\t     if(!this.ready) return {};\n\t     if(!this.result) {\n\t\t return this.graph.nodes;\n\t     }\n\t     var ans = {};\n\t     for(var r in this.result) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.result) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var ans = [];\n\t     var best = this.subgraph.best_nodes();\n\t     for(var n of best){\n\t\t if(n in this.highlightset) {\n\t\t     ans.push(n);\n\t\t     if(ans.length >= 10) break;\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t ...mapState(['graph','ready', 'node_data'])\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     query: this.$route.params.query ? atob(this.$route.params.query) : '*',\n\t     preview_id: this.$route.params.id || '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t     subgraph: {}\n\t }\n     },\n     watch: {\n\t ready: function(val) {\n\t     if(val) {\n\t\t this.$nextTick(function () {\n\t\t     this.search();\n\t\t });\n\t     }\n\t }\n     },\n     methods: {\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return {};\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     return this.graph.search(nodeset, q);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.nodeset)\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t this.highlight = {};\n\t\t this.subgraph = this.graph.subgraph(this.result);\n\t\t this.do_highlight()\n\t\t /* for(var i = 0; i < this.result.length; i++){\n\t\t    if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t    this.$router.push('/node/'+this.result[i]);\n\t\t    break;\n\t\t    }\n\t\t    }*/\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t clear_filter: function() {\n\t     this.$router.push('/browse/'+btoa('*'));\n\t     this.query = '*';\n\t     this.search();\n\t     this.do_highlight();\n\t }\n     },\n     beforeRouteUpdate (to, from, next) {\n\t console.log('222222222222',to);\n\t this.query = to.params.query ? atob(to.params.query) : '*';\n\t this.search();\n\t next();\n     },\n     mounted: function() {\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-602c690e_0", { source: "\n.sidebar-item[data-v-602c690e] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-602c690e] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-602c690e] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-602c690e]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-602c690e]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AAqRA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"querypanel\" style=\"float:left;width:20%;padding-left:10px;\">\n\t    <b>Top nodes</b>\n\t    <div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n\t<div class=\"browse_container\" style=\"float:left;width:50%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span>{{query}}</span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-eraser\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:clickedNode=\"goto_node\"></graph-index>\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:20%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"search\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:search=\"do_highlight\" v-on:keyup.enter=\"do_highlight\" />\n\t\t<span v-on:click=\"do_highlight()\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span v-on:click=\"set_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-search-minus\"></span></span>\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\n\t    \n\t    <div v-if=\"preview_mode\">\n\t\t<span style=\"float:right;\" v-on:click=\"preview_mode = false\" class=\"close_x\"><span class=\"fas fa-times\"></span></span>\n\t\t<read :node=\"preview_node\" />\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty && !preview_mode\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t resultset: function() {\n\t     if(!this.ready) return {};\n\t     if(!this.result) {\n\t\t return this.graph.nodes;\n\t     }\n\t     var ans = {};\n\t     for(var r in this.result) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.result) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var ans = [];\n\t     var best = this.subgraph.best_nodes();\n\t     for(var n of best){\n\t\t if(n in this.highlightset) {\n\t\t     ans.push(n);\n\t\t     if(ans.length >= 10) break;\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     console.log(\"RRR\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t ...mapState(['graph', 'ready', 'node_data'])\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     preview_mode: false,\n\t     preview_node: '',\n\t     query: this.$route.params.query ? atob(this.$route.params.query) : '*',\n\t     preview_id: this.$route.params.id || '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t     subgraph: {}\n\t }\n     },\n     watch: {\n\t ready: function(val) {\n\t     if(val) {\n\t\t this.$nextTick(function () {\n\t\t     this.search();\n\t\t });\n\t     }\n\t }\n     },\n     methods: {\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.preview_node = e;\n\t     this.preview_mode = true;\n\t     // this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return {};\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     return this.graph.search(nodeset, q);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.nodeset)\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t this.highlight = {};\n\t\t this.subgraph = this.graph.subgraph(this.result);\n\t\t this.do_highlight()\n\t\t this.$forceUpdate();\n\t\t /* for(var i = 0; i < this.result.length; i++){\n\t\t    if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t    this.$router.push('/node/'+this.result[i]);\n\t\t    break;\n\t\t    }\n\t\t    }*/\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t clear_filter: function() {\n\t     this.$router.push('/browse/'+btoa('*'));\n\t     this.query = '*';\n\t     this.search();\n\t     this.do_highlight();\n\t }\n     },\n     beforeRouteUpdate (to, from, next) {\n\t console.log('222222222222',to);\n\t this.query = to.params.query ? atob(to.params.query) : '*';\n\t this.search();\n\t next();\n     },\n     mounted: function() {\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-67f2d29a";
+    const __vue_scope_id__$3 = "data-v-602c690e";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -13467,12 +13497,12 @@
       },
       getters: {
   	neighbours: state => node_id => {
-  	    let node = state.nodes[node_id];
+  	    let node = state.graph.nodes[node_id];
   	    var ans = {};
   	    for(var d in node.edges) {
   		for(var l in node.edges[d]) {
   		    for(var edge of node.edges[d][l]) {
-  			ans[edge.target] = state.nodes[edge.target];
+  			ans[edge.target] = state.graph.nodes[edge.target];
   		    }
   		}
   	    }
@@ -13480,13 +13510,13 @@
   	},
   	sorted: state => nodelist => {
   	    return nodelist.sort(function(a, b){
-  		if('index' in state.nodes[a] && 'index' in state.nodes[b]) {
-  		    return parseInt(state.nodes[a].index) - parseInt(state.nodes[b].index);
+  		if('index' in state.graph.nodes[a] && 'index' in state.graph.nodes[b]) {
+  		    return parseInt(state.graph.nodes[a].index) - parseInt(state.graph.nodes[b].index);
   		}
-  		else if('date' in state.nodes[a] && 'date' in state.nodes[b]) {
-  		    return state.nodes[a].date.localeCompare(state.nodes[b].date);
+  		else if('date' in state.graph.nodes[a] && 'date' in state.graph.nodes[b]) {
+  		    return state.graph.nodes[a].date.localeCompare(state.graph.nodes[b].date);
   		}
-  		else return state.nodes[a].name.localeCompare(state.nodes[b].name);
+  		else return state.graph.nodes[a].name.localeCompare(state.graph.nodes[b].name);
   	    });
   	},
   	sortedby: state => (nodeset, nodelist, key, ascending) => {
@@ -13519,8 +13549,8 @@
   	    console.log('caching',nodes);
   	    if(state.ready) {
   		for(var node_id in nodes){
-  		    if(state.nodes[node_id].auto) {
-  			state.nodes[node_id].snippet = "[index node]";
+  		    if(state.graph.nodes[node_id].auto) {
+  			state.graph.nodes[node_id].snippet = "[index node]";
   		    }
   		    state.node_data[node_id] = nodes[node_id];
   		}
@@ -13566,7 +13596,6 @@
   	    // }
   	},
   	METADATA: (state, g) => {
-  	    //state.nodes = nodes;
   	    console.log("MD",g);
   	    state.graph = new CatGraph(g["nodes"], g["edges"]);
   	    state.recent = [];
@@ -13589,6 +13618,27 @@
   	},
   	go: (context, node_id) => {
   	    context.commit('GO', node_id);
+  	},
+  	get_node: (context, node_id) => {
+  	    console.log("fetching",node_id);
+  	    var fetch_headers = new Headers();
+  	    fetch_headers.append('pragma', 'no-cache');
+  	    fetch_headers.append('cache-control', 'no-cache');
+  	    
+  	    var fetch_params = {
+  		method: 'GET',
+  		headers: fetch_headers,
+  	    };
+  	    return new Promise((resolve, reject) => {
+  		fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
+  		    response.text().then(function(data){
+  			var to_cache = {};
+  			to_cache[node_id] = data;
+  			context.commit('CACHE',to_cache);
+  			resolve();
+  		    });
+  		});
+  	    });
   	},
   	refresh_metadata: (context) => {
   	    var fetch_headers = new Headers();
@@ -34770,13 +34820,104 @@
     );
 
   //
+
+   var script$a = {
+       name: 'Read',
+       props: ['node'],
+       data() {
+  	 return {
+  	     data: "loading..."
+  	 };
+       },
+       watch: {
+  	 node(prev, next) {
+  	     console.log("NEW NODE???", prev, next);
+  	     this.get_node(next);
+  	 }
+       },
+       created: function() {
+  	 console.log('cr');
+  	 this.get_node(this.node);
+       },
+       methods: {
+  	 get_node(n) {
+  	     var self = this;
+  	     console.log("GET",n);
+  	     this.$store.dispatch('get_node', n).then(response => {
+  		 console.log("response",response);
+  		 self.data = self.node_data[n];
+               }, error => {
+  		 console.error("ERROR", error);
+               });
+  	     
+  	 }
+       },
+       computed: {
+  	 ...mapState(['ready', 'graph', 'node_data']),
+       },
+   };
+
+  /* script */
+  const __vue_script__$a = script$a;
+
+  /* template */
+  var __vue_render__$b = function() {
+    var _vm = this;
+    var _h = _vm.$createElement;
+    var _c = _vm._self._c || _h;
+    return _c("div", [
+      !_vm.ready ? _c("div", [_vm._v("\n\t    Loading...\n\t")]) : _vm._e(),
+      _vm.ready &&
+      _vm.graph.nodes[_vm.node] &&
+      _vm.graph.nodes[_vm.node].auto == false
+        ? _c("div", [
+            _c("h3", [_vm._v(_vm._s(_vm.graph.nodes[_vm.node].name))]),
+            _c("div", {
+              staticClass: "expanded_content",
+              domProps: { innerHTML: _vm._s(_vm.data) }
+            })
+          ])
+        : _vm._e()
+    ])
+  };
+  var __vue_staticRenderFns__$b = [];
+  __vue_render__$b._withStripped = true;
+
+    /* style */
+    const __vue_inject_styles__$b = function (inject) {
+      if (!inject) return
+      inject("data-v-46fc76ba_0", { source: "\n.expanded_content img[data-v-46fc76ba] {\n    max-width: 100%;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/read.vue"],"names":[],"mappings":";AAwDA;IACA,eAAA;AACA","file":"read.vue","sourcesContent":["<template>\n    <div>\n\t<div v-if=\"!ready\">\n\t    Loading...\n\t</div>\n\t<div v-if=\"ready && graph.nodes[node] && graph.nodes[node].auto == false\">\n\t    <h3>{{graph.nodes[node].name}}</h3>\n\t    <div v-html=\"data\" class=\"expanded_content\"></div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Read',\n     props: ['node'],\n     data() {\n\t return {\n\t     data: \"loading...\"\n\t };\n     },\n     watch: {\n\t node(prev, next) {\n\t     console.log(\"NEW NODE???\", prev, next);\n\t     this.get_node(next);\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.get_node(this.node);\n     },\n     methods: {\n\t get_node(n) {\n\t     var self = this;\n\t     console.log(\"GET\",n);\n\t     this.$store.dispatch('get_node', n).then(response => {\n\t\t console.log(\"response\",response);\n\t\t self.data = self.node_data[n];\n             }, error => {\n\t\t console.error(\"ERROR\", error)\n             });\n\t     \n\t }\n     },\n     computed: {\n\t ...mapState(['ready', 'graph', 'node_data']),\n     },\n }\n</script>\n\n<style scoped>\n .expanded_content img {\n     max-width: 100%;\n }\n</style>\n"]}, media: undefined });
+
+    };
+    /* scoped */
+    const __vue_scope_id__$b = "data-v-46fc76ba";
+    /* module identifier */
+    const __vue_module_identifier__$b = undefined;
+    /* functional template */
+    const __vue_is_functional_template__$b = false;
+    /* style inject SSR */
+    
+
+    
+    var Read = normalizeComponent_1(
+      { render: __vue_render__$b, staticRenderFns: __vue_staticRenderFns__$b },
+      __vue_inject_styles__$b,
+      __vue_script__$a,
+      __vue_scope_id__$b,
+      __vue_is_functional_template__$b,
+      __vue_module_identifier__$b,
+      browser,
+      undefined
+    );
+
+  //
   //
   //
   //
   //
   //
 
-   var script$a = {
+   var script$b = {
        name: 'cat-loc',
        props: ['root'],
        data () {
@@ -34793,10 +34934,10 @@
    };
 
   /* script */
-  const __vue_script__$a = script$a;
+  const __vue_script__$b = script$b;
 
   /* template */
-  var __vue_render__$b = function() {
+  var __vue_render__$c = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -34826,17 +34967,17 @@
         : _vm._e()
     ])
   };
-  var __vue_staticRenderFns__$b = [];
-  __vue_render__$b._withStripped = true;
+  var __vue_staticRenderFns__$c = [];
+  __vue_render__$c._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$b = undefined;
+    const __vue_inject_styles__$c = undefined;
     /* scoped */
-    const __vue_scope_id__$b = undefined;
+    const __vue_scope_id__$c = undefined;
     /* module identifier */
-    const __vue_module_identifier__$b = undefined;
+    const __vue_module_identifier__$c = undefined;
     /* functional template */
-    const __vue_is_functional_template__$b = false;
+    const __vue_is_functional_template__$c = false;
     /* style inject */
     
     /* style inject SSR */
@@ -34844,12 +34985,12 @@
 
     
     var LocPlugin = normalizeComponent_1(
-      { render: __vue_render__$b, staticRenderFns: __vue_staticRenderFns__$b },
-      __vue_inject_styles__$b,
-      __vue_script__$a,
-      __vue_scope_id__$b,
-      __vue_is_functional_template__$b,
-      __vue_module_identifier__$b,
+      { render: __vue_render__$c, staticRenderFns: __vue_staticRenderFns__$c },
+      __vue_inject_styles__$c,
+      __vue_script__$b,
+      __vue_scope_id__$c,
+      __vue_is_functional_template__$c,
+      __vue_module_identifier__$c,
       undefined,
       undefined
     );
@@ -34864,7 +35005,7 @@
   //
   //
 
-   var script$b = {
+   var script$c = {
        name: 'cat-video',
        props: ['root'],
        data () {
@@ -34901,10 +35042,10 @@
    };
 
   /* script */
-  const __vue_script__$b = script$b;
+  const __vue_script__$c = script$c;
 
   /* template */
-  var __vue_render__$c = function() {
+  var __vue_render__$d = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -34947,17 +35088,17 @@
         : _vm._e()
     ])
   };
-  var __vue_staticRenderFns__$c = [];
-  __vue_render__$c._withStripped = true;
+  var __vue_staticRenderFns__$d = [];
+  __vue_render__$d._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$c = undefined;
+    const __vue_inject_styles__$d = undefined;
     /* scoped */
-    const __vue_scope_id__$c = undefined;
+    const __vue_scope_id__$d = undefined;
     /* module identifier */
-    const __vue_module_identifier__$c = undefined;
+    const __vue_module_identifier__$d = undefined;
     /* functional template */
-    const __vue_is_functional_template__$c = false;
+    const __vue_is_functional_template__$d = false;
     /* style inject */
     
     /* style inject SSR */
@@ -34965,12 +35106,12 @@
 
     
     var VideoPlugin = normalizeComponent_1(
-      { render: __vue_render__$c, staticRenderFns: __vue_staticRenderFns__$c },
-      __vue_inject_styles__$c,
-      __vue_script__$b,
-      __vue_scope_id__$c,
-      __vue_is_functional_template__$c,
-      __vue_module_identifier__$c,
+      { render: __vue_render__$d, staticRenderFns: __vue_staticRenderFns__$d },
+      __vue_inject_styles__$d,
+      __vue_script__$c,
+      __vue_scope_id__$d,
+      __vue_is_functional_template__$d,
+      __vue_module_identifier__$d,
       undefined,
       undefined
     );
@@ -34999,7 +35140,7 @@
   //
   //
 
-   var script$c = {
+   var script$d = {
        name: 'cat-math',
        props: ['root'],
        data () {
@@ -35063,10 +35204,10 @@
    };
 
   /* script */
-  const __vue_script__$c = script$c;
+  const __vue_script__$d = script$d;
 
   /* template */
-  var __vue_render__$d = function() {
+  var __vue_render__$e = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -35149,32 +35290,32 @@
         : _vm._e()
     ])
   };
-  var __vue_staticRenderFns__$d = [];
-  __vue_render__$d._withStripped = true;
+  var __vue_staticRenderFns__$e = [];
+  __vue_render__$e._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$d = function (inject) {
+    const __vue_inject_styles__$e = function (inject) {
       if (!inject) return
       inject("data-v-368015e5_0", { source: "\n.category-math-plugin-math[data-v-368015e5] {\n    cursor:pointer;\n    display:inline-block;\n}\n.category-math-plugin-vars[data-v-368015e5] {\n    background-color: #dd5;\n    padding:1ex;\n    border: 1px solid black;\n    z-index:1;\n}\n.category-math-plugin-refs[data-v-368015e5] {\n    background-color: #ff5;\n    padding:2ex 1ex;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/math.vue"],"names":[],"mappings":";AA6FA;IACA,cAAA;IACA,oBAAA;AACA;AAEA;IACA,sBAAA;IACA,WAAA;IACA,uBAAA;IACA,SAAA;AACA;AAEA;IACA,sBAAA;IACA,eAAA;AACA","file":"math.vue","sourcesContent":["<template>\n    <span class=\"category-math-plugin\">\n\t<a v-bind:name=\"'category-math-plugin-link-'+id\"></a>\n\t<div v-bind:id=\"'category-math-plugin-expr-'+id\" class=\"category-math-plugin-math\" v-on:click=\"display_syms = !display_syms\" v-html=\"rendered\"></div>\n\t<div class=\"category-math-plugin-vars\" v-bind:style=\"get_pos(id)\" v-if=\"display_syms\">\n\t    <a href=\"#\" v-on:click=\"display_syms = false; query = ''\">[x]</a>\n\t    Vars:\n\t    <ul>\n\t\t<li v-for=\"e in syms\">\n\t\t    <a href=\"#\" v-on:click=\"query = e\">{{e}}</a>\n\t\t</li>\n\t    </ul>\n\t    <div class=\"category-math-plugin-refs\" v-if=\"display_syms && query != ''\">\n\t\tUses:\n\t\t<ul>\n\t\t    <li v-for=\"x in master.index[query]\">\n\t\t\t<a v-bind:href=\"'#category-math-plugin-link-'+x\">{{master.snippets[x]}}</a>\n\t\t    </li>\n\t\t</ul>\n\t    </div>\n\t</div>\n    </span>\n</template>\n<script>\n export default {\n     name: 'cat-math',\n     props: ['root'],\n     data () {\n\t return {\n\t     id: '',\n\t     rendered: '',\n\t     player: null\n\t };\n     },\n     methods: {\n\t get_pos: function() {\n\t     var el = document.getElementById(\"category-math-plugin-expr-\"+this.id);\n\t     var top = el.getBoundingClientRect().y;\n\t     return {'position':'absolute','left':'-25%','top':top+'px','width':'25%'};\n\t }\n     },\n     created: function(){\n\t console.log(\"init\");\n\t this.$store.dispatch(\"RESET_PLUGIN_DATA\",\"math\");\n\t //Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t var index = 0;\n\t var doc_id = node+\"-\"+index;\n\t var content = this.root.innerHTML.trim()\n\t console.log(\"R\",this.root,content);\n\t //var res = Guppy.Doc.render(content, \"text\");\n\t var res = {doc:content};\n\t var doc_data = {};\n\t //doc_data[index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t doc_data[index] = [\"x\"];\n\t //res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t //var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\n\t \n\t // Put this doc ID in the index for each var and symbol in the document\n\t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t     var v = this.docs[node][index][i];\n\t     if (!this.index[v]) this.index[v] = [];\n\t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t }\n\n\t // Calculate the snippet that will be associated with this expression when it appears in listings\n\t var snippet = \"\";\n\t if(this.root.previousSibling){\n\t     snippet += this.root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t }\n\t snippet += \" [formula] \"\n\n\t if(this.root.nextSibling) {\n\t     snippet += this.root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t }\n\t snippet = \"...\" + snippet + \"...\";\n\t console.log(\"parprev\",this.root.parentNode.previousSibling);\n\t console.log(\"parnext\",this.root.parentNode.nextSibling);\n\t this.snippets[doc_id] = snippet;\n\n\t // Finally, set up component attributes\n\t this.syms = this.docs[node][index];\n\t this.rendered = rendered_content;\n\t this.display_syms = false;\n\t this.id = doc_id;\n\t this.query = \"\";\n\t this.node = node;\n     }\n }\n</script>\n<style scoped>\n .category-math-plugin-math {\n     cursor:pointer;\n     display:inline-block;\n }\n\n .category-math-plugin-vars {\n     background-color: #dd5;\n     padding:1ex;\n     border: 1px solid black;\n     z-index:1;\n }\n\n .category-math-plugin-refs {\n     background-color: #ff5;\n     padding:2ex 1ex;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$d = "data-v-368015e5";
+    const __vue_scope_id__$e = "data-v-368015e5";
     /* module identifier */
-    const __vue_module_identifier__$d = undefined;
+    const __vue_module_identifier__$e = undefined;
     /* functional template */
-    const __vue_is_functional_template__$d = false;
+    const __vue_is_functional_template__$e = false;
     /* style inject SSR */
     
 
     
     normalizeComponent_1(
-      { render: __vue_render__$d, staticRenderFns: __vue_staticRenderFns__$d },
-      __vue_inject_styles__$d,
-      __vue_script__$c,
-      __vue_scope_id__$d,
-      __vue_is_functional_template__$d,
-      __vue_module_identifier__$d,
+      { render: __vue_render__$e, staticRenderFns: __vue_staticRenderFns__$e },
+      __vue_inject_styles__$e,
+      __vue_script__$d,
+      __vue_scope_id__$e,
+      __vue_is_functional_template__$e,
+      __vue_module_identifier__$e,
       browser,
       undefined
     );
@@ -35183,7 +35324,7 @@
   //
   //
 
-   var script$d = {
+   var script$e = {
        name: 'cat-link',
        props: ['root'],
        data () {
@@ -35201,10 +35342,10 @@
    };
 
   /* script */
-  const __vue_script__$d = script$d;
+  const __vue_script__$e = script$e;
 
   /* template */
-  var __vue_render__$e = function() {
+  var __vue_render__$f = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -35212,17 +35353,17 @@
       _vm._v(_vm._s(_vm.name))
     ])
   };
-  var __vue_staticRenderFns__$e = [];
-  __vue_render__$e._withStripped = true;
+  var __vue_staticRenderFns__$f = [];
+  __vue_render__$f._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$e = undefined;
+    const __vue_inject_styles__$f = undefined;
     /* scoped */
-    const __vue_scope_id__$e = undefined;
+    const __vue_scope_id__$f = undefined;
     /* module identifier */
-    const __vue_module_identifier__$e = undefined;
+    const __vue_module_identifier__$f = undefined;
     /* functional template */
-    const __vue_is_functional_template__$e = false;
+    const __vue_is_functional_template__$f = false;
     /* style inject */
     
     /* style inject SSR */
@@ -35230,19 +35371,19 @@
 
     
     var LinkPlugin = normalizeComponent_1(
-      { render: __vue_render__$e, staticRenderFns: __vue_staticRenderFns__$e },
-      __vue_inject_styles__$e,
-      __vue_script__$d,
-      __vue_scope_id__$e,
-      __vue_is_functional_template__$e,
-      __vue_module_identifier__$e,
+      { render: __vue_render__$f, staticRenderFns: __vue_staticRenderFns__$f },
+      __vue_inject_styles__$f,
+      __vue_script__$e,
+      __vue_scope_id__$f,
+      __vue_is_functional_template__$f,
+      __vue_module_identifier__$f,
       undefined,
       undefined
     );
 
   //
    
-   var script$e = {
+   var script$f = {
        name: 'cat-query',
        props: ['root'],
        
@@ -35265,10 +35406,10 @@
    };
 
   /* script */
-  const __vue_script__$e = script$e;
+  const __vue_script__$f = script$f;
 
   /* template */
-  var __vue_render__$f = function() {
+  var __vue_render__$g = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -35289,17 +35430,17 @@
       0
     )
   };
-  var __vue_staticRenderFns__$f = [];
-  __vue_render__$f._withStripped = true;
+  var __vue_staticRenderFns__$g = [];
+  __vue_render__$g._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$f = undefined;
+    const __vue_inject_styles__$g = undefined;
     /* scoped */
-    const __vue_scope_id__$f = undefined;
+    const __vue_scope_id__$g = undefined;
     /* module identifier */
-    const __vue_module_identifier__$f = undefined;
+    const __vue_module_identifier__$g = undefined;
     /* functional template */
-    const __vue_is_functional_template__$f = false;
+    const __vue_is_functional_template__$g = false;
     /* style inject */
     
     /* style inject SSR */
@@ -35307,12 +35448,12 @@
 
     
     var QueryPlugin = normalizeComponent_1(
-      { render: __vue_render__$f, staticRenderFns: __vue_staticRenderFns__$f },
-      __vue_inject_styles__$f,
-      __vue_script__$e,
-      __vue_scope_id__$f,
-      __vue_is_functional_template__$f,
-      __vue_module_identifier__$f,
+      { render: __vue_render__$g, staticRenderFns: __vue_staticRenderFns__$g },
+      __vue_inject_styles__$g,
+      __vue_script__$f,
+      __vue_scope_id__$g,
+      __vue_is_functional_template__$g,
+      __vue_module_identifier__$g,
       undefined,
       undefined
     );
@@ -35332,7 +35473,7 @@
   //
   //
 
-   var script$f = {
+   var script$g = {
        name: 'cat-slideshow',
        props: ['root'],
        data() {
@@ -35371,10 +35512,10 @@
    };
 
   /* script */
-  const __vue_script__$f = script$f;
+  const __vue_script__$g = script$g;
 
   /* template */
-  var __vue_render__$g = function() {
+  var __vue_render__$h = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -35437,32 +35578,32 @@
       2
     )
   };
-  var __vue_staticRenderFns__$g = [];
-  __vue_render__$g._withStripped = true;
+  var __vue_staticRenderFns__$h = [];
+  __vue_render__$h._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$g = function (inject) {
+    const __vue_inject_styles__$h = function (inject) {
       if (!inject) return
       inject("data-v-46ec8c84_0", { source: "\n.category-slideshow[data-v-46ec8c84] {\n    text-align:center;\n    width:100%;\n    overflow-x:scroll;\n}\n.category-slideshow-slide[data-v-46ec8c84] img {\n    max-width: 100% !important;\n}\n.category-slideshow-slide[data-v-46ec8c84] {\n    text-align:center;\n}\n.category-slideshow-caption[data-v-46ec8c84] {\n    text-align:center;\n    margin:auto;\n    width:80%;\n}\n.category-slideshow-button[data-v-46ec8c84] {\n    width:2em;\n    display:inline-block;\n    height:2em;\n    border:2px solid black;\n    text-align:center;\n    cursor:pointer;\n    margin:.5ex 0;\n}\n.category-slideshow-button-other[data-v-46ec8c84] {\n    background-color:#ccc;\n}\n.category-slideshow-button-current[data-v-46ec8c84] {\n    background-color:#8cf;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/slideshow.vue"],"names":[],"mappings":";AAuDA;IACA,iBAAA;IACA,UAAA;IACA,iBAAA;AACA;AAEA;IACA,0BAAA;AACA;AAEA;IACA,iBAAA;AACA;AAEA;IACA,iBAAA;IACA,WAAA;IACA,SAAA;AACA;AAEA;IACA,SAAA;IACA,oBAAA;IACA,UAAA;IACA,sBAAA;IACA,iBAAA;IACA,cAAA;IACA,aAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"slideshow.vue","sourcesContent":["<template>\n    <div class=\"category-slideshow\">\n\t<span :class=\"current_index == index && !all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-for=\"(s,index) in slides\" v-on:mouseover=\"tmp_set_index(index)\" v-on:mouseout=\"reset_index()\" v-on:click=\"set_index(index)\">\n\t    {{index}}\n\t</span>\n\t<span :class=\"all ? 'category-slideshow-button category-slideshow-button-current' : 'category-slideshow-button category-slideshow-button-other'\" v-on:click=\"all=!all\">\n\t    all\n\t</span>\n\t<div class=\"category-slideshow-slide\" v-html=\"slides[current_index]\" v-if=\"!all\">\n\t</div>\n\t<div class=\"category-slideshow-slide\" v-for=\"(s,index) in slides\" v-if=\"all\" v-html=\"s\">\n\t</div>\n    </div>\n</template>\n<script>\n export default {\n     name: 'cat-slideshow',\n     props: ['root'],\n     data() {\n\t return {\n\t     current_index: 0,\n\t     lock_index: 0,\n\t     init_index: 0,\n\t     all: false,\n\t     slides: [],\n\t };\n     },\n     mounted: function() {\n\t var doc = this.root;\n\t var elements = [];\n\n\t // Iterate through li nodes and extract these as the slides\n\t for(var n = doc.firstChild.firstChild; n != null; n = n.nextSibling){\n\t     if(n.nodeName.toLowerCase() == \"li\") elements.push(n.innerHTML);\n\t }\n\t \n\t this.slides = elements;\n     },\n     methods: {\n\t tmp_set_index: function(idx){\n\t     this.current_index = idx;\n\t },\n\t reset_index: function(){\n\t     this.current_index = this.lock_index;\n\t },\n\t set_index: function(idx){\n\t     this.all = false;\n\t     this.lock_index = idx;\n\t     this.current_index = idx;\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .category-slideshow {\n     text-align:center;\n     width:100%;\n     overflow-x:scroll;\n }\n\n .category-slideshow-slide >>> img {\n     max-width: 100% !important;\n }\n \n .category-slideshow-slide {\n     text-align:center;\n }\n\n .category-slideshow-caption {\n     text-align:center;\n     margin:auto;\n     width:80%;\n }\n\n .category-slideshow-button {\n     width:2em;\n     display:inline-block;\n     height:2em;\n     border:2px solid black;\n     text-align:center;\n     cursor:pointer;\n     margin:.5ex 0;\n }\n\n .category-slideshow-button-other {\n     background-color:#ccc;\n }\n\n .category-slideshow-button-current {\n     background-color:#8cf;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$g = "data-v-46ec8c84";
+    const __vue_scope_id__$h = "data-v-46ec8c84";
     /* module identifier */
-    const __vue_module_identifier__$g = undefined;
+    const __vue_module_identifier__$h = undefined;
     /* functional template */
-    const __vue_is_functional_template__$g = false;
+    const __vue_is_functional_template__$h = false;
     /* style inject SSR */
     
 
     
     var SlideshowPlugin = normalizeComponent_1(
-      { render: __vue_render__$g, staticRenderFns: __vue_staticRenderFns__$g },
-      __vue_inject_styles__$g,
-      __vue_script__$f,
-      __vue_scope_id__$g,
-      __vue_is_functional_template__$g,
-      __vue_module_identifier__$g,
+      { render: __vue_render__$h, staticRenderFns: __vue_staticRenderFns__$h },
+      __vue_inject_styles__$h,
+      __vue_script__$g,
+      __vue_scope_id__$h,
+      __vue_is_functional_template__$h,
+      __vue_module_identifier__$h,
       browser,
       undefined
     );
@@ -45233,7 +45374,7 @@
   });
 
   //
-   var script$g = {
+   var script$h = {
        name: 'cat-jsavr',
        props: ['root','program','text','control','size','lightboard_feature','reset_feature','simid','debug_mode_feature'],
        data () {
@@ -46348,10 +46489,10 @@
    };
 
   /* script */
-  const __vue_script__$g = script$g;
+  const __vue_script__$h = script$h;
 
   /* template */
-  var __vue_render__$h = function() {
+  var __vue_render__$i = function() {
     var _vm = this;
     var _h = _vm.$createElement;
     var _c = _vm._self._c || _h;
@@ -47107,32 +47248,32 @@
         : _vm._e()
     ])
   };
-  var __vue_staticRenderFns__$h = [];
-  __vue_render__$h._withStripped = true;
+  var __vue_staticRenderFns__$i = [];
+  __vue_render__$i._withStripped = true;
 
     /* style */
-    const __vue_inject_styles__$h = function (inject) {
+    const __vue_inject_styles__$i = function (inject) {
       if (!inject) return
       inject("data-v-01dd48c1_0", { source: "\n.simavr[data-v-01dd48c1]{\n    display:inline-block;\n    width:73em;\n    /* min-height:40em; */\n    font-size:10pt;\n}\n#simavr_rf[data-v-01dd48c1]{\n    float:left;\n    width:16em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n#simavr_pm[data-v-01dd48c1]{\n    float:left;\n    width:13em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n#simavr_ram[data-v-01dd48c1]{\n    float:left;\n    width:10em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n#simavr_other[data-v-01dd48c1]{\n    float:left;\n    width:10em;\n    border:1px solid #aaa;\n    text-align:center;\n}\n.simavr_title[data-v-01dd48c1]{\n    width:100%;\n    text-align:center;\n    display:inline-block;\n    font-size:12pt;\n    margin:auto;\n    padding-bottom:5px;\n    line-height:2.5em;\n}\n.simavr_status[data-v-01dd48c1]{\n    display:inline-block;\n    padding:5px;\n    border-left:1px solid #aaa;\n    /* border-radius:5px; */\n    margin:5px;\n    width:45%;\n    font-size:9pt;\n    float:right;\n}\n.active_line[data-v-01dd48c1]{\n    background-color:#f66;\n}\n.simavr_label[data-v-01dd48c1]{\n    font-size:10pt;\n    color:#333;\n    display:inline-block;\n    width:2em;\n}\n.simavr_label_long[data-v-01dd48c1]{\n    font-size:10pt;\n    color:#333;\n    display:inline-block;\n    margin-right:0.5ex;\n    min-width:2em;\n}\n.simavr_reg[data-v-01dd48c1]{\n    text-align:left;\n    display:inline-block;\n    padding:4px;\n    /*margin:0 2px 2px 0;*/\n    width:7em;\n}\n.simavr_pm[data-v-01dd48c1]{\n    text-align:left;\n    display:inline-block;\n    padding:4px;\n    /*margin:0 2px 2px 0;*/\n    width:12em;\n}\n.simavr_mem_start[data-v-01dd48c1]{\n    padding:4px;\n    width:4em;\n    margin:4px;\n}\n.simavr_ram[data-v-01dd48c1]{\n    text-align:left;\n    display:inline-block;\n    padding:4px;\n    /*margin:0 2px 2px 0;*/\n    width:7em;\n}\n.simavr_controls[data-v-01dd48c1]{\n    display:inline-block;\n    width:90%;\n    height:50px;\n    border: 2px solid #ccc;\n    margin:auto;\n    margin-bottom:5px;\n}\n.simavr_programming[data-v-01dd48c1]{\n    display:inline-block;\n    float:left;\n    width:70%;\n}\n.simavr_output_container[data-v-01dd48c1]{\n    display:inline-block;\n    float:left;\n    width:25%;\n}\n.simavr_simulator[data-v-01dd48c1]{\n    display:inline-block;\n    float:left;\n    width:75%;\n}\n.simavr_output[data-v-01dd48c1]{\n    display:inline-block;\n    padding:5px;\n    width:90%;\n    border:1px solid #aaa;\n    overflow-x:scroll;\n    overflow-y:scroll;\n}\n.simavr_program[data-v-01dd48c1]{\n    width:90%;\n}\n.simavr_normal[data-v-01dd48c1]{\n    background-color:#c66;\n}\n.simavr_updated[data-v-01dd48c1]{\n    background-color:#6c6;\n}\n.simavr_active[data-v-01dd48c1]{\n    background-color:#cc6;\n}\n.simavr_display_button[data-v-01dd48c1]{\n    display:inline-block;\n    padding:2px;\n}\n.simavr_enabled_button[data-v-01dd48c1]{\n    background-color:#66a;\n}\n.simavr_disabled_button[data-v-01dd48c1]{\n    background-color:#aaa;\n}\n.simavr_display_button[data-v-01dd48c1]:hover{\n    display:inline-block;\n    cursor:pointer;\n    color:#f33;\n}\n.simavr_button[data-v-01dd48c1]{\n    display:inline-block;\n    padding:8px;\n    border-radius:5px;\n    height:25px;\n    color:white;\n    margin:5px;\n    cursor:pointer;\n}\n.simavr_button[data-v-01dd48c1]:hover{\n    display:inline-block;\n    cursor:pointer;\n    color:#f33;\n}\n.simavr_io_num[data-v-01dd48c1]{\n    width:3em;\n    border:3px solid black;\n    background-color:#363;\n    color:#ff4;\n    font-size:17pt;\n    padding:5px;\n}\n.simavr_io_switch[data-v-01dd48c1]{\n    display:inline-block;\n    width:3em;\n    border:3px solid black;\n    font-size:17pt;\n    padding:5px;\n    cursor:pointer;\n}\n.simavr_io_switch_on[data-v-01dd48c1]{\n    background-color:#3f3;\n}\n.simavr_io_switch_off[data-v-01dd48c1]{\n    background-color:#f33;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/plugins/jsavr.vue"],"names":[],"mappings":";AA+sCA;IACA,oBAAA;IACA,UAAA;IACA,qBAAA;IACA,cAAA;AACA;AACA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;IACA,qBAAA;IACA,iBAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,oBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,iBAAA;AACA;AAEA;IACA,oBAAA;IACA,WAAA;IACA,0BAAA;IACA,uBAAA;IACA,UAAA;IACA,SAAA;IACA,aAAA;IACA,WAAA;AACA;AAEA;IACA,qBAAA;AACA;AACA;IACA,cAAA;IACA,UAAA;IACA,oBAAA;IACA,SAAA;AACA;AACA;IACA,cAAA;IACA,UAAA;IACA,oBAAA;IACA,kBAAA;IACA,aAAA;AACA;AAEA;IACA,eAAA;IACA,oBAAA;IACA,WAAA;IACA,sBAAA;IACA,SAAA;AACA;AACA;IACA,eAAA;IACA,oBAAA;IACA,WAAA;IACA,sBAAA;IACA,UAAA;AACA;AAEA;IACA,WAAA;IACA,SAAA;IACA,UAAA;AACA;AAEA;IACA,eAAA;IACA,oBAAA;IACA,WAAA;IACA,sBAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,SAAA;IACA,WAAA;IACA,sBAAA;IACA,WAAA;IACA,iBAAA;AACA;AAEA;IACA,oBAAA;IACA,UAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,UAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,UAAA;IACA,SAAA;AACA;AAEA;IACA,oBAAA;IACA,WAAA;IACA,SAAA;IACA,qBAAA;IACA,iBAAA;IACA,iBAAA;AACA;AAEA;IACA,SAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,oBAAA;IACA,WAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,oBAAA;IACA,cAAA;IACA,UAAA;AACA;AACA;IACA,oBAAA;IACA,WAAA;IACA,iBAAA;IACA,WAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;AACA;AAEA;IACA,oBAAA;IACA,cAAA;IACA,UAAA;AACA;AAEA;IACA,SAAA;IACA,sBAAA;IACA,qBAAA;IACA,UAAA;IACA,cAAA;IACA,WAAA;AACA;AAEA;IACA,oBAAA;IACA,SAAA;IACA,sBAAA;IACA,cAAA;IACA,WAAA;IACA,cAAA;AACA;AAEA;IACA,qBAAA;AACA;AAEA;IACA,qBAAA;AACA","file":"jsavr.vue","sourcesContent":["<template>\n    <div class=\"simavr\">\n\t<div class=\"simavr_programming\" v-if=\"!running\">\n\t    <div class=\"simavr_controls\">\n\t\t<div v-bind:class=\"'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"program_pm()\">run</div>\n\t\t<div v-bind:class=\"'simavr_button ' + (running == true ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"reset_program()\" v-if=\"reset_feature != 'no'\">reset</div>\n\t\t<div class=\"simavr_status\">Status: {{status}}</div>\n\t    </div><br />\n\t    <form><textarea v-bind:id=\"'simavr'+simid+'_program_area'\"></textarea></form>\n\t    <br />\n\t</div>\n\t<div class=\"simavr_output_container\" v-if=\"running\">\n\t    <div class=\"simavr_controls\">\n\t\t<div v-bind:class=\"'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"end()\">end</div>\n\t\t<div style=\"margin-top:10px;display:inline-block;\">\n\t\t    <select name=\"output_select\" v-model=\"output_type.selection\">\n\t\t\t<option value=\"program\">View Program</option>\n\t\t\t<option value=\"simple\">View Simple I/O</option>\n\t\t\t<!-- <option value=\"complex\">View Complex I/O</option> -->\n\t\t    </select>\n\t\t</div>\n\t    </div>\n\t    <div class=\"simavr_output\" v-if=\"output_type.selection == 'program'\">\n\t\t<b>Program: </b>\n\t\t<pre>{{program}}</pre>\n\t    </div>\n\t    <div class=\"simavr_output\" v-if=\"output_type.selection == 'simple'\">\n\t\tOutput LCD: <br />(Connected to pins 0-7 of D)<br />\n\t\t<div class=\"simavr_io_num\">\n\t\t    {{truncate(PORTD,8,false)}}\n\t\t</div>\n\n\t\t<br /><br />\n\n\t\tToggle switches--click to toggle:<br />(Connected to pins 0-7 of D): <br />\n\t\t<div style=\"display:inline-block;\" v-for=\"i in [0,1,2,3,4,5,6,7]\">\n\t\t    {{i}}:\n\t\t    <div v-bind:class=\"'simavr_io_switch ' + (io_state.switch_state[i] == 'ON' ? 'simavr_io_switch_on' : 'simavr_io_switch_off')\" v-on:click=\"io_switch(i)\">\n\t\t\t{{io_state.switch_state[i]}}\n\t\t    </div>\n\t\t    <br /><br />\n\t\t</div>\n\t    </div>\n\t    <div class=\"simavr_output\" v-if=\"output_type.selection == 'complex'\">\n\t\tPaceholder for full output panel\n\t    </div>\n\t</div>\n\t<div class=\"simavr_simulator\" v-if=\"running\">\n\t    <div class=\"simavr_controls\">\n\t\t<div v-bind:class=\"'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"reset(false)\">reset</div>\n\t\t<div v-bind:class=\"'simavr_button ' + (running == false ? 'simavr_disabled_button' : 'simavr_enabled_button')\" v-on:click=\"step()\">step</div>\n\t\t<input class=\"simavr_mem_start\" type=\"number\" v-model=\"steps.count\" v-if=\"running == true\"></input>\n\t    </div><br />\n\t    <div id=\"simavr_pm\">\n\t\t<div class=\"simavr_title\">PM at <input class=\"simavr_mem_start\" type=\"number\" v-model=\"display_pm_start\"></input></div><br />\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('t')\">[text]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('b')\">[bin]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('d')\">[dec]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_PM_display_mode('h')\">[hex]</div>\n\t\t<div v-for=\"(i,idx) in PM.slice(display_pm_start,display_pm_start+display_pm_length)\">\n\t\t    <div v-bind:class=\"'simavr_pm '+ (display_pm_start+idx == PC ? 'simavr_active' : 'simavr_normal')\">\n\t\t\t<span class=\"simavr_label_long\">{{display_pm_start+idx}}: </span>{{ PM[display_pm_start+idx].display() }}\n\t\t    </div>\n\t\t    <br />\n\t\t</div>\n\t\t<br />\n\t    </div>\n\t    <div id=\"simavr_rf\">\n\t\t<div class=\"simavr_title\">Register file</div><br />\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('b')\">[bin]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('d')\">[dec]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('2')\">[com]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RF_display_mode('h')\">[hex]</div>\n\t\t<br />\n\t\t\n\t\t<span v-for=\"(r,idx) in RF\"><div v-bind:class=\"'simavr_reg '+ (is_updated(idx) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">{{idx}}: </span>{{display_rf(idx)}}</div><br v-if=\"(idx)%2 == 1\" /></span><br />\n\t    </div>\n\t    <div id=\"simavr_ram\">\n\t\t<div class=\"simavr_title\">RAM at <input class=\"simavr_mem_start\" type=\"number\" v-model=\"display_ram_start\"></input></div><br />\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RAM_display_mode('d')\">[dec]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RAM_display_mode('2')\">[com]</div>\n\t\t<div class=\"simavr_display_button\" v-on:click=\"set_RAM_display_mode('c')\">[txt]</div>\n\t\t<div v-for=\"(i,idx) in RAM.slice(display_ram_start,display_ram_start+display_ram_length)\">\n\t\t    <div v-bind:class=\"'simavr_ram '+ (is_ram_updated(display_ram_start+idx) ? 'simavr_updated' : 'simavr_normal')\">\n\t\t\t<span class=\"simavr_label_long\">{{display_ram_start+idx}}: </span>{{display_ram(display_ram_start+idx)}}\n\t\t    </div>\n\t\t    <br />\n\t\t</div>\n\t\t<br />\n\t    </div>\n\t    <div id=\"simavr_other\">\n\t\t<div class=\"simavr_title\">Other</div><br /><div class=\"simavr_display_button\" v-on:click=\"\">&nbsp;</div><br />\n\t\t<div v-bind:class=\"{simavr_reg:true, simavr_updated:is_updated('PC'), simavr_normal:!is_updated('PC')}\"><span class=\"simavr_label\">PC: </span>{{PC}}</div><br />\n\t\t<br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('Z') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">Z: </span>{{Z}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('C') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">C: </span>{{C}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('N') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">N: </span>{{N}}</div><br />\n\t\t<br />\n\t\t\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated(26)||is_updated(27) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">X: </span>{{truncate(RF[26],8,false)+256*truncate(RF[27],8,false)}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated(28)||is_updated(29) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">Y: </span>{{truncate(RF[28],8,false)+256*truncate(RF[29],8,false)}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated(30)||is_updated(31) ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label\">Z: </span>{{truncate(RF[30],8,false)+256*truncate(RF[31],8,false)}}</div><br />\n\t\t<br />\n\t\t\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('PIND') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">PIND: </span>{{PIND}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('DDRD') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">DDRD: </span>{{DDRD}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('PORTD') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">PORTD: </span>{{PORTD}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('SPL') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">SPL: </span>{{SPL}}</div><br />\n\t\t<div v-bind:class=\"'simavr_reg '+(is_updated('SPH') ? 'simavr_updated' : 'simavr_normal')\"><span class=\"simavr_label_long\">SPH: </span>{{SPH}}</div>\n\t    </div>\n\t</div>\n    </div>\n</template>\n<script>\n import CodeMirror from 'codemirror'\n export default {\n     name: 'cat-jsavr',\n     props: ['root','program','text','control','size','lightboard_feature','reset_feature','simid','debug_mode_feature'],\n     data () {\n\t return {\n\t     id: '',\n\t     rendered: '',\n\t     debug_log: this.do_nothing,\n\t     status: \"Ready\",\n\t     running: false,\n\t     outputs: [],\n\t     io_state: {'switch_state':[\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\"]},\n\t     steps: {'count':1},\n\t     output_type: {\"selection\":\"program\"},\n\t     symbols: {},\n\t     PM_display_mode: \"t\",\n\t     RAM_display_mode: \"d\",\n\t     RF_display_mode: \"d\",\n\t     RAM: [],\n\t     PM: [],\n\t     RF: [],\n\t     \n\t     PIND: 0,\n\t     PORTD: 0,\n\t     DDRD: 0,\n\t     SPH: 0,\n\t     SPL: 0,\n\t     \n\t     RAM_size: 65536,\n\t     PM_size: 65536,\n\t     RF_size: 32,\n\t     updated: [],\n\t     error_line: 0,\n\t     current_ram_data: [],\n\t     display_pm_start: 0,\n\t     display_ram_start: 0,\n\t     display_pm_length: 16,\n\t     display_ram_length: 16,\n\t     directives: {\n\t\t \"label\":{\"regex\":/^([a-zA-Z_][a-zA-Z0-9_]*):$/,\"process\":function(args){\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"pm\",\n\t\t     };\n\t\t }},\n\t\t \"word\":{\"regex\":/^\\.word ([0-9,]+)$/,\"process\":function(args){\n\t\t     var rdata = args[1].split(\",\");\n\t\t     for(var i = 0; i < rdata.length; i++){\n\t\t\t rdata[i] = this.truncate(parseInt(rdata[i]),16,false);\n\t\t     }\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"pm\",\n\t\t\t     \"pm_data\":rdata\n\t\t     };\n\t\t }},\n\t\t \"byte_ram\":{\"regex\":/^ *\\.byte\\(([a-zA-Z_][a-zA-Z0-9_]*)\\) ([-0-9, ]+) *$/,\"process\":function(args){\n\t\t     var rdata = args[2].split(\",\");\n\t\t     for(var i = 0; i < rdata.length; i++){\n\t\t\t rdata[i] = this.truncate(parseInt(rdata[i].trim()),8,false);\n\t\t     }\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"ram\",\n\t\t\t     \"ram_data\":rdata\n\t\t     };\n\t\t }},\n\t\t \"string_ram\":{\"regex\":/^ *\\.string\\(([a-zA-Z_][a-zA-Z0-9_]*)\\) \"((?:[^\"\\\\]|\\\\.)*)\" *$/,\"process\":function(args){\n\t\t     var str = this.handle_string_escapes(args[2]);\n\t\t     var rdata = []\n\t\t     for(var i = 0; i < str.length; i++){\n\t\t\t rdata.push(this.truncate(str.charCodeAt(i),8,false));\n\t\t     }\n\t\t     rdata.push(0);\n\t\t     return {\"symbol\":args[1],\n\t\t\t     \"symbol_type\":\"ram\",\n\t\t\t     \"ram_data\":rdata\n\t\t     };\n\t\t     \n\t\t }}\n\t     },\n\t     formats: {\n\t\t \"4r8i\":{\n\t\t     \"string\":/ *r([0-9]+), *()(-?[a-zA-Z_0-9)(-]+|'..?') *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r + \",\"+i;},\n\t\t     \"binary\":\"CCCCIIIIRRRRIIII\",\n\t\t     \"i_bits\":8,\n\t\t     \"validator\":function(c, r, s, i){return 16 <= r && r < 32 && -128 <= i && i < 256;}},\n\t\t \"5r5s\":{\n\t\t     \"string\":/ *r([0-9]+), *r([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r + \",r\"+s;},\n\t\t     \"binary\":\"CCCCCCSRRRRRSSSS\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 32;}},\n\t\t \"6s5r\":{\n\t\t     \"string\":/ *r([0-9]+), *([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r + \",\"+s;},\n\t\t     \"binary\":\"CCCCCSSRRRRRSSSS\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32 && 0 <= s && s < 64;}},\n\t\t \"5r6s\":{\n\t\t     \"string\":/ *([0-9]+), *r([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" \" + r + \",r\"+s;},\n\t\t     \"binary\":\"CCCCCSSRRRRRSSSS\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 64 && 0 <= s && s < 32;}},\n\t\t \"5r\":{\n\t\t     \"string\":/ *r([0-9]+)()() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" r\" + r;},\n\t\t     \"binary\":\"CCCCCCCRRRRRCCCC\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32;}},\n\t\t \"5rX\":{\n\t\t     \"string\":/ *r([0-9]+)(), *(-[XYZ]|[XYZ]|[XYZ]\\+) *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i,x){return mnemonic + \" r\" + r + \",\"+i},\n\t\t     \"binary\":\"CCCXCCCRRRRRXXXX\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= r && r < 32;}},\n\t\t \"X5r\":{\n\t\t     \"string\":/ *(-[XYZ]|[XYZ]|[XYZ]\\+), *r([0-9]+)() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i,x){return mnemonic + \" \" + r + \",r\"+s;},\n\t\t     \"binary\":\"CCCXCCCRRRRRXXXX\",\n\t\t     \"validator\":function(c, r, s, i){return 0 <= s && s < 32;}},\n\t\t \"12i\":{\n\t\t     \"string\":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" \" + i;},\n\t\t     \"binary\":\"CCCCIIIIIIIIIIII\",\n\t\t     \"i_bits\":12,\n\t\t     \"validator\":function(c, r, s, i){return -2048 <= i && i < 2048;}},\n\t\t \"7i\":{\n\t\t     \"string\":/ *()()(-?[a-zA-Z_0-9)(]+) *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic + \" \" + i;},\n\t\t     \"binary\":\"CCCCCCIIIIIIICCC\",\n\t\t     \"i_bits\":7,\n\t\t     \"validator\":function(c, r, s, i){return -64 <= i && i < 64;}},\n\t\t \"n\":{\n\t\t     \"string\":/ *()()() *$/,\n\t\t     \"to_string\":function(mnemonic,c,r,s,i){return mnemonic;},\n\t\t     \"binary\":\"CCCCCCCCCCCCCCCC\",\n\t\t     \"validator\":function(c, r, s, i){return true;}}\n\t     },\n\t     instructions: {\n\t\t \"ldi\":{\"format\":\"4r8i\", \"c\": 14, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     console.log('T',emu);\n\t\t     emu.RF[r] = emu.truncate(i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"mov\":{\"format\":\"5r5s\", \"c\": 11, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.RF[r] = emu.RF[s];\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"add\":{\"format\":\"5r5s\", \"c\": 3, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] + emu.RF[s], true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] + emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"adc\":{\"format\":\"5r5s\", \"c\": 7, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var oldC = emu.C;\n\t\t     emu.update_sreg(emu.RF[r] + emu.RF[s] + oldC, true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] + emu.RF[s] + oldC,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"sbc\":{\"format\":\"5r5s\", \"c\": 2, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var oldC = emu.C;\n\t\t     emu.update_sreg(emu.RF[r] - emu.RF[s] - oldC, true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - emu.RF[s] - oldC,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"sub\":{\"format\":\"5r5s\", \"c\": 6, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - emu.RF[s], true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"cp\":{\"format\":\"5r5s\", \"c\": 5, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - emu.RF[s], true, true, true);\n\t\t     emu.C = emu.truncate(emu.RF[r],8,true) < emu.truncate(emu.RF[s],8,true) ? 1 : 0; // HACK TO MATCH PRESENTATION\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"and\":{\"format\":\"5r5s\", \"c\": 8, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] & emu.RF[s], true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] & emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"or\":{\"format\":\"5r5s\", \"c\": 10, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] | emu.RF[s], true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] | emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"eor\":{\"format\":\"5r5s\", \"c\": 9, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] ^ emu.RF[s], true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] ^ emu.RF[s],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r, \"PC\", \"Z\", \"C\", \"N\"];}},\n\t\t \"cpi\":{\"format\":\"4r8i\", \"c\": 3, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - i, true, true, true);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"subi\":{\"format\":\"4r8i\", \"c\": 5, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - i, true, true, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"andi\":{\"format\":\"4r8i\", \"c\": 7, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] & i, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] & i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"ori\":{\"format\":\"4r8i\", \"c\": 6, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] | i, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] | i,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"Z\",\"C\",\"N\"];}},\n\t\t \"dec\":{\"format\":\"5r\", \"c\": 1194, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] - 1, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] - 1,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"inc\":{\"format\":\"5r\", \"c\": 1187, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(emu.RF[r] + 1, true, false, true);\n\t\t     emu.RF[r] = emu.truncate(emu.RF[r] + 1,8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"neg\":{\"format\":\"5r\", \"c\": 1185, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(-emu.RF[r], true, true, true);\n\t\t     emu.RF[r] = emu.truncate(-emu.RF[r],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"com\":{\"format\":\"5r\", \"c\": 1184, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.update_sreg(~(emu.RF[r]), true, false, true);\n\t\t     emu.RF[r] = emu.truncate(~(emu.RF[r]),8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"ld\":{\"format\":\"5rX\", \"c\": 32, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var reg = 0;\n\t\t     if(i == \"X\" || i == \"-X\" || i == \"X+\") reg = 26;\n\t\t     if(i == \"Y\" || i == \"-Y\" || i == \"Y+\") reg = 28;\n\t\t     if(i == \"Z\" || i == \"-Z\" || i == \"Z+\") reg = 30;\n\t\t     if(i[0] == \"-\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.dec_ptr(reg);\n\t\t     }\n\t\t     var ptr = emu.truncate(emu.RF[reg],8,false)+256*emu.truncate(emu.RF[reg+1],8,false);\n\t\t     emu.updated = [r,\"PC\"];\n\t\t     emu.RF[r] = emu.truncate(emu.RAM[ptr],8,false);\n\t\t     if(i[1] == \"+\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.inc_ptr(reg);\n\t\t     }\n\t\t     emu.ram_updated = [];\n\t\t     emu.PC++;}},\n\t\t \"st\":{\"format\":\"X5r\", \"c\": 33, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     i = r;\n\t\t     r = s;\n\t\t     var reg = 0;\n\t\t     if(i == \"X\" || i == \"-X\" || i == \"X+\") reg = 26;\n\t\t     if(i == \"Y\" || i == \"-Y\" || i == \"Y+\") reg = 28;\n\t\t     if(i == \"Z\" || i == \"-Z\" || i == \"Z+\") reg = 30;\n\t\t     if(i[0] == \"-\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.dec_ptr(reg);\n\t\t     }\n\t\t     var ptr = emu.truncate(emu.RF[reg],8,false)+256*emu.truncate(emu.RF[reg+1],8,false);\n\t\t     emu.updated = [\"PC\"];\n\t\t     emu.ram_updated = [ptr];\n\t\t     emu.RAM[ptr] = emu.RF[r];\n\t\t     emu.PC++;\n\t\t     if(i[1] == \"+\"){\n\t\t\t emu.updated.push(reg);\n\t\t\t emu.inc_ptr(reg);\n\t\t     }\n\t\t }},\n\t\t \"rjmp\":{\"format\":\"12i\", \"c\": 12, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + i + 1,16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"breq\":{\"format\":\"7i\", \"c\": 481, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.Z == 1 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"brne\":{\"format\":\"7i\", \"c\": 489, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.Z == 0 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"brsh\":{\"format\":\"7i\", \"c\": 488, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.C == 0 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"brlo\":{\"format\":\"7i\", \"c\": 480, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC = emu.truncate(emu.PC + 1 + (emu.C == 1 ? (i <= 64 ? i : i-128) : 0),16,false);\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"in\":{\"format\":\"6s5r\", \"c\": 22, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.RF[r] = emu.truncate(emu.read_IO(s),8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"out\":{\"format\":\"5r6s\", \"c\": 23, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     i = s;\n\t\t     s = r;\n\t\t     r = i;\n\t\t     emu.write_IO(s,emu.RF[r]);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"asr\":{\"format\":\"5r\", \"c\": 1189, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var C = emu.RF[r]%2 == 0 ? 0 : 1;\n\t\t     emu.RF[r] = emu.truncate(emu.truncate(emu.RF[r],8,true) >> 1,8,false);\n\t\t     emu.update_sreg(emu.RF[r], true, false, true);\n\t\t     emu.C = C;\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [r,\"PC\"];}},\n\t\t \"push\":{\"format\":\"5r\", \"c\": 1183, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RAM[SP] = emu.RF[r];\n\t\t     emu.decSP();\n\t\t     emu.PC++;\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];\n\t\t     emu.ram_updated = [SP];}},\n\t\t \"pop\":{\"format\":\"5r\", \"c\": 1167, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.incSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RF[r] = emu.truncate(emu.RAM[SP],8,false);\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];}},\n\t\t \"rcall\":{\"format\":\"12i\", \"c\": 13, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC++;\n\t\t     var PCL = emu.PC % 256;\n\t\t     var PCH = Math.floor(emu.PC / 256);\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RAM[SP] = PCH;\n\t\t     emu.decSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     emu.RAM[SP] = PCL;\n\t\t     emu.decSP();\n\t\t     emu.PC = emu.truncate(emu.PC + i,16,false);\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];\n\t\t     emu.ram_updated = [SP];}},\n\t\t \"ret\":{\"format\":\"n\", \"c\": 38152, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.incSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     var PCL = emu.RAM[SP];\n\t\t     emu.incSP();\n\t\t     var SP = emu.SPH * 256 + emu.SPL;\n\t\t     var PCH = emu.RAM[SP];\n\t\t     emu.PC = PCL + 256*PCH;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\",\"SPH\",\"SPL\"];}},\n\t\t \"nop\":{\"format\":\"n\", \"c\": 0, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.PC++;\n\t\t     emu.ram_updated = [];\n\t\t     emu.updated = [\"PC\"];}},\n\t\t \"halt\":{\"format\":\"n\", \"c\": 1, \"exec\":function(c, r, s, i){\n\t\t     var emu = this.parent;\n\t\t     emu.end();}}\n\t     }\n\t }\n     },\n     methods: {\n\t smul: function(str, num) {\n\t     var acc = [];\n\t     for (var i = 0; (1 << i) <= num; i++) {\n\t\t if ((1 << i) & num)\n\t\t     acc.push(str);\n\t\t str += str;\n\t     }\n\t     return acc.join(\"\");\n\t },\n\t do_nothing: function(a){},\n\t cm_setup: function(){\n\t     var sim_textarea = document.getElementById(\"simavr\"+this.simid+\"_program_area\");\n\t     this.debug_log(this.simid,sim_textarea);\n\t     if(sim_textarea == null) return;\n\t     this.editor = CodeMirror.fromTextArea(sim_textarea, {\n\t\t lineNumbers: true,\n\t\t gutters: [\"breakpoints\", \"CodeMirror-linenumbers\"]\n\t     });\n\t     if(this.size){\n\t\t if(this.size == \"auto\"){\n\t\t     this.editor.setSize(null, (this.program.split(\"\\n\").length + 2)*(this.editor.defaultTextHeight()) + 10);\n\t\t }\n\t\t else{\n\t\t     this.editor.setSize(null, this.size);\n\t\t }\n\t     }\n\t     else{\n\t\t this.editor.setSize(null, \"70%\");\n\t     }\n\t     this.editor.setOption(\"extraKeys\", {\n\t\t 'Ctrl-Enter': function(cm) {\n                     this.program_pm();\n                     this.$apply();\n\t\t }\n\t     });\n\t     this.editor.setValue(this.program);\n\t },\n\t reset_program: function(){\n\t     if(this.running) return;\n\t     if(this.text){\n\t\t this.debug_log(\"Using text\");\n\t\t this.program = this.text;\n\t     }\n\t     else if(this.original_program){\n\t\t this.program = this.original_program;\n\t     }\n\t     this.change_program(this.program);\n\t },\n\t reset: function(pm_reset){\n\t     this.io_state.switch_state = [\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\",\"OFF\"];\n\t     this.output_type.selection = \"program\";\n\t     this.display_pm_start = 0;\n\t     this.display_ram_start = 0;\n\t     this.steps = {'count':1};\n\t     this.PC = 0;\n\t     this.Z = 0;\n\t     this.C = 0;\n\t     this.N = 0;\n\t     this.PIND = 0;\n\t     this.PORTD = 0;\n\t     this.DDRD = 0;\n\t     this.SPH = 0;\n\t     this.SPL = 0;\n\t     this.updated = [];\n\t     this.ram_updated = [];\n\t     this.outputs = [];\n\t     this.mux = new this.output_mux();\n\t     for(var i = 0; i < this.RF_size; i++) this.RF[i] = 0;\n\t     for(var i = 0; i < this.RAM_size; i++) this.RAM[i] = 0;\n\t     for(var i = 0; i < this.IORF_size; i++) this.IORF[i] = 0;\n\t     var nop = this.parse(\"nop\",0);\n\t     if(pm_reset){ for(var i = 0; i < this.PM_size; i++){ nop.addr = i; this.PM[i] = nop; }}\n\t     if(!pm_reset){ for(var i = 0; i < this.current_ram_data.length; i++) this.RAM[i+1024] = this.current_ram_data[i]; }\n\t     if(this.editor) this.editor.removeLineClass(this.error_line, \"background\", \"active_line\");\n\t },\n\t change_program: function(prog){\n\t     this.program = prog;\n\t     if(this.editor) this.editor.setValue(prog);\n\t },\n\t display_ram: function(i){\n\t     if(this.RAM_display_mode == \"d\"){\n\t\t return this.RAM[i];\n\t     }\n\t     else if(this.RAM_display_mode == \"2\"){\n\t\t return this.truncate(this.RAM[i],8,true);\n\t     }\n\t     else if(this.RAM_display_mode == \"c\"){\n\t\t return String.fromCharCode(this.RAM[i])\n\t     }\n\t },\n\t display_rf: function(i){\n\t     if(this.RF_display_mode == \"d\"){\n\t\t return this.truncate(this.RF[i],8,false);\n\t     }\n\t     if(this.RF_display_mode == \"2\"){\n\t\t return this.truncate(this.RF[i],8,true);\n\t     }\n\t     else if(this.RF_display_mode == \"b\"){\n\t\t var s = this.RF[i].toString(2);\n\t\t return smul(\"0\",8-s.length)+s;\n\t     }\n\t     else if(this.RF_display_mode == \"h\"){\n\t\t var s = this.RF[i].toString(16);\n\t\t return \"0x\"+smul(\"0\",2-s.length)+s;\n\t     }\n\t },\n\t program_pm: function(){\n\t     if(this.running) return;\n\t     this.reset(true);\n\t     this.running = true;\n\t     this.program = this.editor.getValue();\n\t     var pm_data = this.preparse(this.program);\n\t     if(!pm_data){\n\t\t this.running = false;\n\t\t return;\n\t     }\n\t     var pm_addr = 0;\n\t     for(var i = 0; i < pm_data.length; i++){\n\t\t var datum = pm_data[i];\n\t\t if(datum.inst){\n\t\t     var inst = this.parse(datum.inst,pm_addr);\n\t\t     if(!inst) continue;\n\t\t     if(inst.error){\n\t\t\t this.error_on_line(datum.line, inst.error);\n\t\t\t return;\n\t\t     }\n\t\t     this.PM[pm_addr] = inst;\n\t\t     pm_addr++;\n\t\t }\n\t\t else if(datum.word){\n\t\t     var inst = this.decode(datum.word,pm_addr);\n\t\t     if(inst.error){\n\t\t\t this.error_on_line(datum.line, inst.error);\n\t\t\t return;\n\t\t     }\n\t\t     this.PM[pm_addr] = inst;\n\t\t     pm_addr++;\n\t\t }\n\t     }\n\t     this.status = \"Ready\";\n\t },\n\t error_on_line: function(linenum, err_msg){\n\t     this.running = false;\n\t     this.status = \"Error on line \" + linenum + \": \" + err_msg;\n\t     this.error_line = linenum;\n\t     if(this.editor) this.editor.addLineClass(linenum, \"background\", \"active_line\");\n\t },\n\t preparse: function(){\n\t     var lines = this.program.split(\"\\n\");\n\t     var to_program = [];\n\t     var pm_offset = 0;\n\t     var ram_offset = 1024;\n\t     for(var i = 0; i < lines.length; i++){\n\t\t var pieces = lines[i].match(/^((?:[^\";]|';'|\"(?:[^\\\\\"]+|\\\\(?:\\\\\\\\)*[nt\\\\\"])*\")*)(;.*)?$/)\n\t\t this.debug_log(\"P\",pieces);\n\t\t if(!pieces){\n\t\t     this.error_on_line(i, \"Invalid line: \"+i);\n\t\t     return;\n\t\t }\n\t\t if(!pieces[1]) continue;\n\t\t lines[i] = pieces[1].trim();\n\t\t var is_inst = true;\n\t\t for(var d in this.directives){\n\t\t     var matches = lines[i].match(this.directives[d].regex)\n\t\t     this.debug_log(\"D\",lines[i],d,matches);\n\t\t     if(matches){\n\t\t\t // process needs to return:\n\t\t\t // - What it inserts to PM (pm_data)\n\t\t\t // - What it inserts into RAM (ram_data)\n\t\t\t // - What symbol it wants to make (symbol)\n\t\t\t // - What kind of symbol it is (symbol_type == \"pm\" | \"ram\")\n\t\t\t // - Whether there was an error (error)\n\t\t\t \n\t\t\t var result = this.directives[d].process(matches);\n\n\t\t\t // Handle error\n\t\t\t if(result.error){\n\t\t\t     this.error_on_line(i, result.error);\n\t\t\t     return;\n\t\t\t }\n\n\t\t\t // Update symbol\n\t\t\t if(result.symbol && result.symbol_type){\n\t\t\t     if(result.symbol_type == \"pm\"){\n\t\t\t\t this.symbols[result.symbol] = pm_offset;\n\t\t\t     }\n\t\t\t     else if(result.symbol_type == \"ram\"){\n\t\t\t\t this.symbols[result.symbol] = ram_offset;\n\t\t\t     }\n\t\t\t }\n\t\t\t \n\t\t\t // Insert data and update offsets\n\t\t\t if(result.pm_data){\n\t\t\t     for(var j = 0; j < result.pm_data.length; j++){\n\t\t\t\t to_program.push({'word':result.pm_data[j],'line':i});\n\t\t\t     }\n\t\t\t     pm_offset += result.pm_data.length;\n\t\t\t }\n\t\t\t if(result.ram_data){\n\t\t\t     for(var j = 0; j < result.ram_data.length; j++){\n\t\t\t\t this.RAM[ram_offset + j] = result.ram_data[j];\n\t\t\t     }\n\t\t\t     this.current_ram_data = this.current_ram_data.concat(result.ram_data);\n\t\t\t     ram_offset += result.ram_data.length;\n\t\t\t }\n\t\t\t is_inst = false;\n\t\t\t break;\n\t\t     }\n\t\t }\n\t\t if(is_inst && !(/^[ \\t]*$/.test(lines[i]))){\n\t\t     to_program.push({'inst':lines[i],'line':i});\n\t\t     pm_offset++;\n\t\t }\n\t     }\n\t     return to_program;\n\t },\n\t parse: function(inst,addr){\n\t     this.debug_log(inst)\n\t     var matches = inst.match(/^[ \\t]*([a-zA-Z]+)[ \\t]*((?:[^;]|';')*)[ \\t]*$/)\n\t     if(!matches){\n\t\t return {\"error\":\"Line does not match any directive or instruction\"};\n\t     }\n\t     var mnemonic = matches[1];\n\t     var operand = matches[2];\n\t     this.debug_log(mnemonic, \"|||\", operand);\n\t     if(mnemonic in this.instructions){\n\t\t var format = this.instructions[mnemonic].format;\n\t\t var execf = this.instructions[mnemonic].exec;\n\t\t var ops = operand.match(this.formats[format].string);\n\t\t if(!ops){\n\t\t     return {\"error\":\"Operands to instruction \" + inst + \" did not parse\"};\n\t\t }\n\t\t for(var i = 0; i < 3; i++){\n\t\t     if(/^[0-9]+$/.test(ops[i])) ops[i] = parseInt(ops[i]);\n\t\t     //else if(format.sym_valid[i]) ops[i] = symbols[ops[i]];\n\t\t }\n\t\t var opcode = this.instructions[mnemonic].c;\n\t\t this.debug_log(format, execf, ops, opcode);\n\t\t var data = {\"r\":ops[1],\"s\":ops[2],\"i\":ops[3],\"c\":opcode};\n\t\t var new_inst = new this.instruction(mnemonic + \" \" + operand, mnemonic, data, execf,addr, this);\n\t\t if(new_inst.error){\n\t\t     return {\"error\":inst.error};\n\t\t }\n\t\t if(new_inst.check_valid()){\n\t\t     return new_inst;\n\t\t }\n\t\t else{\n\t\t     return {\"error\":\"Illegal operands to instruction \" + inst};\n\t\t }\n\t     }\n\t     else{\n\t\t return {\"error\":\"Invalid instruction \" + inst};\n\t     }\n\t     return null;\n\t },\n\t is_updated: function(x){\n\t     for(var i = 0; i < this.updated.length; i++){\n\t\t if(this.updated[i] == x) return true;\n\t     }\n\t     return false;\n\t },\n\t is_ram_updated: function(x){\n\t     for(var i = 0; i < this.updated.length; i++){\n\t\t if(this.ram_updated[i] == x) return true;\n\t     }\n\t     return false;\n\t },\n\t handle_string_escapes: function(s){\n\t     s = s.replace(/(([^\\\\]|)(\\\\\\\\)*)\\\\t/g,\"$1\\t\");\n\t     s = s.replace(/(([^\\\\]|)(\\\\\\\\)*)\\\\n/g,\"$1\\n\");\n\t     s = s.replace(/(([^\\\\]|)(\\\\\\\\)*)\\\\\"/g,\"$1\\\"\");\n\t     s = s.replace(/\\\\\\\\/g,\"\\\\\");\n\t     return s;\n\t },\n\n\t // X,*:  111\n\t // Y,\"\": 010\n\t // Y,+-\" 110\n\t // Z,\"\": 000\n\t // Z,+-: 100\n\t // \"\":  00\n\t // \"+\": 01\n\t // \"-\": 10\n\t encode_x: function(i){\n\t     var x = 0;\n\t     var ptr = i[0] == \"-\" ? i[1] : i[0];\n\t     var mod = i[0] == \"-\" ? \"-\" : (i[1] == \"+\" ? \"+\" : \"\");\n\t     if(ptr == \"X\") x = 7*4\n\t     if(ptr == \"Y\") x = 6*4\n\t     if(ptr == \"Z\") x = 4*4\n\t     if(ptr != \"X\" && mod == \"\") x -= 16;\n\t     if(mod == \"+\") x += 1;\n\t     if(mod == \"-\") x += 2;\n\t     return x;\n\t },\n\t decode_x: function(x){\n\t     var ptr = \"\";\n\t     var mod = \"\";\n\t     this.debug_log(\"XX\",x,x&3,(x>>2)&3)\n\t     if(((x >> 2)&3) == 3) ptr = \"X\";\n\t     if(((x >> 2)&3) == 2) ptr = \"Y\";\n\t     if(((x >> 2)&3) == 0) ptr = \"Z\";\n\t     if((x&3) == 1) mod = \"+\";\n\t     if((x&3) == 2) mod = \"-\";\n\t     this.debug_log(\"X=\",mod,ptr)\n\t     return mod == \"-\" ? mod +\"\"+ ptr : ptr +\"\"+ mod;\n\t },\n\t encode: function(format, c, r, s, i){\n\t     var fmt = this.formats[format].binary;\n\t     var inst = 0;\n\t     var x = 0;\n\t     if(format == \"5r6s\"){\n\t\t i = s;\n\t\t s = r;\n\t\t r = i;\n\t     }\n\t     else if(format == \"5rX\" || format == \"X5r\"){\n\t\t if(format == \"X5r\"){\n\t\t     i = r;\n\t\t     r = s;\n\t\t }\n\t\t this.debug_log(\"Xe\",i);\n\t\t x = this.encode_x(i);\n\t\t this.debug_log(\"Xd\",x);\n\t     }\n\t     for(var j = 15; j >= 0; j--) {\n\t\t if(fmt[j] == \"C\"){\n\t\t     inst += (c%2)<<(15-j);\n\t\t     c >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"R\"){\n\t\t     inst += (r%2)<<(15-j);\n\t\t     r >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"S\"){\n\t\t     inst += (s%2)<<(15-j);\n\t\t     s >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"I\"){\n\t\t     inst += (i%2)<<(15-j);\n\t\t     i >>= 1;\n\t\t }\n\t\t if(fmt[j] == \"X\"){\n\t\t     inst += (x%2)<<(15-j);\n\t\t     x >>= 1;\n\t\t }\n\t     }\n\t     return inst;\n\t },\n\t decode: function(x,addr){\n\t     for(var f in this.formats){\n\t\t fmt = this.formats[f];\n\t\t var data = {\"c\":0,\"r\":0,\"s\":0,\"i\":0,\"x\":0}\n\t\t for(var j = 15; j >= 0; j--){\n\t\t     //this.debug_log(\"J\",j,fmt.binary[15-j],(x>>j)%2);\n\t\t     if(fmt.binary[15-j] == \"C\") data.c = (data.c * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"R\") data.r = (data.r * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"S\") data.s = (data.s * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"I\") data.i = (data.i * 2) + ((x >> j) % 2);\n\t\t     if(fmt.binary[15-j] == \"X\") data.x = (data.x * 2) + ((x >> j) % 2);\n\t\t }\n\t\t if(f == \"4r8i\") data.r += 16;\n\t\t if(f == \"12i\") data.i = this.truncate(data.i,12,true);\n\t\t if(f == \"7i\") data.i = this.truncate(data.i,7,true);\n\t\t if(f == \"5rX\") data.i = this.decode_x(data.x);\n\t\t if(f == \"X5r\"){\n\t\t     data.s = data.r;\n\t\t     data.r = this.decode_x(data.x);\n\t\t }\n\t\t if(f == \"5r6s\"){\n\t\t     var temp = data.r;\n\t\t     data.r = data.s;\n\t\t     data.s = temp;\n\t\t }\n\t\t for(var mnemonic in this.instructions){\n\t\t     inst = this.instructions[mnemonic];\n\t\t     if(inst.format == f && inst.c == data.c){\n\t\t\t return new this.instruction(x,mnemonic,data,inst.exec,addr,this);\n\t\t     }\n\t\t }\n\t     }\n\t     return {\"error\":\"Could not decode instruction: \" + x};\n\t },\n\t label: function(name, addr){\n\t     this.label = true;\n\t     this.name = name;\n\t     this.addr = addr;\n\t },\n\t output_mux: function(){\n\t     this.SEL_ADDR = 0;\n\t     this.SEL_LEN = 255;\n\t     this.LCD_OUT = 1;\n\t     this.LB_OUT = 2;\n\t     this.target = 0;\n\t     this.len = 0;\n\t     this.state = 0;\n\t     this.input = function(val){\n\t\t if(this.state == this.SEL_ADDR) {\n\t\t     this.target = val;\n\t\t     this.state = this.SEL_LEN;\n\t\t }\n\t\t else if(this.state == this.SEL_LEN){\n\t\t     this.len = val;\n\t\t     this.state = this.target;\n\t\t     this.target = 0;\n\t\t }\n\t\t else if(this.len > 0){\n\t\t     if(this.state-1 < this.output_devs.length)\n\t\t\t this.output_devs.input(val);\n\t\t     this.len--;\n\t\t }\n\t\t else{\n\t\t     this.state = this.SEL_ADDR;\n\t\t }\n\t     }\n\t },\n\t lcd: function(){\n\t     this.input = function(val){\n\t\t \n\t     }\n\t },\n\t set_PM_display_mode: function(m){\n\t     this.PM_display_mode = m;\n\t },\n\t set_RAM_display_mode: function(m){\n\t     this.RAM_display_mode = m;\n\t },\n\t set_RF_display_mode: function(m){\n\t     this.RF_display_mode = m;\n\t },\n\t instruction: function(text, mnemonic, data, exec, addr, parent){\n\t     console.log(this);\n\t     this.parent = parent;\n\t     this.label = false;\n\t     this.addr = addr;\n\t     this.text = text;\n\t     this.c = data.c;\n\t     this.r = data.r;\n\t     this.s = data.s;\n\t     this.i = data.i;\n\t     this.exec = exec;\n\t     this.mnemonic = mnemonic;\n\t     console.log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);\n\t     this.format = this.parent.instructions[this.mnemonic].format;\n\t     if(this.i.match){\n\t\t var matches = this.i.match(/(lo|hi)8\\(([a-zA-Z_][a-zA-Z0-9_]*)\\)/);\n\t\t if(matches){\n\t\t     if(matches[2] in this.parent.symbols){\n\t\t\t if(matches[1] == \"lo\") this.i = this.parent.truncate(this.parent.symbols[matches[2]],8,false);\n\t\t\t if(matches[1] == \"hi\") this.i = this.parent.truncate(this.parent.symbols[matches[2]]>>8,8,false);\n\t\t     }\n\t\t     else{\n\t\t\t this.error = \"Symbol not found \" + matches[2];\n\t\t     }\n\t\t }\n\t\t else if(this.i in this.parent.symbols){\n\t\t     this.i = this.parent.symbols[this.i];\n\t\t     var fmt = this.parent.formats[this.format];\n\t\t     //this.parent.debug_log(this.parent.symbols,fmt.i_bits);\n\t\t     if(fmt.i_bits){\n\t\t\t this.i = this.parent.truncate(this.i - this.addr - 1,fmt.i_bits,true);\n\t\t     }\n\t\t }\n\t\t else if(/'[^'\\\\]'/.test(this.i)){\n\t\t     this.i = this.i.charCodeAt(1);\n\t\t }\n\t\t else if(this.i == \"'\\\\''\"){\n\t\t     this.i = this.i.charCodeAt(2);\n\t\t }\n\t\t else if(this.i == \"'\\\\\\\\'\"){\n\t\t     this.i = this.i.charCodeAt(2);\n\t\t }\n\t\t else if(this.i == \"'\\\\n'\"){\n\t\t     this.i = 10;\n\t\t }\n\t\t else if(this.i == \"'\\\\t'\"){\n\t\t     this.i = 9;\n\t\t }\n\t\t else if(/^[XYZ]$|^[XYZ]\\+$|^-[XYZ]$/.test(this.i)){\n\t\t     this.i = this.i;\n\t\t }\n\t\t else this.i = parseInt(this.i);\n\t     }\n\t     this.encoding = this.parent.encode(this.format, this.c, this.r, this.s, this.i < 0 ? this.parent.truncate(this.i,this.parent.formats[this.format].i_bits,false) : this.i);\n\t     //this.debug_log(this.text, this.c, this.r, this.s, this.i, this.mnemonic);\n\t     var self = this;\n\t     this.display = function(){\n\t\t if(this.parent.PM_display_mode == \"t\"){\n\t\t     return this.parent.formats[self.format].to_string(self.mnemonic,self.c,self.r,self.s,self.i);\n\t\t }\n\t\t else if(this.parent.PM_display_mode == \"d\"){\n\t\t     return self.encoding;\n\t\t }\n\t\t else if(this.parent.PM_display_mode == \"h\"){\n\t\t     var s = self.encoding.toString(16);\n\t\t     return \"0x\"+this.parent.smul(\"0\",4 - s.length)+s;\n\t\t }\n\t\t else if(this.parent.PM_display_mode == \"b\"){\n\t\t     var s = self.encoding.toString(2);\n\t\t     return this.parent.smul(\"0\",16 - s.length) + s;\n\t\t }\n\t     }\n\t     this.check_valid = function(){\n\t\t return this.parent.formats[self.format].validator(self.c, self.r, self.s, self.i);\n\t     }\n\t     this.run = function(){\n\t\t self.exec(self.c, self.r, self.s, self.i);\n\t     }\n\t },\n\t step: function(){\n\t     if(!this.running) return;\n\t     this.debug_log(this.steps.count);\n\t     for(var k = 0; k < this.steps.count; k++){\n\t\t var i = this.PM[this.PC];\n\t\t this.debug_log(\"i\",i);\n\t\t i.run();\n\t\t if(this.PC < this.display_pm_start || this.PC >= this.display_pm_start + this.display_pm_length){\n\t\t     this.display_pm_start = Math.max(0, this.PC - this.display_ram_length/2);\n\t\t }\n\t\t if(this.ram_updated.length > 0){\n\t\t     this.display_ram_start = Math.max(0, Math.min.apply(Math, this.ram_updated) - this.display_ram_length/2);\n\t\t }\n\t     }\n\t },\n\t raise_error: function(s){\n\t     this.status = \"Error: \" + s;\n\t },\n\t truncate: function(num, bits, twos_complement){\n\t     var mod = 1<<bits;\n\t     num = ((num % mod)+mod)%mod;\n\t     return twos_complement ? (num >= 1<<(bits - 1) ? num - (1<<bits) : num) : num;\n\t },\n\t update_sreg: function(result, z, c, n){\n\t     this.debug_log(\"SREG for\",result);\n\t     if(z) this.Z = this.truncate(result,8,false) == 0 ? 1 : 0;\n\t     if(c) this.C = result >= 256 || result < 0 ? 1 : 0;\n\t     if(n) this.N = this.truncate(result,8,true) <0 ? 1 : 0;\n\t },\n\t read_IO: function(s){\n\t     if(s == 16) return this.PIND & (~(this.DDRD));\n\t     else if(s == 17) return this.DDRD;\n\t     else if(s == 61) return this.SPL;\n\t     else if(s == 62) return this.SPH;\n\t     return 0;\n\t },\n\t write_IO: function(s,val){\n\t     if(s == 18){\n\t\t this.PORTD = this.DDRD & val;\n\t\t this.output();\n\t     }\n\t     else if(s == 17) this.DDRD = this.truncate(val,8,false);\n\t     else if(s == 61) this.SPL = this.truncate(val,8,false);\n\t     else if(s == 62) this.SPH = this.truncate(val,8,false);\n\t     if(this.output_type.selection == \"simple\"){\n\t\t this.PIND = 0;\n\t\t for(var i = 0; i < 8; i++)\n\t\t     this.PIND |= (this.io_state.switch_state[i] == \"ON\" ? 1 << i : 0)\n\t\t this.PIND &= ~this.DDRD;\n\t     }\n\t },\n\t inc_ptr: function(reg){\n\t     if(this.RF[reg] == -1 || this.RF[reg] == 255){\n\t\t this.RF[reg] = 0\n\t\t this.RF[reg+1] = this.truncate(this.RF[reg+1]+1,8,false);\n\t     }\n\t     else this.RF[reg]++;\n\t     if(this.RF[reg] == 128){\n\t\t this.RF[reg] = -128;\n\t     }\n\t },\n\t dec_ptr: function(reg){\n\t     this.RF[reg]--;\n\t     if(this.RF[reg] == -1){\n\t\t this.RF[reg+1] = this.truncate(this.RF[reg+1]-1,8,false);\n\t     }\n\t     if(this.RF[reg] < -128){\n\t\t this.RF[reg] = 127;\n\t     }\n\t },\n\t incSP: function(){\n\t     this.SPL++;\n\t     if(this.SPL == 256){\n\t\t this.SPL = 0;\n\t\t this.SPH = this.truncate(this.SPH+1,8,false);\n\t     }\n\t },\n\t decSP: function(){\n\t     this.SPL--;\n\t     if(this.SPL == -1){\n\t\t this.SPL = 255;\n\t\t this.SPH = this.truncate(this.SPH-1,8,false);\n\t     }\n\t },\n\t io_switch: function(i){\n\t     if(this.io_state.switch_state[i] == \"ON\"){\n\t\t this.io_state.switch_state[i] = \"OFF\";\n\t\t this.PIND &= ~(1<<i);\n\t     }\n\t     else if(this.io_state.switch_state[i] == \"OFF\"){\n\t\t this.io_state.switch_state[i] = \"ON\";\n\t\t this.PIND |= 1<<i;\n\t     }\n\t     this.PIND = this.PIND & ~this.DDRD;\n\t },\n\t output: function(){\n\t     var out_val = this.PORTD;\n\t     this.outputs.push(out_val);\n\t     //this.outputs.push(String.fromCharCode(out_val));\n\t },\n\t initialize: function(){\n\t     this.reset_program();\n\t     this.cm_setup();\n\t },\n\t end: function(){\n\t     if(!this.running) return;\n\t     this.running = false;\n\t     setTimeout(this.cm_setup, 0);\n\t }\n\n     },\n     created: function(){\n\t console.log(\"init\");\n\t this.$store.dispatch(\"RESET_PLUGIN_DATA\",\"math\");\n\t //Guppy.init({\"path\":\"/node_modules/guppy-js\",\"symbols\":\"/node_modules/guppy-js/sym/symbols.json\"});\n     }, \n     mounted: function(){\n\t console.log(\"Hello JSAVR\");\n\t console.log(this.instructions);\n\t this.program = this.root.innerHTML.trim();\n\t this.reset(true);\n\t this.original_program = this.program;\n\t this.initialize();\n\n\t this.debug_log = this.debug_mode_feature == 'yes' ? console.log.bind(console) : this.do_nothing;\n\t if(this.control){\n\t     this.control.set_program = function(new_prog){\n\t\t this.change_program(new_prog);\n\t     }\n\t     this.control.get_program = function(){\n\t\t if(this.editor) this.program = this.editor.getValue();\n\t\t return this.program;\n\t     }\n\t     this.control.get_PM = function(addr){\n\t\t return this.PM[addr].encoding;\n\t     }\n\t     this.control.get_RF = function(){\n\t\t return this.RF;\n\t     }\n\t     this.control.get_RAM = function(addr){\n\t\t return this.RAM[addr];\n\t     }\n\t     this.control.get_other = function(){\n\t\t return {\n\t\t     \"PC\":this.PC,\n\t\t     \"Z\":this.Z,\n\t\t     \"C\":this.C,\n\t\t     \"N\":this.N,\n\t\t     \"DDRD\":this.DDRD,\n\t\t     \"PIND\":this.PIND,\n\t\t     \"PORTD\":this.PORTD,\n\t\t     \"SPL\":this.SPL,\n\t\t     \"SPH\":this.SPH\n\t\t }\n\t     }\n\t }\n\t /* \n\t  * \t \n\t  * \t var index = 0;\n\t  * \t var doc_id = node+\"-\"+index;\n\t  * \t var content = this.root.innerHTML.trim()\n\t  * \t console.log(\"R\",this.root,content);\n\t  * \t //var res = Guppy.Doc.render(content, \"text\");\n\t  * \t var res = {doc:content};\n\t  * \t var doc_data = {};\n\t  * \t //doc_data[index] = res.doc.get_vars().concat(res.doc.get_symbols());\n\t  * \t doc_data[index] = [\"x\"];\n\t  * \t //res.container.setAttribute(\"id\",\"category-math-container-\"+doc_id);\n\t  * \t //var rendered_content = (new XMLSerializer()).serializeToString(res.container);\n\t  * \n\t  * \t \n\t  * \t // Put this doc ID in the index for each var and symbol in the document\n\t  * \t for(var i = 0; i < this.docs[node][index].length; i++) {\n\t  * \t     var v = this.docs[node][index][i];\n\t  * \t     if (!this.index[v]) this.index[v] = [];\n\t  * \t     if (this.index[v].indexOf(doc_id) < 0) this.index[v].push(doc_id);\n\t  * \t }\n\t  * \n\t  * \t // Calculate the snippet that will be associated with this expression when it appears in listings\n\t  * \t var snippet = \"\";\n\t  * \t if(this.root.previousSibling){\n\t  * \t     snippet += this.root.previousSibling.textContent.split(\" \").slice(-4).join(\" \");\n\t  * \t }\n\t  * \t snippet += \" [formula] \"\n\t  * \n\t  * \t if(this.root.nextSibling) {\n\t  * \t     snippet += this.root.nextSibling.textContent.split(\" \").slice(0,4).join(\" \");\n\t  * \t }\n\t  * \t snippet = \"...\" + snippet + \"...\";\n\t  * \t console.log(\"parprev\",this.root.parentNode.previousSibling);\n\t  * \t console.log(\"parnext\",this.root.parentNode.nextSibling);\n\t  * \t this.snippets[doc_id] = snippet;\n\t  * \n\t  * \t // Finally, set up component attributes\n\t  * \t this.syms = this.docs[node][index];\n\t  * \t this.rendered = rendered_content;\n\t  * \t this.display_syms = false;\n\t  * \t this.id = doc_id;\n\t  * \t this.query = \"\";\n\t  * \t this.node = node;*/\n     }\n }\n</script>\n<style scoped>\n .simavr{\n     display:inline-block;\n     width:73em;\n     /* min-height:40em; */\n     font-size:10pt;\n }\n #simavr_rf{\n     float:left;\n     width:16em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n #simavr_pm{\n     float:left;\n     width:13em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n #simavr_ram{\n     float:left;\n     width:10em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n #simavr_other{\n     float:left;\n     width:10em;\n     border:1px solid #aaa;\n     text-align:center;\n }\n\n .simavr_title{\n     width:100%;\n     text-align:center;\n     display:inline-block;\n     font-size:12pt;\n     margin:auto;\n     padding-bottom:5px;\n     line-height:2.5em;\n }\n\n .simavr_status{\n     display:inline-block;\n     padding:5px;\n     border-left:1px solid #aaa;\n     /* border-radius:5px; */\n     margin:5px;\n     width:45%;\n     font-size:9pt;\n     float:right;    \n }\n\n .active_line{\n     background-color:#f66;\n }\n .simavr_label{\n     font-size:10pt;\n     color:#333;\n     display:inline-block;\n     width:2em;\n }\n .simavr_label_long{\n     font-size:10pt;\n     color:#333;\n     display:inline-block;\n     margin-right:0.5ex;\n     min-width:2em;\n }\n\n .simavr_reg{\n     text-align:left;\n     display:inline-block;\n     padding:4px;\n     /*margin:0 2px 2px 0;*/\n     width:7em;\n }\n .simavr_pm{\n     text-align:left;\n     display:inline-block;\n     padding:4px;\n     /*margin:0 2px 2px 0;*/\n     width:12em;\n }\n\n .simavr_mem_start{\n     padding:4px;\n     width:4em;\n     margin:4px;\n }\n\n .simavr_ram{\n     text-align:left;\n     display:inline-block;\n     padding:4px;\n     /*margin:0 2px 2px 0;*/\n     width:7em;\n }\n\n .simavr_controls{\n     display:inline-block;\n     width:90%;\n     height:50px;\n     border: 2px solid #ccc;\n     margin:auto;\n     margin-bottom:5px;\n }\n\n .simavr_programming{\n     display:inline-block;\n     float:left;\n     width:70%;\n }\n\n .simavr_output_container{\n     display:inline-block;\n     float:left;\n     width:25%;\n }\n\n .simavr_simulator{\n     display:inline-block;\n     float:left;\n     width:75%;\n }\n\n .simavr_output{\n     display:inline-block;\n     padding:5px;\n     width:90%;\n     border:1px solid #aaa;\n     overflow-x:scroll;\n     overflow-y:scroll;\n }\n\n .simavr_program{\n     width:90%;\n }\n\n .simavr_normal{\n     background-color:#c66;\n }\n\n .simavr_updated{\n     background-color:#6c6;\n }\n\n .simavr_active{\n     background-color:#cc6;\n }\n\n .simavr_display_button{\n     display:inline-block;\n     padding:2px;\n }\n\n .simavr_enabled_button{\n     background-color:#66a;\n }\n\n .simavr_disabled_button{\n     background-color:#aaa;\n }\n\n .simavr_display_button:hover{\n     display:inline-block;\n     cursor:pointer;\n     color:#f33;\n }\n .simavr_button{\n     display:inline-block;\n     padding:8px;\n     border-radius:5px;\n     height:25px;\n     color:white;\n     margin:5px;\n     cursor:pointer;\n }\n\n .simavr_button:hover{\n     display:inline-block;\n     cursor:pointer;\n     color:#f33;\n }\n\n .simavr_io_num{\n     width:3em;\n     border:3px solid black;\n     background-color:#363;\n     color:#ff4;\n     font-size:17pt;\n     padding:5px;\n }\n\n .simavr_io_switch{\n     display:inline-block;\n     width:3em;\n     border:3px solid black;\n     font-size:17pt;\n     padding:5px;\n     cursor:pointer;\n }\n\n .simavr_io_switch_on{\n     background-color:#3f3;\n }\n\n .simavr_io_switch_off{\n     background-color:#f33;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$h = "data-v-01dd48c1";
+    const __vue_scope_id__$i = "data-v-01dd48c1";
     /* module identifier */
-    const __vue_module_identifier__$h = undefined;
+    const __vue_module_identifier__$i = undefined;
     /* functional template */
-    const __vue_is_functional_template__$h = false;
+    const __vue_is_functional_template__$i = false;
     /* style inject SSR */
     
 
     
     var JSAVRPlugin = normalizeComponent_1(
-      { render: __vue_render__$h, staticRenderFns: __vue_staticRenderFns__$h },
-      __vue_inject_styles__$h,
-      __vue_script__$g,
-      __vue_scope_id__$h,
-      __vue_is_functional_template__$h,
-      __vue_module_identifier__$h,
+      { render: __vue_render__$i, staticRenderFns: __vue_staticRenderFns__$i },
+      __vue_inject_styles__$i,
+      __vue_script__$h,
+      __vue_scope_id__$i,
+      __vue_is_functional_template__$i,
+      __vue_module_identifier__$i,
       browser,
       undefined
     );
@@ -47142,6 +47283,7 @@
 
   Vue$1.config.productionTip = true;
 
+  Vue$1.component('read', Read);
   Vue$1.component('graphIndex', GraphIndex);
   Vue$1.component('nodeIndex', NodeIndex);
   Vue$1.component('labelIndex', LabelIndex);
