@@ -144,17 +144,15 @@ def get_targets(node):
 
 def create_subcat(metadata, node_list):
     # Want to return exactly only nodes in the node list and also constrain any links to this subset as well
-    ans = {}
-    duals = {'has':'is','is':'has'}
-    node_set = set(node_list)
-    for x in node_list:
-        node = metadata[x]
-        print(node)
-        for et in duals:
-            edges = node['edges'][et]
-            for e in edges:
-                edges[e] = [edge for edge in edges[e] if edge["target"] in node_set]
-        ans[x] = node
+    ans = {"nodes":[],"edges":[]}
+    nodeset = {n for n in node_list}
+    
+    for n in metadata["nodes"]:
+        if n["_id"] in nodeset:
+            ans["nodes"].append(n)
+    for e in metadata["edges"]:
+        if e["_from"] in nodeset and e["_to"] in nodeset:
+            ans["edges"].append(e)
     return ans
 
 def edge_exists(edge, edgeset):

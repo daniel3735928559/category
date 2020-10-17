@@ -12,11 +12,10 @@ export default new Router({
     routes: [
 	{
 	    path: '/',
-	    name: 'home',
-	    component: Home
+	    redirect: '/browse/'
 	},
 	{
-	    path: '/node/:id',
+	    path: '/read/:id',
 	    name: 'node',
 	    component: Node,
 	    props: true
@@ -28,8 +27,26 @@ export default new Router({
 	    // }
 	},
 	{
-	    path: '/browse/:query',
+	    path: '/read/:id',
+	    name: 'node',
+	    component: Node,
+	    props: true
+	    // route level code-splitting
+	    // this generates a separate chunk (about.[hash].js) for this route
+	    // which is lazy-loaded when the route is visited.
+	    // component: function () { 
+	    //   return import(/* webpackChunkName: "about" */ './views/Node.vue')
+	    // }
+	},
+	{
+	    path: '/browse/:query?',
 	    name: 'browse',
+	    component: Browse,
+	    props:true
+	},
+	{
+	    path: '/browse/preview/:id',
+	    name: 'preview',
 	    component: Browse,
 	    props:true
 	}

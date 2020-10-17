@@ -28,7 +28,7 @@
 "c"		       	      	  return 'C'
 [0-9]{4}"-"[0-9]{2}"-"[0-9]{2}        return 'DATE'
 [0-9][0-9]*                       return 'NUM'
-"=="|">="|"<=" return 'CMP'
+">"|"<"|"!="|"=="|">="|"<="|"~" return 'CMP'
 //(\>|\<|\>=|\<=|==|!=|~|!!)        return 'CMP'
 (?!has)(?!of)(?!is)(?!before)(?!after)[^*;/,:.()! <>=~[\]]+       return 'STR'
 <<EOF>>                	       	  return 'EOF'
@@ -66,6 +66,8 @@ q
     | name OF ':' '(' q ')'
         {$$ = ["edge",{"name":$1,"dir":"is","query":$5}];}
     | '.' name CMP name
+        {$$ = ["prop",[$2,$3,$4]];}
+    | '.' name CMP NUM
         {$$ = ["prop",[$2,$3,$4]];}
     | BEFORE ':' DATE
         {$$ = ["before",$3];}

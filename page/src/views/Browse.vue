@@ -20,44 +20,43 @@
 	</div>
 	<div class="querypanel" style="float:left;width:30%;padding-left:10px;">
 	    <div style="float:left">
-		<input type="text" id="highlight_input" v-model="highlight_query" v-on:keyup.enter="do_highlight" />
+		<input type="search" id="highlight_input" v-model="highlight_query" v-on:search="do_highlight" v-on:keyup.enter="do_highlight" />
 		<span v-on:click="do_highlight()" class="close_x"><span class="fas fa-search"></span></span>
 		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
-		<span v-on:click="clear_highlight()" class="close_x"><span class="fas fa-backspace"></span></span>
 		<span v-on:click="set_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
 		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-search-minus"></span></span>
 	    </div>
 
 	    <span class="search-error" v-if="errormsg.length > 0">{{errormsg}}</span>
 	    <br /><br />
-	    <div v-if="highlight_is_empty">
+	    <div>
 		<b>Top nodes</b>
 		<div v-for="n in best_nodes" class="query_result">
 		    <div style="display:inline-block;">
-			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n.node].name + ')[2], !(=' + graph.nodes[n.node].name + '))')">+</span>
-			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n.node].name + ')')">-</span>
+			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n].name + ')')">-</span>
 		    </div>
-		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1]')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
+		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
 		</div>
 	    </div>
 	    <div v-if="!highlight_is_empty">
 		<b>Top nodes in result</b>
 		<div v-for="n in best_highlights" class="query_result">
 		    <div style="display:inline-block;">
-			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n.node].name + ')[2], !(=' + graph.nodes[n.node].name + '))')">+</span>
-			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n.node].name + ')')">-</span>
+			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
+			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n].name + ')')">-</span>
 		    </div>
-		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1]')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
+		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
 		</div>
 	    </div>
 	    <hr />
 	    <b>Top labels</b>
 	    <div v-for="e in best_edges" class="query_result">
 		<div style="display:inline-block;">
-		    <span class="badge_button" v-on:click="add_to_query('(has ' + e.edge + ' / is ' + e.edge + ')')">+</span>
-		    <span class="badge_button" v-on:click="add_to_query('!(is ' + e.edge + ')')">-</span>
+		    <span class="badge_button" v-on:click="add_to_query('(has ' + e.label + ' / is ' + e.label + ')')">+</span>
+		    <span class="badge_button" v-on:click="add_to_query('!(is ' + e.label + ')')">-</span>
 		</div>
-		<a href="#" v-on:click="set_highlight('(is ' + e.edge + ')')">{{e.label}} ({{e.count}})</a>
+		<a href="#" v-on:click="set_highlight('(is ' + e.label + ')')">{{e.label}} ({{e.count}})</a>
 	    </div>
 	</div>
     </div>
@@ -71,6 +70,10 @@
      name: 'browse',
      computed: {
 	 resultset: function() {
+	     if(!this.ready) return {};
+	     if(!this.result) {
+		 return this.graph.nodes;
+	     }
 	     var ans = {};
 	     for(var r in this.result) {
 		 ans[r] = this.graph.nodes[r];
@@ -98,12 +101,15 @@
 	     return ans;
 	 },
 	 best_highlights: function() {
-	     return this.subgraph.subgraph(this.highlightset).best_nodes().slice(0,10);
-	 },
-	 subgraph: function() {
-	     if(!this.ready) return;
-	     console.log("GGGGGG",this.graph);
-	     return this.graph;
+	     var ans = [];
+	     var best = this.subgraph.best_nodes();
+	     for(var n of best){
+		 if(n in this.highlightset) {
+		     ans.push(n);
+		     if(ans.length >= 10) break;
+		 }
+	     }
+	     return ans;
 	 },
 	 best_nodes: function() {
 	     console.log("BN",this.ready);
@@ -111,6 +117,7 @@
 	     return this.subgraph.best_nodes().slice(0,10);
 	 },
 	 best_edges: function() {
+	     if(!this.ready) return [];
 	     return this.subgraph.best_labels().slice(0,10);
 	 },
 	 ...mapState(['graph','ready', 'node_data'])
@@ -118,19 +125,23 @@
      data() {
 	 return {
 	     entered_query: '',
-	     query: '',
+	     query: this.$route.params.query ? atob(this.$route.params.query) : '*',
+	     preview_id: this.$route.params.id || '',
 	     highlight_query: '',
 	     errormsg: '',
 	     result: [],
 	     highlight: [],
 	     mode: 'graph',
+	     subgraph: {}
 	 }
      },
      watch: {
-	 nodes: function(val) {
-	     this.$nextTick(function () {
-		 this.search();
-	     });
+	 ready: function(val) {
+	     if(val) {
+		 this.$nextTick(function () {
+		     this.search();
+		 });
+	     }
 	 }
      },
      methods: {
@@ -145,12 +156,14 @@
 	     else {
 		 this.query = qry;
 	     }
+	     this.$router.push('/browse/'+btoa(this.query));
 	     this.search();
 	 },
 	 set_query: function(qry) {
 	     this.query = qry;
 	     this.highlight_query = "";
 	     this.do_highlight();
+	     this.$router.push('/browse/'+btoa(this.query));
 	     this.search();
 	 },
 	 set_highlight: function(qry) {
@@ -158,6 +171,7 @@
 	     this.do_highlight();
 	 },
 	 run_search: function(qry, nodeset) {
+	     if(!this.ready) return {};
 	     this.entered_query = qry;
 	     this.errormsg = "";
 	     if(qry.trim().length == 0) {
@@ -188,6 +202,9 @@
 	     }
 	     else {
 		 this.result = query_result;
+		 this.highlight = {};
+		 this.subgraph = this.graph.subgraph(this.result);
+		 this.do_highlight()
 		 /* for(var i = 0; i < this.result.length; i++){
 		    if(this.nodes[this.result[i]].name == this.query.trim()) {
 		    this.$router.push('/node/'+this.result[i]);
@@ -224,13 +241,19 @@
 	     });
 	 },
 	 clear_filter: function() {
+	     this.$router.push('/browse/'+btoa('*'));
 	     this.query = '*';
 	     this.search();
 	     this.do_highlight();
 	 }
      },
+     beforeRouteUpdate (to, from, next) {
+	 console.log('222222222222',to);
+	 this.query = to.params.query ? atob(to.params.query) : '*';
+	 this.search();
+	 next();
+     },
      mounted: function() {
-	 this.query = '*';
 	 this.search();
      }
  }

@@ -70,7 +70,7 @@ class AEdge:
     def to_json(self):
         srcid = self.get_src_id()
         dstid = self.get_dst_id()
-        ans = {"_from":f"nodes/{srcid}", "_to":f"nodes/{dstid}", "label":self.label, "internal":('srcloc' in self.args or 'dstloc' in self.args)}
+        ans = {"_id":f"edges/{srcid}_{dstid}_{self.label}", "_from":f"nodes/{srcid}", "_to":f"nodes/{dstid}", "label":self.label, "internal":('srcloc' in self.args or 'dstloc' in self.args)}
         for arg in self.args:
             if not arg in {"_to", "_from", "label" "srcloc", "dstloc"}:
                 ans[arg] = self.args[arg]
@@ -201,4 +201,5 @@ class AGraph:
         with open(os.path.join(path, "nodes.jsonl"), "w") as f:
             for n in self.nodes:
                 f.write(json.dumps(self.nodes[n].to_json())+"\n")
-
+        with open(os.path.join(path, "metadata.json"), "w") as f:
+            f.write(json.dumps({"nodes":[self.nodes[n].to_json() for n in self.nodes],"edges":[e.to_json() for e in self.edges]}))

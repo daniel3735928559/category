@@ -117,12 +117,13 @@ class CatGraph {
 	for(var i = 0; i < label_arr.length; i++) {
 	    label_arr[i].count = labels[label_arr[i].label];
 	}
-	label_arr.sort(function(x, y){ return labels[y]-labels[x]; })
+	label_arr.sort(function(x, y){ return y.count-x.count; })
 	return label_arr;
     }
     add_node(node) {
-	CatGraph.verify_keys(node, ["_id","name"]);
-	let id = node["_id"];
+	CatGraph.verify_keys(node, ["_key","name"]);
+	let id = node["_key"];
+	node["_degree"] = 0;
 	node["_indegree"] = 0;
 	node["_outdegree"] = 0;
 	this.nodes[id] = node;
@@ -130,6 +131,8 @@ class CatGraph {
     }
     add_edge(edge) {
 	CatGraph.verify_keys(edge, ["_id","_from","_to","label"]);
+	if(edge["_from"].indexOf("/") >= 0) edge["_from"] = edge["_from"].split("/")[1];
+	if(edge["_to"].indexOf("/") >= 0) edge["_to"] = edge["_to"].split("/")[1];
 	let edgeid = edge["_id"];
 	let srcid = edge["_from"];
 	let tgtid = edge["_to"];
@@ -146,6 +149,8 @@ class CatGraph {
 	this.edges[edgeid] = edge;
 	this.nodes[srcid]["_outdegree"]++;
 	this.nodes[tgtid]["_indegree"]++;
+	this.nodes[srcid]["_degree"]++;
+	this.nodes[tgtid]["_degree"]++;
     }
 
     // Begin searching functions
@@ -179,7 +184,7 @@ class CatGraph {
     // - lab = "*" (for any label) or a label specifying which edges to follow
     // - dist = the number of steps we've taken to get to this point (i.e. everything in nodeset is less than dist from the starting point, and everything in frontier is exactly dist from the starting point)
     // Returns: a map {node id : distance from starting nodeset}
-    search_nbhd_helper(resultset, nodeset, steps, frontier, dir, lab, dist) {
+    search_nbhd_helper(resultset, nodeset, steps, frontier, dir, lab, dist, may_overlap) {
 	if(this.debug_search) {
 	    console.log(steps, dir, lab);
 	    this.log_nodeset("INTERIOR ", nodeset);
@@ -243,14 +248,16 @@ class CatGraph {
 			// frontier, we need to verify that it is BOTH
 			// not yet visited, and that it is in the
 			// ambient resultset we're searching
-			if(!(tgtid in new_nodeset) && (tgtid in resultset)) {
-			    new_frontier[tgtid] = true;
+			if(tgtid in resultset) {
+			    if(!(tgtid in new_nodeset) || may_overlap) {
+				new_frontier[tgtid] = true;
+			    }
 			}
 		    }
 		}
 	    }
 	}
-	return this.search_nbhd_helper(resultset, new_nodeset, steps-1, new_frontier, dir, lab, dist+1);
+	return this.search_nbhd_helper(resultset, new_nodeset, steps-1, new_frontier, dir, lab, dist+1, may_overlap);
     }
     
     search(resultset, q) {
@@ -278,7 +285,7 @@ class CatGraph {
 	    // ["or", [subquery1, subquery2, ...]]
 	    for(var i = 0; i < q[1].length; i++){
 		var next_result = this.search(resultset, q[1][i]);
-		result = this.search_union(result,next_result);
+		result = this.search_union(resultset,result,next_result);
 	    }
 	}
 	else if(q[0] == "not"){
@@ -296,7 +303,7 @@ class CatGraph {
 	    }
 	    console.log("T",JSON.stringify(targets));
 	    // Then query for edges from this nodeset:
-	    result = this.search_nbhd(resultset, targets, 1, 1, q[1].dir, q[1].name);
+	    result = this.search_nbhd(resultset, targets, 1, 1, q[1].dir, q[1].name, true);
 	}
 	else if(q[0] == "nbhd"){
 	    // ["nbhd", [<subquery>, <min_steps>, <max_steps>, <direction>, <label>]]
@@ -306,7 +313,7 @@ class CatGraph {
 	    var dir = q[1][3];
 	    var lab = q[1][4];
 	    var targets = this.search(resultset, subquery);
-	    result = this.search_nbhd(resultset, targets, min_steps, max_steps, dir, lab)
+	    result = this.search_nbhd(resultset, targets, min_steps, max_steps, dir, lab, true)
 	}
 	else if(q[0] == "name"){
 	    //["name", <name>]
@@ -416,7 +423,7 @@ class CatGraph {
     // - <nodeset>[<min_steps>..<max_steps>]            = <nodeset>[<min_steps>..<max_steps>:any:*]
     // - <nodeset>[<min_steps>..<max_steps>:<label>]    = <nodeset>[<min_steps>..<max_steps>:any:<label>]
     // --> ["nbhd", [<subquery>, <min_steps>, <max_steps>, <direction>, <label>]]
-    search_nbhd(resultset, nodeset, min_steps, max_steps, direction, label) {
+    search_nbhd(resultset, nodeset, min_steps, max_steps, direction, label, may_overlap) {
 	if(direction == "has") {
 	    direction = "in";
 	}
@@ -426,7 +433,7 @@ class CatGraph {
 	else if(direction != "any"){
 	    throw ("Invalid direction: "+direction);
 	}
-	var knbhd = this.search_nbhd_helper(resultset, {}, max_steps, nodeset, direction, label, 0);
+	var knbhd = this.search_nbhd_helper(resultset, {}, max_steps, nodeset, direction, label, 0, may_overlap);
 	console.log("K",JSON.stringify(knbhd));
 	var ans = {};
 	for(var nodeid in knbhd) {
@@ -439,12 +446,12 @@ class CatGraph {
 
     // "has <label>: <nodeset>"
     search_has(resultset, nodeset, label) {
-	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "has", label);
+	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "has", label, true);
     }
 
     // "is <label> of: <nodeset>"
     search_is(resultset, nodeset, label) {
-	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "is", label);
+	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "is", label, true);
     }
     
     // "is <label>" = "an inbound edge of label <label> exists to this node"
@@ -474,16 +481,16 @@ class CatGraph {
 
 var test_graph = function() {
     let nodes = [
-	{"_id":"1","name":"apple"},
-	{"_id":"2","name":"banana"},
-	{"_id":"3","name":"cherry"},
-	{"_id":"4","name":"bacon"},
-	{"_id":"5","name":"lettuce"},
-	{"_id":"6","name":"tomato"},
-	{"_id":"7","name":"fruit salad"},
-	{"_id":"8","name":"BLT"},
-	{"_id":"9","name":"alice"},
-	{"_id":"10","name":"bob"}
+	{"_key":"1","name":"apple"},
+	{"_key":"2","name":"banana"},
+	{"_key":"3","name":"cherry"},
+	{"_key":"4","name":"bacon"},
+	{"_key":"5","name":"lettuce"},
+	{"_key":"6","name":"tomato"},
+	{"_key":"7","name":"fruit salad"},
+	{"_key":"8","name":"BLT"},
+	{"_key":"9","name":"alice"},
+	{"_key":"10","name":"bob"}
     ];
     let edges = [
 	{"_id":"1","_from":"7","_to":"1","label":"ingredient"},
@@ -509,6 +516,7 @@ var test_graph = function() {
     console.log(JSON.stringify(g.nodes));
     g.search(g.nodes, ["nbhd",[["name","apple"], 0, 2, "any", "ingredient"]]);
     g.search(g.nodes, ["edge",{"name":"*","dir":"has","query":["name","banana"]}]);
+    g.search(g.nodes, ["edge",{"name":"ingredient","dir":"is"}]);
     console.log(query.parse('has x: y'));
     console.log(query.parse('(x)[1]'));
     console.log(query.parse('(x)[1..2]'));

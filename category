@@ -3,19 +3,15 @@
 """ Category
 
 Usage: 
-  category init <path> <name> <db_name> <db_un> <db_pw> [(--da <db_addr>)] [(--dp <db_port>)] 
-  category build <path>
+  category init <path>
+  category incbuild <path>
   category rebuild <path>
-  category mdrebuild <path>
-  category subcat [--static] <path> <subcat_path> <subcat_name> <query>
+  category subcat [--static] <path> <subcat_path> <query>
   category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
-  category serve <path> <db_name> <db_un> <db_pw> [(-p <port>)] [(-a <bind_addr>)] [(--da <db_addr>)] [(--dp <db_port>)] 
-  category n4jimport <path> <un> <pw>
-  category n4jquery <un> <pw> <query>
-  category updatedb <path> <db_name> <db_un> <db_pw> [(--da <db_addr>)] [(--dp <db_port>)] 
+  category serve <path> [(-p <port>)] [(-a <bind_addr>)]
 
 Options:
-  -p port (default: 7688)
+  -p port (default: 5000)
   -a address to bind (default: 127.0.0.1)
 """
 
@@ -48,6 +44,26 @@ UNWIND metadata[node].edges.is[edge] AS dest
 MATCH (src:Node {nodeid:node}),(tgt:Node {nodeid:dest})
 MERGE (src)-[:IS {label:edge}]->(tgt)"""
 
+def get_conf(path, info):
+    ans = info
+    with open(config_path(path),"r") as f:
+        for l in f:
+            if len(l.strip()) == 0:
+                continue
+            if not ":" in l:
+                continue
+            k,v = l.split(":",2)
+            k,v = k.strip(),v.strip()
+            if k in ans:
+                ans[k] = v
+    return ans
+
+def get_db_info(path):
+    return get_conf(path, {"arango":"no","db_port":"8529","db_host":"localhost","db_name":"category","db_username":"root","db_password":""})
+
+def get_editor(path):
+    return get_conf(path, {"editor":"/usr/bin/emacs"})
+
 def n4j_run(tx, q, md):
     return tx.run(q, md=md)
 
@@ -56,15 +72,11 @@ def cat_error(*args):
     exit(1)
 
 def config_path(cat_path):
-    return os.path.join(cat_path, "category.yaml")
+    return os.path.join(cat_path, "category.conf")
 
 def metadata_path(cat_path):
     return os.path.join(cat_path, "out/metadata.json")
 
-def load_config(cat_path):
-    with open(config_path(cat_path)) as f:
-        return yaml.load(f, Loader=yaml.SafeLoader)
-    
 def load_metadata(cat_path):
     with open(metadata_path(cat_path)) as f:
         return json.load(f)
@@ -72,37 +84,31 @@ def load_metadata(cat_path):
 def is_category(cat_path):
     return os.path.exists(config_path(cat_path))
 
-def read_config(cat_path):
-    if not is_category(cat_path):
-        cat_error(f"Not a category. Run: category init {cat_path}")
-    with open(config_path,"r") as f:
-        return yaml.load(f, Loader=yaml.SafeLoader)
+# def cat_n4j_import(cat_path, db_url, un, pw, reset_db=True):
+#     metadata_path = os.path.join(cat_path,"out","metadata.json")
+#     with open(metadata_path,"r") as f: s = f.read()
+#     s = json.loads(s)
 
-def cat_n4j_import(cat_path, db_url, un, pw, reset_db=True):
-    metadata_path = os.path.join(cat_path,"out","metadata.json")
-    with open(metadata_path,"r") as f: s = f.read()
-    s = json.loads(s)
+#     driver = GraphDatabase.driver("bolt://"+db_url, auth=(un, pw))
 
-    driver = GraphDatabase.driver("bolt://"+db_url, auth=(un, pw))
+#     with driver.session() as session:
+#         if reset_db:
+#             session.read_transaction(n4j_run, "match (n) detach delete n", s)
+#         session.read_transaction(n4j_run, nodes_import, s)
+#         session.read_transaction(n4j_run, has_edges_import, s)
+#         #session.read_transaction(n4j_run, is_edges_import, s)
 
-    with driver.session() as session:
-        if reset_db:
-            session.read_transaction(n4j_run, "match (n) detach delete n", s)
-        session.read_transaction(n4j_run, nodes_import, s)
-        session.read_transaction(n4j_run, has_edges_import, s)
-        #session.read_transaction(n4j_run, is_edges_import, s)
+# def cat_n4j_query(db_url, un, pw, q):
+#     driver = GraphDatabase.driver("bolt://"+db_url, auth=(un, pw))
 
-def cat_n4j_query(db_url, un, pw, q):
-    driver = GraphDatabase.driver("bolt://"+db_url, auth=(un, pw))
-
-    with driver.session() as session:
-        ans = session.read_transaction(n4j_run, q, None)
-        begin = True
-        for r in ans:
-            if begin:
-                print(",".join([k for k in r.keys()]))
-                begin = False
-            print(",".join([str(r[k]) for k in r.keys()]))
+#     with driver.session() as session:
+#         ans = session.read_transaction(n4j_run, q, None)
+#         begin = True
+#         for r in ans:
+#             if begin:
+#                 print(",".join([k for k in r.keys()]))
+#                 begin = False
+#             print(",".join([str(r[k]) for k in r.keys()]))
     
 
 def cat_init_db(db_name, db_un, db_pw, db_port, db_addr):
@@ -118,36 +124,101 @@ def cat_init_db(db_name, db_un, db_pw, db_port, db_addr):
         db.createCollection(name="nodes")
         db.createCollection(className='Edges', name="edges")
         
-def cat_init(cat_path, name, db_name, db_un, db_pw, db_port, db_addr):
-    cat_init_db(db_name, db_un, db_pw, db_port, db_addr)
-    cat_init_files(cat_path, name)
-    
-def cat_init_files(cat_path, name):
+def cat_init(cat_path):
+    emacs_path = subprocess.check_output("which emacs", shell=True).decode().strip()
+    ed_path = input("Enter your editor path (default:{})".format(emacs_path))
+    ed_path = ed_path.strip()
+    if len(ed_path) == 0:
+        ed_path = emacs_path
+
+    config_str = f"editor: {ed_path}\n"
+        
+    if not os.path.exists(cat_path):
+        os.makedirs(cat_path, exist_ok=True)
+
+    arango_yn = " "
+    while not arango_yn in {"y", "n"}:
+        if arango_yn != " ":
+            print("Please enter y or n")
+        arango_yn = input("Do you want to use arangodb to back this? (y/N)")
+        arango_yn = arango_yn.strip().lower()
+        if len(arango_yn) == 0:
+            arango_yn = "n"
+        
+    if arango_yn == "y":
+        db_un = input("Arango username:")
+        db_pw = input("Arango password:")
+        db_name = input("Arango db name:")
+        db_port = input("Arango db port [8529]:")
+        db_host = input("Arango db host [localhost]:")
+        if len(db_port.strip()) == 0:
+            db_port = "8529"
+        if len(db_port.strip()) == 0:
+            db_host = "localhost"
+        # Now we initialise the database:
+        
+        cat_init_db(db_name, db_un, db_pw, int(db_port), db_host)
+        
+        # If this succeeded, add the database info to the config info
+        config_str += f"""arango: yes
+db_username: {db_un}
+db_password: {db_pw}
+db_name: {db_name}
+db_port: {db_port}
+db_host: {db_host}
+"""
+
+    # Write the config file:
+    with open(config_path(cat_path),"w") as f:
+        f.write(config_str)
+
+    # Finally init the files:
     # In the cat_path folder, create the structure
     # $CAT_PATH/src
     # $CAT_PATH/out
-    # $CAT_PATH/category.yaml (with name: <name>)
-    if is_category(cat_path):
-        cat_error(f"Pre-existing category found in {cat_path}")
+    # $CAT_PATH/out/files
+    # $CAT_PATH/category.conf
     for dirname in ["src","out","out/files"]:
         dir_path = os.path.join(cat_path,dirname)
         if not os.path.exists(dir_path):
             os.mkdir(dir_path)
-    with open(config_path(cat_path),"w") as f:
-        yaml.dump({"name":name},f)
 
 def cat_build(cat_path):
     cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), True, False)
+    cat_db_rebuild(cat_path)
 
 def cat_md_rebuild(cat_path):
     cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), False, True)
+    cat_db_rebuild(cat_path)
 
 def cat_rebuild(cat_path):
     cat_builder(os.path.join(cat_path,"src"), os.path.join(cat_path,"out"), False, False)
+    cat_db_rebuild(cat_path)
 
-def cat_subcat(src_path, subcat_path, subcat_name, query, static=False):
+def cat_db_rebuild(cat_path):
+    di = get_db_info(cat_path)
+    if di is None or di["arango"] != "yes":
+        return
+
+    # If we actually got db info, actually push data to arango (TODO: use non-standard host:port if specified)
+    db_un,db_pw,db_name = di["db_username"],di["db_password"],di["db_name"]
+    conn = Connection(username=db_un, password=db_pw)
+    db = conn[db_name]
+    db.collections["nodes"].truncate()
+    db.collections["edges"].truncate()
+    nodes_path = os.path.join(cat_path, "out", "nodes.jsonl")
+    edges_path = os.path.join(cat_path, "out", "edges.jsonl")
+    node_import = f"""arangoimp --server.username "{db_un}" --server.password "{db_pw}" --server.database "{db_name}" --file {nodes_path} --collection nodes --overwrite true --create-collection true --create-collection-type document --on-duplicate replace"""
+    edge_import = f"""arangoimp --server.username "{db_un}" --server.password "{db_pw}" --server.database "{db_name}" --file {edges_path} --collection edges --overwrite true --create-collection true --create-collection-type edge"""
+
+    print(node_import)
+    subprocess.Popen(shlex.split(node_import), shell=False)
+    print(edge_import)
+    subprocess.Popen(shlex.split(edge_import), shell=False)
+
+def cat_subcat(src_path, subcat_path, query, static=False):
     if not is_category(subcat_path):
-        cat_init(subcat_path, subcat_name)
+        cat_init(subcat_path)
 
     if static:
         # Copy page folder into subcat directory
@@ -222,8 +293,7 @@ def cat_query(src_path, query, as_src, as_json, as_edit, pdf_path=None):
                         print(f.read())
         if as_edit:
             to_edit = [n for n in subcat_nodes if 'src' in cat_nodes[n]]
-            config = load_config(src_path)
-            editor = config.get("editor","/usr/bin/emacs")
+            editor = get_editor()
 
             if len(to_edit) == 1:
                 node = to_edit[0]
@@ -267,68 +337,36 @@ def cat_query(src_path, query, as_src, as_json, as_edit, pdf_path=None):
         
 def cat_updatedb(cat_path, db_name, db_un, db_pw, db_port, db_addr):
     #global metadata
+    pass
 
-    conn = Connection(username=db_un, password=db_pw)
-    db = conn[db_name]
-    db.collections["nodes"].truncate()
-    db.collections["edges"].truncate()
-    nodes_path = os.path.join(cat_path, "out", "nodes.jsonl")
-    edges_path = os.path.join(cat_path, "out", "edges.jsonl")
-    node_import = f"""arangoimp --server.username "{db_un}" --server.password "{db_pw}" --server.database "{db_name}" --file {nodes_path} --collection nodes --overwrite true --create-collection true --create-collection-type document --on-duplicate replace"""
-    edge_import = f"""arangoimp --server.username "{db_un}" --server.password "{db_pw}" --server.database "{db_name}" --file {edges_path} --collection edges --overwrite true --create-collection true --create-collection-type edge"""
-
-    print(node_import)
-    subprocess.Popen(shlex.split(node_import), shell=False)
-    print(edge_import)
-    subprocess.Popen(shlex.split(edge_import), shell=False)
-
-    md_query = """LET subgr = nodes
-    RETURN MERGE(FOR doc IN subgr
-    LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
-    
-    # make aql query to arangdb
-    res = db.AQLQuery(md_query, rawResults=True, batchSize=1000)
-    ans = next(res)
-    print(ans)
-    md_path = os.path.join(cat_path, "out", "metadata.json")
-    with open(md_path, "w") as f:
-        f.write(json.dumps(ans))
-
-def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr):
+def cat_serve(cat_path, port, bind_addr):
     #global metadata
-
-    conn = Connection(username=db_un, password=db_pw)
-    db = conn[db_name]
-
-    md_query = """LET subgr = QUERYGOESHERE
-    LET subst = MERGE(for doc in subgr return {[doc._id]:true})
-    RETURN MERGE(FOR doc IN subgr
-    LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})"""
-    
-    # md_query = """RETURN MERGE(FOR doc IN nodes
-    # LET isedges = (RETURN MERGE(FOR v, e IN 1..1 INBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    # LET hasedges = (RETURN MERGE(FOR v, e IN 1..1 OUTBOUND doc._id edges filter subst[v._id] == true COLLECT lab=e.label INTO edgedata = {"target":v._key,"srcloc":e.srcloc,"dstloc":e.dstloc} RETURN {[lab]:edgedata}))[0] 
-    # RETURN {[doc._key]:{"name":doc.name,"auto":doc.auto,"snippet":doc.snippet,"parent":doc.parent,"date":doc.date,"edges":{"has":hasedges,"is":isedges}}})""" 
         
     # Ensure we don't zombify our editors
     signal.signal(signal.SIGCHLD, signal.SIG_IGN);
 
-    # Load the category metadata and configuration
-    #metadata = load_metadata(cat_path)
-    config = load_config(cat_path)
-    editor = config.get("editor","/usr/bin/emacs")
     
     if not is_category(cat_path):
         cat_error(f"Not a category. Run: category init {cat_path}")
+
+    # Load the category metadata and configuration
+    metadata = load_metadata(cat_path)
+    editor = get_editor(cat_path)
         
     cat_root = os.path.join(os.path.realpath(cat_path),"out")
     print(f"Serving {cat_root} on port {bind_addr}:{port}...")
     page_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page")
     static_root = os.path.join(os.path.realpath(os.path.dirname(__file__)),"page","dist","static")
+
+    # Use arango if specified by config
+    use_arango = False
+    di = get_db_info(cat_path)
+    if di["arango"] == "yes":
+        use_arango = True
+        db_name, db_un, db_pw, db_port, db_host = di["db_name"], di["db_username"], di["db_password"], di["db_port"], di["db_host"]
+        conn = Connection(username=db_un, password=db_pw)
+        db = conn[db_name]
+    
     app = Flask(__name__,static_url_path='')
     
     @app.route('/static/<path:path>')
@@ -337,9 +375,14 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
     
     @app.route('/edit/<node>')
     def edit_file(node):
-        #global metadata
-        node_src = ""#os.path.join(cat_path,"src",metadata[node].get("src",f"""{metadata[node]["name"]}.md"""))
+        node_src = ""
+        for n in metadata["nodes"]:
+            if n["_id"] == node:
+                node_src = n.get("src","")
+                break
         print("EDIT",node_src)
+        if node_src == "":
+            return
         def edit_node(cat_path, editor, node_src):
             global metadata
             proc = subprocess.Popen([editor, node_src],shell=False)
@@ -396,29 +439,12 @@ def cat_serve(cat_path, db_name, db_un, db_pw, port, bind_addr, db_port, db_addr
     def send_output_file(path):
         return send_from_directory(cat_root, path)
 
-    @app.route('/out/metadata.json')
-    def send_metadata():
-        query = request.args.get('q','')
-        if len(query.strip()) == 0:
-            query = '(for doc in nodes limit 2000 return doc)'
-        q = md_query.replace("QUERYGOESHERE",query)
-
-        q = """let es = (for e in edges return e)
-let ns = (for n in nodes return n)
-return {"nodes":ns,"edges":es}"""
-        print("AQL:",q)
-        
-        # make aql query to arangdb
-        try:
-            res = db.AQLQuery(q, rawResults=True, batchSize=10)
-            ans = next(res)
-            return jsonify(ans)
-        except Exception as e:
-            print("ERROR",e,e.message)
-            return jsonify({"error":e.message})
-
     @app.route('/browse/<path:path>')
     def send_browse(path):
+        return send_from_directory(page_root,"dist/index.html")
+
+    @app.route('/browse/')
+    def send_browse_blank():
         return send_from_directory(page_root,"dist/index.html")
     
     @app.route('/node/<path:path>')
@@ -434,23 +460,14 @@ return {"nodes":ns,"edges":es}"""
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     if args['init']:
-        cat_init(args['<path>'],
-                 args['<name>'],
-                 args['<db_name>'],
-                 args['<db_un>'],
-                 args['<db_pw>'],
-                 args['--dp'] if args['--dp'] != False else 8529,
-                 args['--da'] if args['--da'] != False else "127.0.0.1")
-    elif args['build']:
+        cat_init(args['<path>'])
+    elif args['incbuild']:
         cat_build(args['<path>'])
-    elif args['mdrebuild']:
-        cat_md_rebuild(args['<path>'])
     elif args['rebuild']:
         cat_rebuild(args['<path>'])
     elif args['subcat']:
         cat_subcat(args['<path>'],
                    args['<subcat_path>'],
-                   args['<subcat_name>'],
                    args['<query>'],
                    args['--static'])
     elif args['query']:
@@ -458,35 +475,6 @@ if __name__ == "__main__":
                   args['<query>'], as_src=args['--src'], as_json=args['--json'], as_edit=args['--edit'], pdf_path=args['<pdf_path>'])
     elif args['serve']:
         cat_serve(args['<path>'],
-                  args['<db_name>'],
-                  args['<db_un>'],
-                  args['<db_pw>'],
-                  args['-p'] if args['-p'] != False else 7688,
-                  args['-a'] if args['-a'] != False else "127.0.0.1",
-                  args['--dp'] if args['--dp'] != False else 8529,
-                  args['--da'] if args['--da'] != False else "127.0.0.1")
-    elif args['n4jimport']:
-        cat_n4j_import(args['<path>'],
-                       "localhost:7687",
-                       args['<un>'],
-                       args['<pw>'],
-                       True)
-    elif args['n4jquery']:
-        cat_n4j_query("localhost:7687",
-                      args['<un>'],
-                      args['<pw>'],
-                      args['<query>'])
-    elif args['updatedb']:
-        cat_updatedb(args['<path>'],
-                     args['<db_name>'],
-                     args['<db_un>'],
-                     args['<db_pw>'],
-                     args['--dp'] if args['--dp'] != False else 8529,
-                     args['--da'] if args['--da'] != False else "127.0.0.1")
-    elif args['complete']:
-        with open(args["<input>"],"r") as f:
-            json_data = f.read()
-            md = json.loads(json_data)
-            with open(args["<output>"],"w") as of:
-                of.write(json.dumps(src.util.complete_metadata(md)))
+                  args['-p'] if args['-p'] != False else 5000,
+                  args['-a'] if args['-a'] != False else "127.0.0.1")
             
