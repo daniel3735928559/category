@@ -11370,39 +11370,32 @@
   	 return {
   	     'node': this.$route.params.id,
   	     'display_graph':false,
-  	     'data': 'loading...'
   	 }
-       },
-       created: function() {
-  	 console.log('cr');
-  	 this.$store.commit('GO',this.node);
-  	 this.get_node(this.node, function(){});
        },
        beforeRouteUpdate: function(to, fro, next) {
-  	 console.log("ND",this.node_data);
   	 let node_id = to.params.id;
   	 this.$store.dispatch('go',node_id);
-  	 if (!this.nodes[node_id]) {
+  	 if (!this.graph.nodes[node_id]) {
   	     console.log("problem:",node_id,"does not exist");
   	 }
-  	 else if (node_id in this.node_data) {
-  	     console.log("cached");
-  	     this.data = this.node_data[node_id];
-  	     console.log(this.data);
-  	     this.node = node_id;
-  	     this.$nextTick(function(){Vue$1.run_plugins(this);});
-  	     next();
-  	 }
-  	 else if(this.nodes[node_id].auto == "yes") {
-  	     console.log("auto");
-  	     this.node = node_id;
-  	     this.$store.dispatch('go',this.node);
-  	     next();
-  	 }
-  	 else {
-  	     console.log("not cached");
-  	     this.get_node(node_id, next);
-  	 }
+  	 /* else if (node_id in this.node_data) {
+  	    console.log("cached");
+  	    this.data = this.node_data[node_id];
+  	    console.log(this.data);
+  	    this.node = node_id;
+  	    this.$nextTick(function(){Vue.run_plugins(this);});
+  	    next();
+  	    }
+  	    else if(this.nodes[node_id].auto == "yes") {
+  	    console.log("auto");
+  	    this.node = node_id;
+  	    this.$store.dispatch('go',this.node);
+  	    next();
+  	    }*/
+  	 /* else {
+  	    console.log("not cached");
+  	    this.get_node(node_id, next);
+  	    }*/
        },
        computed: {
   	 internal_nodes: function() {
@@ -11427,42 +11420,10 @@
   	     console.log("INTERNAL",ans);
   	     return ans;
   	 },
-  	 ...mapState(['nodes', 'node_data']),
+  	 ...mapState(['graph', 'ready']),
   	 ...mapGetters(['neighbours'])
        },
        methods: {
-  	 get_node: function(node_id, next) {
-  	     var self = this;
-  	     console.log("fetching",node_id);
-  	     var fetch_headers = new Headers();
-  	     fetch_headers.append('pragma', 'no-cache');
-  	     fetch_headers.append('cache-control', 'no-cache');
-  	     
-  	     var fetch_params = {
-  		 method: 'GET',
-  		 headers: fetch_headers,
-  	     };
-  	     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){
-  		 response.text().then(function(data){
-  		     var to_cache = {};
-  		     to_cache[node_id] = data;
-  		     self.$store.commit('CACHE',to_cache);
-  		     self.data = data;
-  		     self.node = node_id;
-  		     next();
-  		     console.log("IH1",self.data,"||",self.$el.innerHTML);
-  		     self.$nextTick(function(){
-  			 console.log("IH2",self.data,"||",self.$el.innerHTML);
-  			 Vue$1.run_plugins(self);
-  			 console.log("IH3",self.data,"||",self.$el.innerHTML);
-  		     });
-  		 });
-  	     });
-
-  	 },
-  	 reload_node: function(node, event){
-  	     this.get_node(this.node, function(){});
-  	 },
   	 edit_node: function(node, event){
   	     var fetch_headers = new Headers();
   	     fetch_headers.append('pragma', 'no-cache');
@@ -11512,8 +11473,8 @@
           _c("span", { staticClass: "snippet_title" }, [
             _vm._v(
               _vm._s(
-                _vm.nodes && _vm.nodes[_vm.node]
-                  ? _vm.nodes[_vm.node].name
+                _vm.ready && _vm.graph.nodes[_vm.node]
+                  ? _vm.graph.nodes[_vm.node].name
                   : "loading..."
               )
             )
@@ -11561,7 +11522,9 @@
         1
       ),
       _c("div", [
-        _vm.nodes && _vm.nodes[_vm.node] && _vm.nodes[_vm.node].auto == false
+        _vm.ready &&
+        _vm.graph.nodes[_vm.node] &&
+        _vm.graph.nodes[_vm.node].auto == false
           ? _c(
               "div",
               [
@@ -11589,16 +11552,15 @@
                       1
                     )
                   : _vm._e(),
-                _c("div", {
-                  staticClass: "expanded_content",
-                  domProps: { innerHTML: _vm._s(_vm.data) }
-                }),
+                _c("read", { attrs: { node: _vm.node } }),
                 _c("edge-display", { attrs: { node: _vm.node } })
               ],
               1
             )
           : _vm._e(),
-        _vm.nodes && _vm.nodes[_vm.node] && _vm.nodes[_vm.node].auto == true
+        _vm.ready &&
+        _vm.graph.nodes[_vm.node] &&
+        _vm.graph.nodes[_vm.node].auto == true
           ? _c(
               "div",
               [
@@ -11607,7 +11569,7 @@
               1
             )
           : _vm._e(),
-        !_vm.nodes || !_vm.nodes[_vm.node]
+        !_vm.ready || !_vm.graph.nodes[_vm.node]
           ? _c("div", [_vm._v("\n\t\tLoading...\n\t    ")])
           : _vm._e()
       ])
@@ -11619,11 +11581,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-f8ff00f8_0", { source: "\n.snippet_content img[data-v-f8ff00f8] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-f8ff00f8] {\n    max-width: 100%;\n}\n.snippet[data-v-f8ff00f8]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-f8ff00f8]{\n    padding:5px;\n}\n.snippet_header[data-v-f8ff00f8]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-f8ff00f8]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-f8ff00f8]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AA8KA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{nodes && nodes[node] ? nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <span v-on:click=\"new_node(node)\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == false\">\n\t\t<span v-on:click=\"display_graph = !display_graph\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<div v-if=\"display_graph\" style=\"float:left;width:100%;\">\n\t\t    <search :nodes=\"internal_nodes\" initquery=\"*\"></search>\n\t\t</div>\n\t\t\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"nodes && nodes[node] && nodes[node].auto == true\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!nodes || !nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'display_graph':false,\n\t     'data': 'loading...'\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.$store.commit('GO',this.node);\n\t this.get_node(this.node, function(){});\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t console.log(\"ND\",this.node_data);\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t else if (node_id in this.node_data) {\n\t     console.log(\"cached\");\n\t     this.data = this.node_data[node_id];\n\t     console.log(this.data);\n\t     this.node = node_id;\n\t     this.$nextTick(function(){Vue.run_plugins(this);});\n\t     next();\n\t }\n\t else if(this.nodes[node_id].auto == \"yes\") {\n\t     console.log(\"auto\");\n\t     this.node = node_id;\n\t     this.$store.dispatch('go',this.node);\n\t     next();\n\t }\n\t else {\n\t     console.log(\"not cached\");\n\t     this.get_node(node_id, next);\n\t }\n     },\n     computed: {\n\t internal_nodes: function() {\n\t     // ans is going to be the set of locations within this document as well as all targets\n\t     var ans = {};\n\t     var duals = {\"has\":\"is\",\"is\":\"has\"};\n\t     // Pull in children of the current node and everything connected to them:\n\t     for(var n in this.nodes) {\n\t\t var node = this.nodes[n];\n\t\t if(node.parent == this.node && n != this.node) {\n\t\t     ans[n] = node;\n\t\t     for(var dir in node.edges) {\n\t\t\t for(var label in node.edges[dir]) {\n\t\t\t     for(var edge of node.edges[dir][label]) {\n\t\t\t\t if(edge.target != this.node) {\n\t\t\t\t     ans[edge.target] = this.nodes[edge.target];\n\t\t\t\t }\n\t\t\t     }\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     console.log(\"INTERNAL\",ans);\n\t     return ans;\n\t },\n\t ...mapState(['nodes', 'node_data']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t get_node: function(node_id, next) {\n\t     var self = this;\n\t     console.log(\"fetching\",node_id);\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/out/'+node_id+'.html', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     var to_cache = {};\n\t\t     to_cache[node_id] = data;\n\t\t     self.$store.commit('CACHE',to_cache);\n\t\t     self.data = data;\n\t\t     self.node = node_id;\n\t\t     next();\n\t\t     console.log(\"IH1\",self.data,\"||\",self.$el.innerHTML);\n\t\t     self.$nextTick(function(){\n\t\t\t console.log(\"IH2\",self.data,\"||\",self.$el.innerHTML);\n\t\t\t Vue.run_plugins(self);\n\t\t\t console.log(\"IH3\",self.data,\"||\",self.$el.innerHTML);\n\t\t     });\n\t\t });\n\t     });\n\n\t },\n\t reload_node: function(node, event){\n\t     var self = this;\n\t     this.get_node(this.node, function(){});\n\t },\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-c01023b0_0", { source: "\n.snippet_content img[data-v-c01023b0] {\n    max-width: 100%;\n}\n.expanded_content img[data-v-c01023b0] {\n    max-width: 100%;\n}\n.snippet[data-v-c01023b0]{\n    border-radius: 3px;\n    border: 1px solid #ccc;\n    margin-bottom: 10px;\n}\n.snippet_content[data-v-c01023b0]{\n    padding:5px;\n}\n.snippet_header[data-v-c01023b0]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-c01023b0]{\n    font-size: 20pt;\n}\n.snippet_content[data-v-c01023b0]{\n    max-height: 400px;\n    overflow-y:scroll;\n    overflow-x:scroll;\n    margin-bottom:10px;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Node.vue"],"names":[],"mappings":";AAsIA;IACA,eAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,kBAAA;IACA,sBAAA;IACA,mBAAA;AACA;AAEA;IACA,WAAA;AACA;AAEA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA;AAEA;IACA,iBAAA;IACA,iBAAA;IACA,iBAAA;IACA,kBAAA;AACA","file":"Node.vue","sourcesContent":["<template>\n    <div>\n\t<div class=\"snippet_header\">\n\t    <span class=\"snippet_title\">{{ready && graph.nodes[node] ? graph.nodes[node].name : 'loading...'}}</span>\n\t    <span v-on:click=\"edit_node(node)\" class=\"close_x\"><span class=\"fas fa-edit\"></span></span>\n\t    <span v-on:click=\"reload_node(node)\" class=\"close_x\"><span class=\"fas fa-sync\"></span></span>\n\t    <span v-on:click=\"new_node(node)\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t    <router-link to=\"/\" class=\"close_x\"><span class=\"fas fa-home\"></span></router-link>\n\t</div>\n\t<div>\n\t    <div v-if=\"ready && graph.nodes[node] && graph.nodes[node].auto == false\">\n\t\t<span v-on:click=\"display_graph = !display_graph\" class=\"close_x\"><span class=\"fas fa-search\"></span></span>\n\t\t<div v-if=\"display_graph\" style=\"float:left;width:100%;\">\n\t\t    <search :nodes=\"internal_nodes\" initquery=\"*\"></search>\n\t\t</div>\n\t\t\n\t\t<read :node=\"node\" />\n\t\t<edge-display :node=\"node\"></edge-display>\n\t    </div>\n\t    <div v-if=\"ready && graph.nodes[node] && graph.nodes[node].auto == true\">\n\t\t<node-index :nodeset=\"neighbours(node)\" />\n\t    </div>\n\t    <div v-if=\"!ready || !graph.nodes[node]\">\n\t\tLoading...\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Node',\n     data() {\n\t return {\n\t     'node': this.$route.params.id,\n\t     'display_graph':false,\n\t }\n     },\n     beforeRouteUpdate: function(to, fro, next) {\n\t let node_id = to.params.id;\n\t this.$store.dispatch('go',node_id);\n\t var self = this;\n\t if (!this.graph.nodes[node_id]) {\n\t     console.log(\"problem:\",node_id,\"does not exist\");\n\t }\n\t /* else if (node_id in this.node_data) {\n\t    console.log(\"cached\");\n\t    this.data = this.node_data[node_id];\n\t    console.log(this.data);\n\t    this.node = node_id;\n\t    this.$nextTick(function(){Vue.run_plugins(this);});\n\t    next();\n\t    }\n\t    else if(this.nodes[node_id].auto == \"yes\") {\n\t    console.log(\"auto\");\n\t    this.node = node_id;\n\t    this.$store.dispatch('go',this.node);\n\t    next();\n\t    }*/\n\t /* else {\n\t    console.log(\"not cached\");\n\t    this.get_node(node_id, next);\n\t    }*/\n     },\n     computed: {\n\t internal_nodes: function() {\n\t     // ans is going to be the set of locations within this document as well as all targets\n\t     var ans = {};\n\t     var duals = {\"has\":\"is\",\"is\":\"has\"};\n\t     // Pull in children of the current node and everything connected to them:\n\t     for(var n in this.nodes) {\n\t\t var node = this.nodes[n];\n\t\t if(node.parent == this.node && n != this.node) {\n\t\t     ans[n] = node;\n\t\t     for(var dir in node.edges) {\n\t\t\t for(var label in node.edges[dir]) {\n\t\t\t     for(var edge of node.edges[dir][label]) {\n\t\t\t\t if(edge.target != this.node) {\n\t\t\t\t     ans[edge.target] = this.nodes[edge.target];\n\t\t\t\t }\n\t\t\t     }\n\t\t\t }\n\t\t     }\n\t\t }\n\t     }\n\t     console.log(\"INTERNAL\",ans);\n\t     return ans;\n\t },\n\t ...mapState(['graph', 'ready']),\n\t ...mapGetters(['neighbours'])\n     },\n     methods: {\n\t edit_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/edit/'+node, fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t }\n     }\n }\n</script>\n\n<style scoped>\n .snippet_content img {\n     max-width: 100%;\n }\n\n .expanded_content img {\n     max-width: 100%;\n }\n\n .snippet{\n     border-radius: 3px;\n     border: 1px solid #ccc;\n     margin-bottom: 10px;\n }\n\n .snippet_content{\n     padding:5px;\n }\n\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n\n .snippet_content{\n     max-height: 400px;\n     overflow-y:scroll;\n     overflow-x:scroll;\n     margin-bottom:10px;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-f8ff00f8";
+    const __vue_scope_id__$2 = "data-v-c01023b0";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -11712,7 +11674,7 @@
   	     highlight_query: '',
   	     errormsg: '',
   	     result: [],
-  	     highlight: [],
+  	     highlight: {},
   	     mode: 'graph',
   	     subgraph: {}
   	 }
@@ -11727,11 +11689,14 @@
   	 }
        },
        methods: {
-  	 goto_node: function(e) {
-  	     console.log("GOTO",e);
+  	 preview_a_node: function(e) {
+  	     console.log("Preview",e);
   	     this.preview_node = e;
   	     this.preview_mode = true;
-  	     // this.$router.push("/node/"+e);
+  	 },
+  	 goto_node: function(e) {
+  	     console.log("GOTO",e);
+  	     this.$router.push("/node/"+e);
   	 },
   	 add_to_query: function(qry) {
   	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
@@ -11742,6 +11707,21 @@
   	     }
   	     this.$router.push('/browse/'+btoa(this.query));
   	     this.search();
+  	 },
+  	 toggle_highlight: function(n) {
+  	     console.log("toggle",n);
+  	     var ans = {};
+  	     for(var nodeid in this.highlight) {
+  		 ans[nodeid] = true;
+  	     }
+  	     if(n in ans) {
+  		 delete ans[n];
+  	     }
+  	     else {
+  		 ans[n] = true;
+  	     }
+  	     this.highlight = ans;
+  	     console.log("HANS",ans);
   	 },
   	 set_query: function(qry) {
   	     this.query = qry;
@@ -11799,11 +11779,11 @@
   	     }
   	 },
   	 do_highlight: function() {
+  	     console.log("doing highlight");
   	     this.highlight = this.run_search(this.highlight_query, this.resultset);
   	 },
   	 expand_highlight: function() {
-  	     this.highlight_query = "("+this.highlight_query+")[1]";
-  	     this.do_highlight();
+  	     this.highlight = this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, "any", "*", true);
   	 },
   	 clear_highlight: function() {
   	     this.highlight_query = "";
@@ -12099,7 +12079,11 @@
                             nodeset: _vm.resultset,
                             highlight: _vm.highlightset
                           },
-                          on: { clickedNode: _vm.goto_node }
+                          on: {
+                            selectedNode: _vm.toggle_highlight,
+                            clickedNode: _vm.preview_a_node,
+                            doubleClickedNode: _vm.goto_node
+                          }
                         })
                       : _vm._e()
                   ],
@@ -12183,7 +12167,11 @@
                     },
                     [_c("span", { staticClass: "fas fa-times" })]
                   ),
-                  _c("read", { attrs: { node: _vm.preview_node } })
+                  _c("h4", [
+                    _vm._v(_vm._s(_vm.graph.nodes[_vm.preview_node].name))
+                  ]),
+                  _c("read", { attrs: { node: _vm.preview_node } }),
+                  _c("edge-display", { attrs: { node: _vm.node } })
                 ],
                 1
               )
@@ -12220,9 +12208,7 @@
                             staticClass: "badge_button",
                             on: {
                               click: function($event) {
-                                _vm.add_to_query(
-                                  "!(=" + _vm.graph.nodes[n].name + ")"
-                                );
+                                return _vm.toggle_highlight(n)
                               }
                             }
                           },
@@ -12235,13 +12221,7 @@
                           attrs: { href: "#" },
                           on: {
                             click: function($event) {
-                              _vm.set_highlight(
-                                "(=" +
-                                  _vm.graph.nodes[n].name +
-                                  ")[1], !(=" +
-                                  _vm.graph.nodes[n].name +
-                                  ")"
-                              );
+                              return _vm.goto_node(n)
                             }
                           }
                         },
@@ -12249,10 +12229,7 @@
                           _vm._v(
                             _vm._s(_vm.graph.nodes[n].name) +
                               " (" +
-                              _vm._s(
-                                _vm.graph.nodes[n]["_outdegree"] +
-                                  _vm.graph.nodes[n]["_indegree"]
-                              ) +
+                              _vm._s(_vm.graph.nodes[n]["_degree"]) +
                               ")"
                           )
                         ]
@@ -12274,11 +12251,11 @@
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-069eb592_0", { source: "\n.sidebar-item[data-v-069eb592] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-069eb592] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-069eb592] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-069eb592]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-069eb592]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AAsRA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"querypanel\" style=\"float:left;width:20%;padding-left:10px;\">\n\t    <b>Top nodes</b>\n\t    <div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n\t<div class=\"browse_container\" style=\"float:left;width:50%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span><input type=\"search\" id=\"query_input\" v-model=\"query\" v-on:search=\"run_search\" v-on:keyup.enter=\"run_search\" /></span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-globe\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t\t<span style=\"float:right\">Display:</span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-eye-slash\"></span></span>\n\t\t<span style=\"float:right\">Highlight:</span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:clickedNode=\"goto_node\"></graph-index>\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"search\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:search=\"do_highlight\" v-on:keyup.enter=\"do_highlight\" />\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\n\t    \n\t    <div v-if=\"preview_mode\">\n\t\t<span style=\"float:right;\" v-on:click=\"preview_mode = false\" class=\"close_x\"><span class=\"fas fa-times\"></span></span>\n\t\t<read :node=\"preview_node\" />\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty && !preview_mode\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t resultset: function() {\n\t     if(!this.ready) return {};\n\t     if(!this.result) {\n\t\t return this.graph.nodes;\n\t     }\n\t     var ans = {};\n\t     for(var r in this.result) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.result) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var ans = [];\n\t     var best = this.subgraph.best_nodes();\n\t     for(var n of best){\n\t\t if(n in this.highlightset) {\n\t\t     ans.push(n);\n\t\t     if(ans.length >= 10) break;\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     console.log(\"RRR\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t ...mapState(['graph', 'ready', 'node_data'])\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     preview_mode: false,\n\t     preview_node: '',\n\t     query: this.$route.params.query ? atob(this.$route.params.query) : '*',\n\t     preview_id: this.$route.params.id || '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: [],\n\t     mode: 'graph',\n\t     subgraph: {}\n\t }\n     },\n     watch: {\n\t ready: function(val) {\n\t     if(val) {\n\t\t this.$nextTick(function () {\n\t\t     this.search();\n\t\t });\n\t     }\n\t }\n     },\n     methods: {\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.preview_node = e;\n\t     this.preview_mode = true;\n\t     // this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return {};\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     return this.graph.search(nodeset, q);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.nodeset)\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t this.highlight = {};\n\t\t this.subgraph = this.graph.subgraph(this.result);\n\t\t this.do_highlight()\n\t\t this.$forceUpdate();\n\t\t /* for(var i = 0; i < this.result.length; i++){\n\t\t    if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t    this.$router.push('/node/'+this.result[i]);\n\t\t    break;\n\t\t    }\n\t\t    }*/\n\t     }\n\t },\n\t do_highlight: function() {\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight_query = \"(\"+this.highlight_query+\")[1]\";\n\t     this.do_highlight();\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t clear_filter: function() {\n\t     this.$router.push('/browse/'+btoa('*'));\n\t     this.query = '*';\n\t     this.search();\n\t     this.do_highlight();\n\t }\n     },\n     beforeRouteUpdate (to, from, next) {\n\t console.log('222222222222',to);\n\t this.query = to.params.query ? atob(to.params.query) : '*';\n\t this.search();\n\t next();\n     },\n     mounted: function() {\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-0716b761_0", { source: "\n.sidebar-item[data-v-0716b761] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-0716b761] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-0716b761] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-0716b761]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-0716b761]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AA0SA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"querypanel\" style=\"float:left;width:20%;padding-left:10px;\">\n\t    <b>Top nodes</b>\n\t    <div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(=' + graph.nodes[n].name + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n\t<div class=\"browse_container\" style=\"float:left;width:50%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span><input type=\"search\" id=\"query_input\" v-model=\"query\" v-on:search=\"run_search\" v-on:keyup.enter=\"run_search\" /></span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-globe\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t\t<span style=\"float:right\">Display:</span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query(highlight_query)\" class=\"close_x\"><span class=\"fas fa-search-plus\"></span></span>\n\t\t<span v-on:click=\"add_to_query('!('+highlight_query+')')\" class=\"close_x\"><span class=\"fas fa-eye-slash\"></span></span>\n\t\t<span style=\"float:right\">Highlight:</span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:selectedNode=\"toggle_highlight\" v-on:clickedNode=\"preview_a_node\" v-on:doubleClickedNode=\"goto_node\"></graph-index>\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"search\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:search=\"do_highlight\" v-on:keyup.enter=\"do_highlight\" />\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\n\t    \n\t    <div v-if=\"preview_mode\">\n\t\t<span style=\"float:right;\" v-on:click=\"preview_mode = false\" class=\"close_x\"><span class=\"fas fa-times\"></span></span>\n\t\t<h4>{{graph.nodes[preview_node].name}}</h4>\n\t\t<read :node=\"preview_node\" />\n\t\t<edge-display :node=\"node\" />\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty && !preview_mode\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"toggle_highlight(n)\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"goto_node(n)\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t resultset: function() {\n\t     if(!this.ready) return {};\n\t     if(!this.result) {\n\t\t return this.graph.nodes;\n\t     }\n\t     var ans = {};\n\t     for(var r in this.result) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.result) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlight) {\n\t\t ans[r] = true;\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var ans = [];\n\t     var best = this.subgraph.best_nodes();\n\t     for(var n of best){\n\t\t if(n in this.highlightset) {\n\t\t     ans.push(n);\n\t\t     if(ans.length >= 10) break;\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     console.log(\"RRR\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t ...mapState(['graph', 'ready', 'node_data'])\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     preview_mode: false,\n\t     preview_node: '',\n\t     query: this.$route.params.query ? atob(this.$route.params.query) : '*',\n\t     preview_id: this.$route.params.id || '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     result: [],\n\t     highlight: {},\n\t     mode: 'graph',\n\t     subgraph: {}\n\t }\n     },\n     watch: {\n\t ready: function(val) {\n\t     if(val) {\n\t\t this.$nextTick(function () {\n\t\t     this.search();\n\t\t });\n\t     }\n\t }\n     },\n     methods: {\n\t preview_a_node: function(e) {\n\t     console.log(\"Preview\",e);\n\t     this.preview_node = e;\n\t     this.preview_mode = true;\n\t },\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t toggle_highlight: function(n) {\n\t     console.log(\"toggle\",n);\n\t     var ans = {};\n\t     for(var nodeid in this.highlight) {\n\t\t ans[nodeid] = true;\n\t     }\n\t     if(n in ans) {\n\t\t delete ans[n];\n\t     }\n\t     else {\n\t\t ans[n] = true;\n\t     }\n\t     this.highlight = ans;\n\t     console.log(\"HANS\",ans);\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.$router.push('/browse/'+btoa(this.query));\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return {};\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     return this.graph.search(nodeset, q);\n\t },\n\t search: function() {\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.nodeset)\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.result = query_result;\n\t\t this.highlight = {};\n\t\t this.subgraph = this.graph.subgraph(this.result);\n\t\t this.do_highlight();\n\t\t this.$forceUpdate();\n\t\t /* for(var i = 0; i < this.result.length; i++){\n\t\t    if(this.nodes[this.result[i]].name == this.query.trim()) {\n\t\t    this.$router.push('/node/'+this.result[i]);\n\t\t    break;\n\t\t    }\n\t\t    }*/\n\t     }\n\t },\n\t do_highlight: function() {\n\t     console.log(\"doing highlight\");\n\t     this.highlight = this.run_search(this.highlight_query, this.resultset);\n\t },\n\t expand_highlight: function() {\n\t     this.highlight = this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, \"any\", \"*\", true)\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t new_node: function(event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t clear_filter: function() {\n\t     this.$router.push('/browse/'+btoa('*'));\n\t     this.query = '*';\n\t     this.search();\n\t     this.do_highlight();\n\t }\n     },\n     beforeRouteUpdate (to, from, next) {\n\t console.log('222222222222',to);\n\t this.query = to.params.query ? atob(to.params.query) : '*';\n\t this.search();\n\t next();\n     },\n     mounted: function() {\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-069eb592";
+    const __vue_scope_id__$3 = "data-v-0716b761";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -12309,19 +12286,7 @@
   	    redirect: '/browse/'
   	},
   	{
-  	    path: '/read/:id',
-  	    name: 'node',
-  	    component: Node,
-  	    props: true
-  	    // route level code-splitting
-  	    // this generates a separate chunk (about.[hash].js) for this route
-  	    // which is lazy-loaded when the route is visited.
-  	    // component: function () { 
-  	    //   return import(/* webpackChunkName: "about" */ './views/Node.vue')
-  	    // }
-  	},
-  	{
-  	    path: '/read/:id',
+  	    path: '/node/:id',
   	    name: 'node',
   	    component: Node,
   	    props: true
@@ -13177,6 +13142,10 @@
   	this.nodes[tgtid]["_degree"]++;
       }
 
+      get_edges(node) {
+  	return this.index_edge_label[node];
+      }
+      
       // Begin searching functions
 
       // Begin search helper functions
@@ -20952,7 +20921,7 @@
        name: 'edge-display',
        props: ['node'],
        computed: mapState([
-  	 'nodes'
+  	 'graph'
        ])
   };
 
@@ -20968,129 +20937,74 @@
       "div",
       { staticClass: "edge_display" },
       [
-        _vm._l(_vm.nodes[_vm.node].edges.has, function(edges, label) {
+        _vm._v("\n\tEdges:\n\t"),
+        _c("br"),
+        _vm._l(_vm.graph.get_edges(_vm.node), function(edges, label) {
           return _c(
             "div",
-            _vm._l(edges, function(edge) {
-              return _vm.nodes[edge.target].auto != "yes"
-                ? _c(
-                    "div",
-                    [
-                      _vm._v("\n\t\thas " + _vm._s(label) + ": \n\t\t"),
-                      _c(
-                        "router-link",
-                        {
-                          attrs: {
-                            to:
-                              "./" +
-                              edge.target +
-                              ("dstloc" in edge && edge.dstloc != null
-                                ? "/" + edge.dstloc
-                                : "")
-                          }
-                        },
-                        [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
-                      )
-                    ],
-                    1
-                  )
-                : _vm._e()
-            }),
-            0
-          )
-        }),
-        _vm._l(_vm.nodes[_vm.node].edges.is, function(edges, label) {
-          return _c(
-            "div",
-            _vm._l(edges, function(edge) {
-              return _vm.nodes[edge.target].auto != "yes"
-                ? _c(
-                    "div",
-                    [
-                      _vm._v("\n\t\tis " + _vm._s(label) + " of: \n\t\t"),
-                      _c(
-                        "router-link",
-                        {
-                          attrs: {
-                            to:
-                              "./" +
-                              edge.target +
-                              ("dstloc" in edge && edge.dstloc != null
-                                ? "/" + edge.dstloc
-                                : "")
-                          }
-                        },
-                        [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
-                      )
-                    ],
-                    1
-                  )
-                : _vm._e()
-            }),
-            0
-          )
-        }),
-        _c("b", [_vm._v("Auto-generated:")]),
-        _vm._l(_vm.nodes[_vm.node].edges.has, function(edges, label) {
-          return _c(
-            "div",
-            _vm._l(edges, function(edge) {
-              return _vm.nodes[edge.target].auto == "yes"
-                ? _c(
-                    "div",
-                    [
-                      _vm._v("\n\t\thas " + _vm._s(label) + ": \n\t\t"),
-                      _c(
-                        "router-link",
-                        {
-                          attrs: {
-                            to:
-                              "./" +
-                              edge.target +
-                              ("dstloc" in edge && edge.dstloc != null
-                                ? "/" + edge.dstloc
-                                : "")
-                          }
-                        },
-                        [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
-                      )
-                    ],
-                    1
-                  )
-                : _vm._e()
-            }),
-            0
-          )
-        }),
-        _vm._l(_vm.nodes[_vm.node].edges.is, function(edges, label) {
-          return _c(
-            "div",
-            _vm._l(edges, function(edge) {
-              return _vm.nodes[edge.target].auto == "yes"
-                ? _c(
-                    "div",
-                    [
-                      _vm._v("\n\t\tis " + _vm._s(label) + " of: \n\t\t"),
-                      _c(
-                        "router-link",
-                        {
-                          attrs: {
-                            to:
-                              "./" +
-                              edge.target +
-                              ("dstloc" in edge && edge.dstloc != null
-                                ? "/" + edge.dstloc
-                                : "")
-                          }
-                        },
-                        [_vm._v(_vm._s(_vm.nodes[edge.target].name))]
-                      )
-                    ],
-                    1
-                  )
-                : _vm._e()
-            }),
-            0
+            [
+              _vm._l(edges["in"], function(edgeid) {
+                return _c(
+                  "div",
+                  [
+                    _vm._v("\n\t\tis " + _vm._s(label) + " of: \n\t\t"),
+                    _c(
+                      "router-link",
+                      {
+                        attrs: {
+                          to:
+                            "./" +
+                            _vm.graph.edges[edgeid]["_from"] +
+                            ("dstloc" in _vm.graph.edges[edgeid] &&
+                            _vm.graph.edges[edgeid].dstloc != null
+                              ? "/" + _vm.graph.edges[edgeid].dstloc
+                              : "")
+                        }
+                      },
+                      [
+                        _vm._v(
+                          _vm._s(
+                            _vm.graph.nodes[_vm.graph.edges[edgeid]["_from"]].name
+                          )
+                        )
+                      ]
+                    )
+                  ],
+                  1
+                )
+              }),
+              _vm._l(edges["out"], function(edgeid) {
+                return _c(
+                  "div",
+                  [
+                    _vm._v("\n\t\thas " + _vm._s(label) + ": \n\t\t"),
+                    _c(
+                      "router-link",
+                      {
+                        attrs: {
+                          to:
+                            "./" +
+                            _vm.graph.edges[edgeid]["_to"] +
+                            ("dstloc" in _vm.graph.edges[edgeid] &&
+                            _vm.graph.edges[edgeid].dstloc != null
+                              ? "/" + _vm.graph.edges[edgeid].dstloc
+                              : "")
+                        }
+                      },
+                      [
+                        _vm._v(
+                          _vm._s(
+                            _vm.graph.nodes[_vm.graph.edges[edgeid]["_to"]].name
+                          )
+                        )
+                      ]
+                    )
+                  ],
+                  1
+                )
+              })
+            ],
+            2
           )
         })
       ],
@@ -21103,11 +21017,11 @@
     /* style */
     const __vue_inject_styles__$8 = function (inject) {
       if (!inject) return
-      inject("data-v-552c7996_0", { source: "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", map: {"version":3,"sources":[],"names":[],"mappings":"","file":"edges.vue"}, media: undefined });
+      inject("data-v-903a3e12_0", { source: "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", map: {"version":3,"sources":[],"names":[],"mappings":"","file":"edges.vue"}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$8 = "data-v-552c7996";
+    const __vue_scope_id__$8 = "data-v-903a3e12";
     /* module identifier */
     const __vue_module_identifier__$8 = undefined;
     /* functional template */
@@ -34745,44 +34659,50 @@
   		     renderedSizeThreshold: 1}});
   	     const camera = this.renderer.getCamera();
   	     const captor = this.renderer.getMouseCaptor();
-
-  	     // State
-  	     let draggedNode = null, dragging = false;
-
-  	     var self = this;
   	     
-  	     this.renderer.on('downNode', (e) => {
-  		 dragging = true;
-  		 console.log("down",e);
-  		 draggedNode = e.node;
-  		 camera.disable();
-  	     });
-
+  	     /* this.renderer.on('downNode', (e) => {
+  		dragging = true;
+  		console.log("down",e);
+  		draggedNode = e.node;
+  		camera.disable();
+  		});
+  	      */
   	     this.renderer.on('clickNode', (e) => {
-  		 console.log("nav",e.node);
+  		 console.log("nav",e.node,e);
   		 //this.$router.push("/node/"+e.node);
-  		 this.$emit("clickedNode",e.node);
+  		 if(e.captor.ctrlKey) {
+  		     this.$emit("selectedNode",e.node);
+  		 }
+  		 else {
+  		     this.$emit("clickedNode",e.node);
+  		 }
   	     });
+  	     
+  	     /* this.renderer.on('doubleClickNode', (e) => {
+  		console.log("nav",e.node);
+  		//this.$router.push("/node/"+e.node);
+  		this.$emit("doubleClickedNode",e.node);
+  		});*/
 
-  	     captor.on('mouseup', e => {
-  		 dragging = false;
-  		 console.log("up",e);
-  		 draggedNode = null;
-  		 camera.enable();
-  	     });
+  	     /* captor.on('mouseup', e => {
+  		dragging = false;
+  		console.log("up",e);
+  		draggedNode = null;
+  		camera.enable();
+  		});*/
 
-  	     captor.on('mousemove', e => {
-  		 if (!dragging)
-  		     return;
+  	     /* captor.on('mousemove', e => {
+  		if (!dragging)
+  		return;
 
-  		 // Get new position of node
-  		 const pos = self.renderer.normalizationFunction.inverse(
-  		     camera.viewportToGraph(self.renderer, e.x, e.y)
-  		 );
+  		// Get new position of node
+  		const pos = self.renderer.normalizationFunction.inverse(
+  		camera.viewportToGraph(self.renderer, e.x, e.y)
+  		);
 
-  		 self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);
-  		 self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);
-  	     });
+  		self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);
+  		self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);
+  		});*/
 
   	     this.update_graph();
   	     this.update_highlight();
@@ -34815,11 +34735,11 @@
     /* style */
     const __vue_inject_styles__$a = function (inject) {
       if (!inject) return
-      inject("data-v-0f865908_0", { source: "\n.graph_index[data-v-0f865908] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n}\n#graph_container[data-v-0f865908] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n    color: unset;\n    border: 1px solid #ccc;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/graph.vue"],"names":[],"mappings":";AAqKA;IACA,WAAA;IACA,eAAA;IACA,WAAA;AACA;AACA;IACA,WAAA;IACA,eAAA;IACA,WAAA;IACA,YAAA;IACA,sBAAA;AACA","file":"graph.vue","sourcesContent":["<template>\n    <div class=\"graph_index\">\n\t<div id=\"graph_container\"></div>\n    </div>\n</template>\n\n<script>\n import {DirectedGraph} from 'graphology';\n import FA2 from 'graphology-layout-forceatlas2';\n import FA2Layout from 'graphology-layout-forceatlas2/worker';\n import WebGLRenderer from 'sigma/renderers/webgl';\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'graph-index',\n     props: ['nodeset','highlight'],\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var id in this.nodeset) {\n\t\t ans++;\n\t     }\n\t     return ans;\n\t },\n\t subgraph: function() {\n\t     return this.graph.subgraph(this.nodeset);\n\t },\n\t graph_data: function() {\n\t     return this.subgraph.sigma_graph();\n\t },\n\t ...mapState([\n\t     'graph'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     watch: {\n\t nodeset: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_graph();\n\t     });\n\t },\n\t highlight: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_highlight();\n\t     });\n\t }\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i].target;\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t update_graph: function() {\n\t     if(this.layout) {\n\t\t this.layout.stop();\n\t\t this.layout = null;\n\t     }\n\t     if(this.layout_timer) {\n\t\t clearTimeout(this.layout_timer);\n\t\t this.layout_timer = null;\n\t     }\n\t     this.graph_display.clear();\n\t     this.graph_display.import(this.graph_data);\n\t     this.graph_display.nodes().forEach(node => {\n\t\t this.graph_display.mergeNodeAttributes(node, {\n\t\t     x: Math.random(),\n\t\t     y: Math.random(),\n\t\t     size: Math.max(3,Math.min(this.graph_display.degree(node), 8)),\n\t\t     color: node in this.highlight ? \"#f00\" : \"#00f\"\n\t\t });\n\t     });\n\t     \n\t     var settings = FA2.inferSettings(this.graph_display);\n\t     console.log(settings);\n\t     settings.slowDown = 10;\n\t     //saneSettings.strongGravityMode = true;\n\t     //saneSettings.gravity = 3;\n\t     this.layout = new FA2Layout(this.graph_display, {settings: settings});\n\t     this.layout.start();\n\t     var self = this;\n\t     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));\n\t },\n\t update_highlight: function() {\n\t     console.log(\"updating highlight\",this.highlight);\n\t     this.graph_display.nodes().forEach(node => {\n\t\t console.log(\"N\",node, node in this.highlight);\n\t\t this.graph_display.mergeNodeAttributes(node, {color: node in this.highlight ? \"#f00\" : \"#00f\"});\n\t     });\n\t     \n\t }\n     },\n     mounted: function () {\n\t this.$nextTick(function () {\n\t     console.log(\"initing graph container\");\n\t     this.graph_display = new DirectedGraph({multi: true});\n\t     this.renderer = new WebGLRenderer(this.graph_display, document.getElementById(\"graph_container\"), {\n\t\t defaultEdgeType: 'arrow',\n\t\t defaultEdgeColor: '#888',\n\t\t renderEdgeLabels: true,\n\t\t labelSize: 12,\n\t\t labelGrid: {\n\t\t     cell: {\n\t\t\t width: 40,\n\t\t\t height: 20\n\t\t     },\n\t\t     renderedSizeThreshold: 1}});\n\t     const camera = this.renderer.getCamera();\n\t     const captor = this.renderer.getMouseCaptor();\n\n\t     // State\n\t     let draggedNode = null, dragging = false;\n\n\t     var self = this;\n\t     \n\t     this.renderer.on('downNode', (e) => {\n\t\t dragging = true;\n\t\t console.log(\"down\",e);\n\t\t draggedNode = e.node;\n\t\t camera.disable();\n\t     });\n\n\t     this.renderer.on('clickNode', (e) => {\n\t\t console.log(\"nav\",e.node);\n\t\t //this.$router.push(\"/node/\"+e.node);\n\t\t this.$emit(\"clickedNode\",e.node)\n\t     });\n\n\t     captor.on('mouseup', e => {\n\t\t dragging = false;\n\t\t console.log(\"up\",e);\n\t\t draggedNode = null;\n\t\t camera.enable();\n\t     });\n\n\t     captor.on('mousemove', e => {\n\t\t if (!dragging)\n\t\t     return;\n\n\t\t // Get new position of node\n\t\t const pos = self.renderer.normalizationFunction.inverse(\n\t\t     camera.viewportToGraph(self.renderer, e.x, e.y)\n\t\t );\n\n\t\t self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);\n\t\t self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);\n\t     });\n\n\t     this.update_graph();\n\t     this.update_highlight();\n\t });\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .graph_index {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n }\n #graph_container {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n     color: unset;\n     border: 1px solid #ccc;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-1f3636c8_0", { source: "\n.graph_index[data-v-1f3636c8] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n}\n#graph_container[data-v-1f3636c8] {\n    height: 80%;\n    min-height:80vh;\n    width: 100%;\n    color: unset;\n    border: 1px solid #ccc;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/graph.vue"],"names":[],"mappings":";AAgLA;IACA,WAAA;IACA,eAAA;IACA,WAAA;AACA;AACA;IACA,WAAA;IACA,eAAA;IACA,WAAA;IACA,YAAA;IACA,sBAAA;AACA","file":"graph.vue","sourcesContent":["<template>\n    <div class=\"graph_index\">\n\t<div id=\"graph_container\"></div>\n    </div>\n</template>\n\n<script>\n import {DirectedGraph} from 'graphology';\n import FA2 from 'graphology-layout-forceatlas2';\n import FA2Layout from 'graphology-layout-forceatlas2/worker';\n import WebGLRenderer from 'sigma/renderers/webgl';\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'graph-index',\n     props: ['nodeset','highlight'],\n     computed: {\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var id in this.nodeset) {\n\t\t ans++;\n\t     }\n\t     return ans;\n\t },\n\t subgraph: function() {\n\t     return this.graph.subgraph(this.nodeset);\n\t },\n\t graph_data: function() {\n\t     return this.subgraph.sigma_graph();\n\t },\n\t ...mapState([\n\t     'graph'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     watch: {\n\t nodeset: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_graph();\n\t     });\n\t },\n\t highlight: function(val) {\n\t     this.$nextTick(function () {\n\t\t this.update_highlight();\n\t     });\n\t }\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     var tgts = this.nodes[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i].target;\n\t\t console.log(m);\n\t\t if(m in this.nodeset) ans.push(m);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t },\n\t update_graph: function() {\n\t     if(this.layout) {\n\t\t this.layout.stop();\n\t\t this.layout = null;\n\t     }\n\t     if(this.layout_timer) {\n\t\t clearTimeout(this.layout_timer);\n\t\t this.layout_timer = null;\n\t     }\n\t     this.graph_display.clear();\n\t     this.graph_display.import(this.graph_data);\n\t     this.graph_display.nodes().forEach(node => {\n\t\t this.graph_display.mergeNodeAttributes(node, {\n\t\t     x: Math.random(),\n\t\t     y: Math.random(),\n\t\t     size: Math.max(3,Math.min(this.graph_display.degree(node), 8)),\n\t\t     color: node in this.highlight ? \"#f00\" : \"#00f\"\n\t\t });\n\t     });\n\t     \n\t     var settings = FA2.inferSettings(this.graph_display);\n\t     console.log(settings);\n\t     settings.slowDown = 10;\n\t     //saneSettings.strongGravityMode = true;\n\t     //saneSettings.gravity = 3;\n\t     this.layout = new FA2Layout(this.graph_display, {settings: settings});\n\t     this.layout.start();\n\t     var self = this;\n\t     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));\n\t },\n\t update_highlight: function() {\n\t     console.log(\"updating highlight\",this.highlight);\n\t     this.graph_display.nodes().forEach(node => {\n\t\t console.log(\"N\",node, node in this.highlight);\n\t\t this.graph_display.mergeNodeAttributes(node, {color: node in this.highlight ? \"#f00\" : \"#00f\"});\n\t     });\n\t     \n\t }\n     },\n     mounted: function () {\n\t this.$nextTick(function () {\n\t     console.log(\"initing graph container\");\n\t     this.graph_display = new DirectedGraph({multi: true});\n\t     this.renderer = new WebGLRenderer(this.graph_display, document.getElementById(\"graph_container\"), {\n\t\t defaultEdgeType: 'arrow',\n\t\t defaultEdgeColor: '#888',\n\t\t renderEdgeLabels: true,\n\t\t labelSize: 12,\n\t\t labelGrid: {\n\t\t     cell: {\n\t\t\t width: 40,\n\t\t\t height: 20\n\t\t     },\n\t\t     renderedSizeThreshold: 1}});\n\t     const camera = this.renderer.getCamera();\n\t     const captor = this.renderer.getMouseCaptor();\n\n\t     // State\n\t     let draggedNode = null, dragging = false;\n\n\t     var self = this;\n\t     \n\t     /* this.renderer.on('downNode', (e) => {\n\t\tdragging = true;\n\t\tconsole.log(\"down\",e);\n\t\tdraggedNode = e.node;\n\t\tcamera.disable();\n\t\t});\n\t      */\n\t     this.renderer.on('clickNode', (e) => {\n\t\t console.log(\"nav\",e.node,e);\n\t\t //this.$router.push(\"/node/\"+e.node);\n\t\t if(e.captor.ctrlKey) {\n\t\t     this.$emit(\"selectedNode\",e.node);\n\t\t }\n\t\t else {\n\t\t     this.$emit(\"clickedNode\",e.node);\n\t\t }\n\t     });\n\t     \n\t     /* this.renderer.on('doubleClickNode', (e) => {\n\t\tconsole.log(\"nav\",e.node);\n\t\t//this.$router.push(\"/node/\"+e.node);\n\t\tthis.$emit(\"doubleClickedNode\",e.node);\n\t\t});*/\n\n\t     /* captor.on('mouseup', e => {\n\t\tdragging = false;\n\t\tconsole.log(\"up\",e);\n\t\tdraggedNode = null;\n\t\tcamera.enable();\n\t\t});*/\n\n\t     /* captor.on('mousemove', e => {\n\t\tif (!dragging)\n\t\treturn;\n\n\t\t// Get new position of node\n\t\tconst pos = self.renderer.normalizationFunction.inverse(\n\t\tcamera.viewportToGraph(self.renderer, e.x, e.y)\n\t\t);\n\n\t\tself.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);\n\t\tself.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);\n\t\t});*/\n\n\t     this.update_graph();\n\t     this.update_highlight();\n\t });\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .graph_index {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n }\n #graph_container {\n     height: 80%;\n     min-height:80vh;\n     width: 100%;\n     color: unset;\n     border: 1px solid #ccc;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$a = "data-v-0f865908";
+    const __vue_scope_id__$a = "data-v-1f3636c8";
     /* module identifier */
     const __vue_module_identifier__$a = undefined;
     /* functional template */
@@ -34888,15 +34808,16 @@
     var _c = _vm._self._c || _h;
     return _c("div", [
       !_vm.ready ? _c("div", [_vm._v("\n\t    Loading...\n\t")]) : _vm._e(),
-      _vm.ready &&
-      _vm.graph.nodes[_vm.node] &&
-      _vm.graph.nodes[_vm.node].auto == false
+      _vm.ready
         ? _c("div", [
-            _c("h3", [_vm._v(_vm._s(_vm.graph.nodes[_vm.node].name))]),
-            _c("div", {
-              staticClass: "expanded_content",
-              domProps: { innerHTML: _vm._s(_vm.data) }
-            })
+            _vm.graph.nodes[_vm.node] && _vm.graph.nodes[_vm.node].auto == false
+              ? _c("div", [
+                  _c("div", {
+                    staticClass: "expanded_content",
+                    domProps: { innerHTML: _vm._s(_vm.data) }
+                  })
+                ])
+              : _vm._e()
           ])
         : _vm._e()
     ])
@@ -34907,11 +34828,11 @@
     /* style */
     const __vue_inject_styles__$b = function (inject) {
       if (!inject) return
-      inject("data-v-1c8f254d_0", { source: "\n.expanded_content img[data-v-1c8f254d] {\n    max-width: 100%;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/read.vue"],"names":[],"mappings":";AAyDA;IACA,eAAA;AACA","file":"read.vue","sourcesContent":["<template>\n    <div>\n\t<div v-if=\"!ready\">\n\t    Loading...\n\t</div>\n\t<div v-if=\"ready && graph.nodes[node] && graph.nodes[node].auto == false\">\n\t    <h3>{{graph.nodes[node].name}}</h3>\n\t    <div v-html=\"data\" class=\"expanded_content\"></div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Read',\n     props: ['node'],\n     data() {\n\t return {\n\t     data: \"loading...\"\n\t };\n     },\n     watch: {\n\t node(next, prev) {\n\t     console.log(\"NEW NODE???\", prev, next);\n\t     this.get_node(next);\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.get_node(this.node);\n     },\n     methods: {\n\t get_node(n) {\n\t     var self = this;\n\t     console.log(\"GET\",n);\n\t     this.$store.dispatch('get_node', n).then(response => {\n\t\t console.log(\"response\",self.node_data[n]);\n\t\t self.data = self.node_data[n];\n\t\t this.$forceUpdate();\n             }, error => {\n\t\t console.error(\"ERROR\", error)\n             });\n\t     \n\t }\n     },\n     computed: {\n\t ...mapState(['ready', 'graph', 'node_data']),\n     },\n }\n</script>\n\n<style scoped>\n .expanded_content img {\n     max-width: 100%;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-4a28870c_0", { source: "\n.expanded_content img[data-v-4a28870c] {\n    max-width: 100%;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/read.vue"],"names":[],"mappings":";AA0DA;IACA,eAAA;AACA","file":"read.vue","sourcesContent":["<template>\n    <div>\n\t<div v-if=\"!ready\">\n\t    Loading...\n\t</div>\n\t<div v-if=\"ready\">\n\t    <div v-if=\"graph.nodes[node] && graph.nodes[node].auto == false\">\n\t\t<div v-html=\"data\" class=\"expanded_content\"></div>\n\t    </div>\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n \n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n\n export default {\n     name: 'Read',\n     props: ['node'],\n     data() {\n\t return {\n\t     data: \"loading...\"\n\t };\n     },\n     watch: {\n\t node(next, prev) {\n\t     console.log(\"NEW NODE???\", prev, next);\n\t     this.get_node(next);\n\t }\n     },\n     created: function() {\n\t console.log('cr');\n\t this.get_node(this.node);\n     },\n     methods: {\n\t get_node(n) {\n\t     var self = this;\n\t     console.log(\"GET\",n);\n\t     this.$store.dispatch('get_node', n).then(response => {\n\t\t console.log(\"response\",self.node_data[n]);\n\t\t self.data = self.node_data[n];\n\t\t this.$forceUpdate();\n             }, error => {\n\t\t console.error(\"ERROR\", error)\n             });\n\t     \n\t }\n     },\n     computed: {\n\t ...mapState(['ready', 'graph', 'node_data']),\n     },\n }\n</script>\n\n<style scoped>\n .expanded_content img {\n     max-width: 100%;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$b = "data-v-1c8f254d";
+    const __vue_scope_id__$b = "data-v-4a28870c";
     /* module identifier */
     const __vue_module_identifier__$b = undefined;
     /* functional template */

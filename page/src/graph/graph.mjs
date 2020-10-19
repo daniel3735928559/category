@@ -153,6 +153,10 @@ class CatGraph {
 	this.nodes[tgtid]["_degree"]++;
     }
 
+    get_edges(node) {
+	return this.index_edge_label[node];
+    }
+    
     // Begin searching functions
 
     // Begin search helper functions

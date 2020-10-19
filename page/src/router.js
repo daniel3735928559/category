@@ -15,19 +15,7 @@ export default new Router({
 	    redirect: '/browse/'
 	},
 	{
-	    path: '/read/:id',
-	    name: 'node',
-	    component: Node,
-	    props: true
-	    // route level code-splitting
-	    // this generates a separate chunk (about.[hash].js) for this route
-	    // which is lazy-loaded when the route is visited.
-	    // component: function () { 
-	    //   return import(/* webpackChunkName: "about" */ './views/Node.vue')
-	    // }
-	},
-	{
-	    path: '/read/:id',
+	    path: '/node/:id',
 	    name: 'node',
 	    component: Node,
 	    props: true

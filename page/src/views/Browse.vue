@@ -35,7 +35,7 @@
 	    <div v-if="mode=='graph'">
 		<div style="float:left;width:100%;">
 		    <br />
-		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="!is_empty" v-on:clickedNode="goto_node"></graph-index>
+		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="!is_empty" v-on:selectedNode="toggle_highlight" v-on:clickedNode="preview_a_node" v-on:doubleClickedNode="goto_node"></graph-index>
 		</div>
 	    </div>
 	    <div v-if="mode=='list'">
@@ -53,16 +53,18 @@
 	    
 	    <div v-if="preview_mode">
 		<span style="float:right;" v-on:click="preview_mode = false" class="close_x"><span class="fas fa-times"></span></span>
+		<h4>{{graph.nodes[preview_node].name}}</h4>
 		<read :node="preview_node" />
+		<edge-display :node="node" />
 	    </div>
 	    <div v-if="!highlight_is_empty && !preview_mode">
 		<b>Top nodes in result</b>
 		<div v-for="n in best_highlights" class="query_result">
 		    <div style="display:inline-block;">
 			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
-			<span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n].name + ')')">-</span>
+			<span class="badge_button" v-on:click="toggle_highlight(n)">-</span>
 		    </div>
-		    <a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_outdegree']+graph.nodes[n]['_indegree']}})</a> 
+		    <a href="#" v-on:click="goto_node(n)">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> 
 		</div>
 	    </div>
 	    <hr />
@@ -141,7 +143,7 @@
 	     highlight_query: '',
 	     errormsg: '',
 	     result: [],
-	     highlight: [],
+	     highlight: {},
 	     mode: 'graph',
 	     subgraph: {}
 	 }
@@ -156,11 +158,14 @@
 	 }
      },
      methods: {
-	 goto_node: function(e) {
-	     console.log("GOTO",e);
+	 preview_a_node: function(e) {
+	     console.log("Preview",e);
 	     this.preview_node = e;
 	     this.preview_mode = true;
-	     // this.$router.push("/node/"+e);
+	 },
+	 goto_node: function(e) {
+	     console.log("GOTO",e);
+	     this.$router.push("/node/"+e);
 	 },
 	 add_to_query: function(qry) {
 	     if(this.query.trim().length > 0 && this.query.trim() != "*") {
@@ -171,6 +176,21 @@
 	     }
 	     this.$router.push('/browse/'+btoa(this.query));
 	     this.search();
+	 },
+	 toggle_highlight: function(n) {
+	     console.log("toggle",n);
+	     var ans = {};
+	     for(var nodeid in this.highlight) {
+		 ans[nodeid] = true;
+	     }
+	     if(n in ans) {
+		 delete ans[n];
+	     }
+	     else {
+		 ans[n] = true;
+	     }
+	     this.highlight = ans;
+	     console.log("HANS",ans);
 	 },
 	 set_query: function(qry) {
 	     this.query = qry;
@@ -217,7 +237,7 @@
 		 this.result = query_result;
 		 this.highlight = {};
 		 this.subgraph = this.graph.subgraph(this.result);
-		 this.do_highlight()
+		 this.do_highlight();
 		 this.$forceUpdate();
 		 /* for(var i = 0; i < this.result.length; i++){
 		    if(this.nodes[this.result[i]].name == this.query.trim()) {
@@ -228,11 +248,11 @@
 	     }
 	 },
 	 do_highlight: function() {
+	     console.log("doing highlight");
 	     this.highlight = this.run_search(this.highlight_query, this.resultset);
 	 },
 	 expand_highlight: function() {
-	     this.highlight_query = "("+this.highlight_query+")[1]";
-	     this.do_highlight();
+	     this.highlight = this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, "any", "*", true)
 	 },
 	 clear_highlight: function() {
 	     this.highlight_query = "";

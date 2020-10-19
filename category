@@ -62,7 +62,7 @@ def get_db_info(path):
     return get_conf(path, {"arango":"no","db_port":"8529","db_host":"localhost","db_name":"category","db_username":"root","db_password":""})
 
 def get_editor(path):
-    return get_conf(path, {"editor":"/usr/bin/emacs"})
+    return get_conf(path, {"editor":"/usr/bin/emacs"}).get("editor","/usr/bin/emacs")
 
 def n4j_run(tx, q, md):
     return tx.run(q, md=md)
@@ -352,6 +352,7 @@ def cat_serve(cat_path, port, bind_addr):
     # Load the category metadata and configuration
     metadata = load_metadata(cat_path)
     editor = get_editor(cat_path)
+    print("ED",editor)
         
     cat_root = os.path.join(os.path.realpath(cat_path),"out")
     print(f"Serving {cat_root} on port {bind_addr}:{port}...")

@@ -3,9 +3,10 @@
 	<div v-if="!ready">
 	    Loading...
 	</div>
-	<div v-if="ready && graph.nodes[node] && graph.nodes[node].auto == false">
-	    <h3>{{graph.nodes[node].name}}</h3>
-	    <div v-html="data" class="expanded_content"></div>
+	<div v-if="ready">
+	    <div v-if="graph.nodes[node] && graph.nodes[node].auto == false">
+		<div v-html="data" class="expanded_content"></div>
+	    </div>
 	</div>
     </div>
 </template>

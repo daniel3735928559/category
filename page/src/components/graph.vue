@@ -121,38 +121,49 @@
 
 	     var self = this;
 	     
-	     this.renderer.on('downNode', (e) => {
-		 dragging = true;
-		 console.log("down",e);
-		 draggedNode = e.node;
-		 camera.disable();
-	     });
-
+	     /* this.renderer.on('downNode', (e) => {
+		dragging = true;
+		console.log("down",e);
+		draggedNode = e.node;
+		camera.disable();
+		});
+	      */
 	     this.renderer.on('clickNode', (e) => {
-		 console.log("nav",e.node);
+		 console.log("nav",e.node,e);
 		 //this.$router.push("/node/"+e.node);
-		 this.$emit("clickedNode",e.node)
+		 if(e.captor.ctrlKey) {
+		     this.$emit("selectedNode",e.node);
+		 }
+		 else {
+		     this.$emit("clickedNode",e.node);
+		 }
 	     });
+	     
+	     /* this.renderer.on('doubleClickNode', (e) => {
+		console.log("nav",e.node);
+		//this.$router.push("/node/"+e.node);
+		this.$emit("doubleClickedNode",e.node);
+		});*/
 
-	     captor.on('mouseup', e => {
-		 dragging = false;
-		 console.log("up",e);
-		 draggedNode = null;
-		 camera.enable();
-	     });
+	     /* captor.on('mouseup', e => {
+		dragging = false;
+		console.log("up",e);
+		draggedNode = null;
+		camera.enable();
+		});*/
 
-	     captor.on('mousemove', e => {
-		 if (!dragging)
-		     return;
+	     /* captor.on('mousemove', e => {
+		if (!dragging)
+		return;
 
-		 // Get new position of node
-		 const pos = self.renderer.normalizationFunction.inverse(
-		     camera.viewportToGraph(self.renderer, e.x, e.y)
-		 );
+		// Get new position of node
+		const pos = self.renderer.normalizationFunction.inverse(
+		camera.viewportToGraph(self.renderer, e.x, e.y)
+		);
 
-		 self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);
-		 self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);
-	     });
+		self.graph_display.setNodeAttribute(draggedNode, 'x', pos.x);
+		self.graph_display.setNodeAttribute(draggedNode, 'y', pos.y);
+		});*/
 
 	     this.update_graph();
 	     this.update_highlight();
