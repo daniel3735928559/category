@@ -18,7 +18,8 @@
 		<edge-display :node="node"></edge-display>
 	    </div>
 	    <div v-if="ready && graph.nodes[node] && graph.nodes[node].auto == true">
-		<node-index :nodeset="neighbours(node)" />
+		<edge-display :node="node"></edge-display>
+		<!-- <node-index :nodeset="neighbours(node)" /> -->
 	    </div>
 	    <div v-if="!ready || !graph.nodes[node]">
 		Loading...
@@ -47,7 +48,10 @@
 	 var self = this;
 	 if (!this.graph.nodes[node_id]) {
 	     console.log("problem:",node_id,"does not exist");
+	 } else {
+	     this.node = node_id;
 	 }
+	 next();
 	 /* else if (node_id in this.node_data) {
 	    console.log("cached");
 	    this.data = this.node_data[node_id];

@@ -4,11 +4,11 @@
 	<br />
 	<div v-for="(edges, label) in graph.get_edges(node)">
             <div v-for="edgeid in edges['in']">
-		is {{label}} of: 
+		is {{label}} of:
 		<router-link :to="'./'+graph.edges[edgeid]['_from'] + ('dstloc' in graph.edges[edgeid] && graph.edges[edgeid].dstloc != null ? '/' + graph.edges[edgeid].dstloc : '')">{{graph.nodes[graph.edges[edgeid]['_from']].name}}</router-link>
 	    </div>
             <div v-for="edgeid in edges['out']">
-		has {{label}}: 
+		has {{label}}:
 		<router-link :to="'./'+graph.edges[edgeid]['_to'] + ('dstloc' in graph.edges[edgeid] && graph.edges[edgeid].dstloc != null ? '/' + graph.edges[edgeid].dstloc : '')">{{graph.nodes[graph.edges[edgeid]['_to']].name}}</router-link>
 	    </div>
 	</div>
@@ -52,7 +52,10 @@ export default {
      props: ['node'],
      computed: mapState([
 	 'graph'
-     ])
+     ]),
+     created: function() {
+	 console.log('ed',this.graph.get_edges(this.node));
+     }
 }
 </script>
 

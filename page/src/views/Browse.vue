@@ -1,11 +1,12 @@
 <template>
     <div class="browse">
 	<div class="querypanel" style="float:left;width:20%;padding-left:10px;">
+	    <b v-if="num_hidden > 0">Hidden: {{num_hidden}}</b><br />
 	    <b>Top nodes</b>
 	    <div v-for="n in best_nodes" class="query_result">
 		<div style="display:inline-block;">
 		    <span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
-		    <span class="badge_button" v-on:click="add_to_query('!(=' + graph.nodes[n].name + ')')">-</span>
+		    <span class="badge_button" v-on:click="hide_node(n)">-</span>
 		</div>
 		<a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> 
 	    </div>
@@ -26,11 +27,13 @@
 		<span v-on:click="clear_filter()" class="close_x"><span class="fas fa-globe"></span></span>
 		<span v-on:click="mode='list'" class="close_x"><span class="fas fa-list"></span></span>
 		<span v-on:click="mode='graph'" class="close_x"><span class="fas fa-project-diagram"></span></span>
-		<span style="float:right">Display:</span>
-		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-plus"></span></span>
-		<span v-on:click="add_to_query(highlight_query)" class="close_x"><span class="fas fa-search-plus"></span></span>
-		<span v-on:click="add_to_query('!('+highlight_query+')')" class="close_x"><span class="fas fa-eye-slash"></span></span>
-		<span style="float:right">Highlight:</span>
+		<span style="float:right;padding-left:10px;">Display:</span>
+		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-expand-arrows-alt"></span></span>
+		<span v-on:click="zoom_to_highlight()" class="close_x"><span class="fas fa-eye"></span></span>
+		<span v-on:click="hide_highlight()" class="close_x"><span class="fas fa-eye-slash"></span></span>
+		<span style="float:right;padding-left:10px;">Highlight:</span>
+		<span v-on:click="new_node()" class="close_x"><span class="fas fa-plus"></span></span>
+		<span style="float:right;padding-left:10px;">Node:</span>
 	    </div>
 	    <div v-if="mode=='graph'">
 		<div style="float:left;width:100%;">
@@ -131,6 +134,13 @@
 	     if(!this.ready) return [];
 	     return this.subgraph.best_labels().slice(0,10);
 	 },
+	 num_hidden: function() {
+	     var ans = 0;
+	     for(var n in this.hidden) {
+		 ans++
+	     }
+	     return ans;
+	 },
 	 ...mapState(['graph', 'ready', 'node_data'])
      },
      data() {
@@ -142,7 +152,8 @@
 	     preview_id: this.$route.params.id || '',
 	     highlight_query: '',
 	     errormsg: '',
-	     result: [],
+	     result: {},
+	     hidden: {},
 	     highlight: {},
 	     mode: 'graph',
 	     subgraph: {}
@@ -158,6 +169,22 @@
 	 }
      },
      methods: {
+	 new_node: function(node, event){
+	     var self = this;
+	     var fetch_headers = new Headers();
+	     fetch_headers.append('pragma', 'no-cache');
+	     fetch_headers.append('cache-control', 'no-cache');
+	     
+	     var fetch_params = {
+		 method: 'GET',
+		 headers: fetch_headers,
+	     };
+	     fetch('/new', fetch_params).then(function(response){
+		 response.text().then(function(data){
+		     console.log(data);
+		 });
+	     });
+	 },
 	 preview_a_node: function(e) {
 	     console.log("Preview",e);
 	     this.preview_node = e;
@@ -247,6 +274,46 @@
 		    }*/
 	     }
 	 },
+	 hide_highlight: function() {
+	     var ans = {};
+	     for(var n in this.result) {
+		 if(n in this.highlight) {
+		     this.hidden[n] = true;
+		 }
+		 else {
+		     ans[n] = true;
+		 }
+	     }
+	     this.highlight = {};
+	     this.result = ans;
+	     this.subgraph = this.graph.subgraph(this.result);
+	 },
+	 hide_node: function(n) {
+	     var ans = {};
+	     for(var x in this.result) {
+		 if(x == n) {
+		     this.hidden[x] = true;
+		 }
+		 else {
+		     ans[x] = true;
+		 }
+	     }
+	     this.result = ans;
+	     this.subgraph = this.graph.subgraph(this.result);
+	 },
+	 zoom_to_highlight: function() {
+	     var ans = {};
+	     for(var n in this.result) {
+		 if(n in this.highlight) {
+		     ans[n] = true;
+		 }
+		 else {
+		     this.hidden[n] = true;
+		 }
+	     }
+	     this.result = ans;
+	     this.subgraph = this.graph.subgraph(this.result);
+	 },
 	 do_highlight: function() {
 	     console.log("doing highlight");
 	     this.highlight = this.run_search(this.highlight_query, this.resultset);
@@ -257,22 +324,6 @@
 	 clear_highlight: function() {
 	     this.highlight_query = "";
 	     this.do_highlight();
-	 },
-	 new_node: function(event){
-	     var self = this;
-	     var fetch_headers = new Headers();
-	     fetch_headers.append('pragma', 'no-cache');
-	     fetch_headers.append('cache-control', 'no-cache');
-	     
-	     var fetch_params = {
-		 method: 'GET',
-		 headers: fetch_headers,
-	     };
-	     fetch('/new', fetch_params).then(function(response){
-		 response.text().then(function(data){
-		     console.log(data);
-		 });
-	     });
 	 },
 	 clear_filter: function() {
 	     this.$router.push('/browse/'+btoa('*'));
