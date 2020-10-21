@@ -55,32 +55,21 @@ source install.sh
 
 ### Start your own category
 
-First, you need an arangodb instance running. We'll assume the
-database username is in an environment var `DB_USERNAME` and the
-password in `DB_PASSWORD`. 
-
-Make a folder for your data. We'll put ours in `~/cat`. 
+Pick a path for your category. Ideally, this should be an empty or
+non-existent directory, else things may be overwritten. We'll use
+`~/cat`
 
 ```
-mkdir ~/cat
-./category init ~/cat my_category category_db "$DB_USERNAME" "$DB_PASSWORD"
+./category init ~/cat
 ```
 
-This will create an arango database named `category_db` configured
-appropriately.
-
-To allow you to create/edit entries from the web browser, add an
-`editor` field to `~/cat/category.yaml`:
-
-```
-name: my_category
-editor: /usr/bin/emacs
-```
+Answer the questions. Unless you are planning to immediately import
+thousands of nodes, there is no need to use arangodb. 
 
 To view your blank category in a browser, run: 
 
 ```
-./category serve ~/cat category_db "$DB_USERNAME" "$DB_PASSWORD" -p 5000 -a 127.0.0.1
+./category serve ~/cat -p 5000 -a 127.0.0.1
 ```
 
 and navigate to [http://localhost:5000](http://localhost:5000).
@@ -124,100 +113,44 @@ to include the node in your category.
 
 ```
 ./category rebuild ~/cat
-./category updatedb ~/cat category_db "$DB_USERNAME" "$DB_PASSWORD"
 ```
 
 Now refresh the web interface and you should see your new node appear!
 
-### Adding nodes to the json database directly
-
-The node database is stored in `~/cat/out/metadata.json`. If you have
-a file containing nodes that you wish to import, ensure it has the
-format:
-```
-{
-  any_key_1: {
-    name: <node_name>,
-    date: <optional_date>,
-	edges: {
-	  has: {
-	    label1:[target_name_1, target_name_2, ...],
-	    label2:[target_name_1, target_name_2, ...],
-		...
-	  },
-	  is: {
-	    label3:[target_name_3, target_name_4, ...],
-	    label4:[target_name_5, target_name_6, ...],
-		...
-	  }
-	}
-  }
-}
-```
-
-Then run 
-
-```
-./category complete data.json ~/cat/out/metadata.json
-```
-
-## Building
-
-To incrementally build the example (only updating changed files), do: 
-
-```
-python3 category build example/cat
-```
-
-To rebuild the example as though from scratch, do: 
-
-```
-python3 category rebuild example/cat
-```
-
-## Serving
-
-To serve the example locally on port 1234, binding to loopback only
-(which is the default anyways): 
-
-```
-python3 category serve example/cat -p 1234 -a 127.0.0.1
-```
-
 ## Building a subcategory
 
 To build and serve a subcategory of the example category in
-`example/cat`, except with only things with category "roads", do:
+`example/cat`, except with only things with category "roads", say in
+te folder `/home/user/onlyroads` do:
 
 ```
-mkdir roads_subcat
-python3 category subcat example/cat roads_subcat roads "has category: roads / roads"
-python3 category serve roads_subcat -p 1234
+python3 category subcat example/cat "has category: roads / roads" /home/user/onlyroads
+python3 category serve /home/user/onlyroads -p 1234
 ```
 
 ## Building a statically servable subcategory
 
-To build and serve a static version of the above subcategory
+To build and serve a static version of the above subcategory, say from
+the folder `/home/user/public_html/cat` simply do:
 
 ```
-mkdir static_subcat
-python3 category subcat --static example/cat static_subcat roads "has category: roads / roads"
+python3 category subcat --static example/cat "has category: roads / roads" /home/user/public_html/cat
 
 # Now statically serve the subcategory
-cd static_subcat
+cd /home/user/public_html/cat
 python3 -m http.server 1234
 ```
 
 ## Building a statically servable version of your entire category
 
-To build and serve a static version of your entire category, simply do:
+To build and serve a static version of your entire category, say from
+the folder `/home/user/public_html/cat` simply do:
 
 ```
-mkdir static_cat
-python3 category subcat --static example/cat static_cat everything "*"
+python3 category subcat --static example/cat "*" /home/user/public_html/cat
 
 # Now statically serve the subcategory
-cd static_cat
+cd /home/user/public_html/cat
 python3 -m http.server 1234
 ```
 
@@ -227,13 +160,9 @@ python3 -m http.server 1234
 Category
 
 Usage: 
-  category init <path> <name>
-  category build <path>
+  category init <path>
   category rebuild <path>
-  category subcat [--static] <path> <subcat_path> <subcat_name> <query>
+  category subcat [--static] <path> <query> <subcat_path>
+  category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
-
-Options:
-  -p port (default: 7688)
-  -a address to bind (default: 127.0.0.1)
 ```

@@ -39,6 +39,8 @@
 		<div style="float:left;width:100%;">
 		    <br />
 		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="!is_empty" v-on:selectedNode="toggle_highlight" v-on:clickedNode="preview_a_node" v-on:doubleClickedNode="goto_node"></graph-index>
+		    <br />
+		    Reasonableness: {{reasonableness}}
 		</div>
 	    </div>
 	    <div v-if="mode=='list'">
@@ -82,6 +84,18 @@
  export default {
      name: 'browse',
      computed: {
+	 reasonableness: function() {
+	     if(!(this.ready)) return 1;
+	     var d = 0;
+	     var ns = 0;
+	     for(var n in this.resultset) {
+		 d += this.graph.nodes[n]['_degree'];
+		 console.log("D",this.graph.nodes[n]['_degree']);
+		 ns++;
+	     }
+	     if(ns == 0) return 1;
+	     return d/ns;
+	 },
 	 resultset: function() {
 	     if(!this.ready) return {};
 	     if(!this.result) {

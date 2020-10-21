@@ -63,7 +63,7 @@ class CatGraph {
 	return !x;
     }
     subgraph(nodeset) {
-	console.log("SG",nodeset);
+	//console.log("SG",nodeset);
 	var new_nodes = [];
 	var new_edges = [];
 	for(var n in nodeset) {
@@ -190,7 +190,7 @@ class CatGraph {
     // Returns: a map {node id : distance from starting nodeset}
     search_nbhd_helper(resultset, nodeset, steps, frontier, dir, lab, dist, may_overlap) {
 	if(this.debug_search) {
-	    console.log(steps, dir, lab);
+	    //console.log(steps, dir, lab);
 	    this.log_nodeset("INTERIOR ", nodeset);
 	    this.log_nodeset("BOUNDARY ", frontier);
 	}
@@ -239,7 +239,7 @@ class CatGraph {
 		    if(dir != "any" && dir != direction) {
 			continue;
 		    }
-		    console.log("S",label,JSON.stringify(this.index_edge_label[n][label]));
+		    //console.log("S",label,JSON.stringify(this.index_edge_label[n][label]));
 		    for(var edgeid of this.index_edge_label[n][label][direction]) {
 			var tgtid = "";
 			if(direction == "out") {
@@ -305,7 +305,7 @@ class CatGraph {
 	    if("query" in q[1]) {
 		targets = this.search(resultset, q[1].query);
 	    }
-	    console.log("T",JSON.stringify(targets));
+	    //console.log("T",JSON.stringify(targets));
 	    // Then query for edges from this nodeset:
 	    result = this.search_nbhd(resultset, targets, 1, 1, q[1].dir, q[1].name, true);
 	}
@@ -438,7 +438,7 @@ class CatGraph {
 	    throw ("Invalid direction: "+direction);
 	}
 	var knbhd = this.search_nbhd_helper(resultset, {}, max_steps, nodeset, direction, label, 0, may_overlap);
-	console.log("K",JSON.stringify(knbhd));
+	//console.log("K",JSON.stringify(knbhd));
 	var ans = {};
 	for(var nodeid in knbhd) {
 	    if(min_steps <= knbhd[nodeid] && knbhd[nodeid] <= max_steps) {

@@ -9,7 +9,7 @@ from . agraph import *
 from . backends.md.handler import md_builder
 from . backends.md.plugins import *
 
-NUM_WORKERS=20
+NUM_WORKERS=30
 
 def build_worker(inputs, outputs, build_only_new=False, md_only=True):
     for input_dir, output_dir, fn, extra_edges, md_time in iter(inputs.get, 'STOP'):

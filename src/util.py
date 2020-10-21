@@ -108,8 +108,11 @@ def get_file(ID, filename, input_url, output_dir):
         src = os.path.join(path, input_url)
         dst = os.path.join(files_dir,input_path)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        print("COPY", src, dst)
-        copyfile(src, dst)
+        if (not os.path.exists(dst)) or (os.path.getmtime(src) > os.path.getmtime(src)):
+            print("COPY", src, dst)
+            copyfile(src, dst)
+        else:
+            print("UP TO DATE", src, dst)
         return "/out/files/"+ID+"/"+input_path
 
 def search_files(base_path, ending):
@@ -151,7 +154,7 @@ def create_subcat(metadata, node_list):
         if n["_id"] in nodeset:
             ans["nodes"].append(n)
     for e in metadata["edges"]:
-        if e["_from"] in nodeset and e["_to"] in nodeset:
+        if e["_from"][len("nodes/"):] in nodeset and e["_to"][len("nodes/"):] in nodeset:
             ans["edges"].append(e)
     return ans
 
