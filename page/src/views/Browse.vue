@@ -66,7 +66,7 @@
 		<b>Top nodes in result</b>
 		<div v-for="n in best_highlights" class="query_result">
 		    <div style="display:inline-block;">
-			<span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
+			<span class="badge_button" v-on:click="hide_node(n)">x</span>
 			<span class="badge_button" v-on:click="toggle_highlight(n)">-</span>
 		    </div>
 		    <a href="#" v-on:click="goto_node(n)">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> 
