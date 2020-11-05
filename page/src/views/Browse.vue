@@ -23,7 +23,7 @@
 	<div class="browse_container" style="float:left;width:50%;">
 	    <div class="filterquery">
 		<!-- <input type="text" id="query_input" v-model="query" v-on:keyup.enter="search" /> -->
-		<span><input type="search" id="query_input" v-model="query" v-on:search="run_search" v-on:keyup.enter="run_search" /></span>
+		<span><input type="search" id="query_input" v-model="query" v-on:search="search" v-on:keyup.enter="search" /></span>
 		<span v-on:click="clear_filter()" class="close_x"><span class="fas fa-globe"></span></span>
 		<span v-on:click="mode='list'" class="close_x"><span class="fas fa-list"></span></span>
 		<span v-on:click="mode='graph'" class="close_x"><span class="fas fa-project-diagram"></span></span>
@@ -80,6 +80,7 @@
 <script>
  import Vue from 'vue'
  import { mapState } from 'vuex'
+ import { mapActions } from 'vuex'
 
  export default {
      name: 'browse',
@@ -90,25 +91,21 @@
 	     var ns = 0;
 	     for(var n in this.resultset) {
 		 d += this.graph.nodes[n]['_degree'];
-		 console.log("D",this.graph.nodes[n]['_degree']);
 		 ns++;
 	     }
 	     if(ns == 0) return 1;
 	     return d/ns;
 	 },
 	 resultset: function() {
-	     if(!this.ready) return {};
-	     if(!this.result) {
-		 return this.graph.nodes;
-	     }
+	     if(!this.ready || !this.graph || !this.zoom) return {};
 	     var ans = {};
-	     for(var r in this.result) {
+	     for(var r in this.zoom) {
 		 ans[r] = this.graph.nodes[r];
 	     }
 	     return ans;
 	 },
 	 is_empty: function() {
-	     for(var n in this.result) {
+	     for(var n in this.zoom) {
 		 return false;
 	     }
 	     return true;
@@ -121,14 +118,14 @@
 	 },
 	 highlightset: function() {
 	     var ans = {};
-	     for(var r in this.highlight) {
+	     for(var r in this.highlights) {
 		 ans[r] = true;
 	     }
-	     console.log(ans);
 	     return ans;
 	 },
 	 best_highlights: function() {
 	     var ans = [];
+	     if(!this.ready) return ans;
 	     var best = this.subgraph.best_nodes();
 	     for(var n of best){
 		 if(n in this.highlightset) {
@@ -141,6 +138,7 @@
 	 best_nodes: function() {
 	     console.log("BN",this.ready);
 	     if(!this.ready) return [];
+	     console.log("SG",this.subgraph);
 	     return this.subgraph.best_nodes().slice(0,10);
 	 },
 	 best_edges: function() {
@@ -155,22 +153,19 @@
 	     }
 	     return ans;
 	 },
-	 ...mapState(['graph', 'ready', 'node_data'])
+	 ...mapState(['graph', 'subgraph', 'ready', 'node_data', 'zoom', 'highlights'])
      },
      data() {
 	 return {
 	     entered_query: '',
 	     preview_mode: false,
 	     preview_node: '',
-	     query: this.$route.params.query ? atob(this.$route.params.query) : '*',
-	     preview_id: this.$route.params.id || '',
+	     query: '*',
+	     preview_id: '',
 	     highlight_query: '',
 	     errormsg: '',
-	     result: {},
 	     hidden: {},
-	     highlight: {},
 	     mode: 'graph',
-	     subgraph: {}
 	 }
      },
      watch: {
@@ -215,13 +210,12 @@
 	     else {
 		 this.query = qry;
 	     }
-	     this.$router.push('/browse/'+btoa(this.query));
 	     this.search();
 	 },
 	 toggle_highlight: function(n) {
 	     console.log("toggle",n);
 	     var ans = {};
-	     for(var nodeid in this.highlight) {
+	     for(var nodeid in this.highlights) {
 		 ans[nodeid] = true;
 	     }
 	     if(n in ans) {
@@ -230,14 +224,13 @@
 	     else {
 		 ans[n] = true;
 	     }
-	     this.highlight = ans;
+	     this.dohighlight(ans);
 	     console.log("HANS",ans);
 	 },
 	 set_query: function(qry) {
 	     this.query = qry;
 	     this.highlight_query = "";
 	     this.do_highlight();
-	     this.$router.push('/browse/'+btoa(this.query));
 	     this.search();
 	 },
 	 set_highlight: function(qry) {
@@ -248,6 +241,7 @@
 	     if(!this.ready) return {};
 	     this.entered_query = qry;
 	     this.errormsg = "";
+	     console.log("QQQ",qry);
 	     if(qry.trim().length == 0) {
 		 return [];
 	     }
@@ -259,14 +253,17 @@
 		 return [];
 	     }
 	     console.log("QQ",q,this.graph);
-	     return this.graph.search(nodeset, q);
+	     console.log(nodeset);
+	     var res = this.graph.search(nodeset, q);
+	     return res;
 	 },
 	 search: function() {
+	     if(!this.ready) return;
 	     if(this.query.trim().length == 0) {
 		 this.query = "*";
 	     }
 	     this.graph.debug_search = true;
-	     var query_result = this.run_search(this.query,this.nodeset)
+	     var query_result = this.run_search(this.query,this.resultset);
 	     console.log("RES",query_result);
 	     if(query_result.length == 0) {
 		 return;
@@ -275,36 +272,26 @@
 		 this.$router.push('/node/'+query_result[0]);
 	     }
 	     else {
-		 this.result = query_result;
-		 this.highlight = {};
-		 this.subgraph = this.graph.subgraph(this.result);
+		 this.dozoom(query_result, this.highlights);
 		 this.do_highlight();
 		 this.$forceUpdate();
-		 /* for(var i = 0; i < this.result.length; i++){
-		    if(this.nodes[this.result[i]].name == this.query.trim()) {
-		    this.$router.push('/node/'+this.result[i]);
-		    break;
-		    }
-		    }*/
 	     }
 	 },
 	 hide_highlight: function() {
 	     var ans = {};
-	     for(var n in this.result) {
-		 if(n in this.highlight) {
+	     for(var n in this.zoom) {
+		 if(n in this.highlights) {
 		     this.hidden[n] = true;
 		 }
 		 else {
 		     ans[n] = true;
 		 }
 	     }
-	     this.highlight = {};
-	     this.result = ans;
-	     this.subgraph = this.graph.subgraph(this.result);
+	     this.dozoom(ans, {});
 	 },
 	 hide_node: function(n) {
 	     var ans = {};
-	     for(var x in this.result) {
+	     for(var x in this.zoom) {
 		 if(x == n) {
 		     this.hidden[x] = true;
 		 }
@@ -312,43 +299,40 @@
 		     ans[x] = true;
 		 }
 	     }
-	     this.result = ans;
-	     this.subgraph = this.graph.subgraph(this.result);
+	     this.dozoom(ans, this.highlights);
 	 },
 	 zoom_to_highlight: function() {
 	     var ans = {};
-	     for(var n in this.result) {
-		 if(n in this.highlight) {
+	     for(var n in this.zoom) {
+		 if(n in this.highlights) {
 		     ans[n] = true;
 		 }
 		 else {
 		     this.hidden[n] = true;
 		 }
 	     }
-	     this.result = ans;
-	     this.subgraph = this.graph.subgraph(this.result);
+	     this.dozoom(ans, this.highlights);
 	 },
 	 do_highlight: function() {
-	     console.log("doing highlight");
-	     this.highlight = this.run_search(this.highlight_query, this.resultset);
+	     var ans = this.run_search(this.highlight_query, this.resultset);
+	     console.log("doing highlight",ans);
+	     this.dohighlight(ans);
 	 },
 	 expand_highlight: function() {
-	     this.highlight = this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, "any", "*", true)
+	     var res = this.resultset;
+	     this.dohighlight(this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, "any", "*", true));
 	 },
 	 clear_highlight: function() {
 	     this.highlight_query = "";
 	     this.do_highlight();
 	 },
 	 clear_filter: function() {
-	     this.$router.push('/browse/'+btoa('*'));
-	     this.query = '*';
-	     this.search();
-	     this.do_highlight();
-	 }
+	     this.dozoom(this.graph.nodes, {});
+	 },
+	 ...mapActions(['dozoom', 'dohighlight'])
      },
      beforeRouteUpdate (to, from, next) {
 	 console.log('222222222222',to);
-	 this.query = to.params.query ? atob(to.params.query) : '*';
 	 this.search();
 	 next();
      },

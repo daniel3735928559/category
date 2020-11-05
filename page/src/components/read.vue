@@ -43,6 +43,7 @@
 		 console.log("response",self.node_data[n]);
 		 self.data = self.node_data[n];
 		 this.$forceUpdate();
+		 this.$nextTick(function(){Vue.run_plugins(self);});
              }, error => {
 		 console.error("ERROR", error)
              });

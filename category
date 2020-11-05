@@ -342,7 +342,7 @@ def cat_updatedb(cat_path, db_name, db_un, db_pw, db_port, db_addr):
     pass
 
 def cat_serve(cat_path, port, bind_addr):
-    #global metadata
+    global metadata
         
     # Ensure we don't zombify our editors
     signal.signal(signal.SIGCHLD, signal.SIG_IGN);
@@ -378,6 +378,7 @@ def cat_serve(cat_path, port, bind_addr):
     
     @app.route('/edit/<node>')
     def edit_file(node):
+        global metadata
         node_src = ""
         for n in metadata["nodes"]:
             if n["_id"] == node:
@@ -390,9 +391,8 @@ def cat_serve(cat_path, port, bind_addr):
             global metadata
             proc = subprocess.Popen([editor, node_src],shell=False)
             proc.wait()
-            cat_md_rebuild(cat_path)
-            cat_build(cat_path)
-            #metadata = load_metadata(cat_path)
+            cat_rebuild(cat_path)
+            metadata = load_metadata(cat_path)
             return
         if os.path.exists(node_src):
             thread = threading.Thread(target=edit_node, args=(cat_path, editor, node_src))
@@ -410,10 +410,8 @@ def cat_serve(cat_path, port, bind_addr):
             now = datetime.datetime.now().strftime("%Y-%m-%d")
             proc = subprocess.Popen([editor, '--execute', f'(insert "``` info\nname: \ndate: {now}\n```\n\n")'],shell=False,cwd=os.path.join(cat_path,'src'))
             proc.wait()
-            cat_build(cat_path)
             cat_rebuild(cat_path)
-            cat_updatedb(cat_path, db_name, db_un, db_pw, db_port, db_addr)
-            #metadata = load_metadata(cat_path)
+            metadata = load_metadata(cat_path)
             return
         thread = threading.Thread(target=new_node, args=(cat_path, editor))
         thread.start()

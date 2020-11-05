@@ -317,7 +317,7 @@ class CatGraph {
 	    var dir = q[1][3];
 	    var lab = q[1][4];
 	    var targets = this.search(resultset, subquery);
-	    result = this.search_nbhd(resultset, targets, min_steps, max_steps, dir, lab, true)
+	    result = this.search_nbhd(resultset, targets, min_steps, max_steps, dir, lab, true);
 	}
 	else if(q[0] == "name"){
 	    //["name", <name>]
@@ -360,7 +360,7 @@ class CatGraph {
 		if(!(nodes[n].date)) continue;
 		var d = date_from_string(nodes[n].date);
 		if(d && d < cutoff_date){
-		    result.push(n);
+		    result[n] = true;
 		}
 	    }
 	}
@@ -371,20 +371,29 @@ class CatGraph {
 		if(!(nodes[n].date)) continue;
 		var d = date_from_string(nodes[n].date);
 		if(d && d > cutoff_date){
-		    result.push(n);
+		    result[n] = true;
 		}
+	    }
+	}
+	else if(q[0] == "count"){
+	    // ["after", <date>]
+	    result = {"value":0};
+	    for(var n in resultset) {
+		result.value++;
 	    }
 	}
 	else {
 	    console.log("Unrecognised query type:",q[0]);
 	}
-	if(this.debug_search) { this.log_nodeset("AFTER: " + JSON.stringify(q), result); }	
+	if(this.debug_search) { this.log_nodeset("AFTER: " + JSON.stringify(q), result); }
 	return result;
     }
     
     log_nodeset(msg, nodeset) {
-	console.log(msg);
+	console.log(msg,nodeset);
 	for(var n in nodeset) {
+	    console.log("N",n);
+	    if(n == "type") continue;
 	    console.log(this.nodes[n].name);
 	}
     }
@@ -451,6 +460,7 @@ class CatGraph {
     // "has <label>: <nodeset>"
     search_has(resultset, nodeset, label) {
 	var ans = this.search_nbhd(resultset, nodeset, 1, 1, "has", label, true);
+	return ans;
     }
 
     // "is <label> of: <nodeset>"
@@ -460,12 +470,15 @@ class CatGraph {
     
     // "is <label>" = "an inbound edge of label <label> exists to this node"
     search_has_label(dir, label) {
-	return this.search_dir_label_helper(resultset, "in", label)
+	var ans = this.search_dir_label_helper(resultset, "in", label);
+	return ans
     }
 
     // "has <label>" = "an outbound edge of label <label> exists from this node"
     search_has_label(resultset, label) {
-	return this.search_dir_label_helper(resultset, "out", label)
+	
+	var ans = this.search_dir_label_helper(resultset, "out", label);
+	return ans;
     }
 
     // End of search functions

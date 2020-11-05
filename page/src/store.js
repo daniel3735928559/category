@@ -10,6 +10,10 @@ export default new Vuex.Store({
 	ready: false,
 	current: '',
 	graph: {},
+	subgraph: {},
+	zoom: {},
+	highlights: {},
+	graph_history: {},
 	recent: [],
 	node_data: {},
 	plugin_data: {}
@@ -114,17 +118,49 @@ export default new Vuex.Store({
 	    // 	state.recent.splice(idx, 1);
 	    // }
 	},
+	ZOOM: (state, nodes, highlight_nodes) => {
+	    state.zoom = nodes;
+	    state.highlights = highlight_nodes;
+	    state.history.push({"zoom":state.zoom, "highlight":state.highlights});
+	    state.subgraph = state.graph.subgraph(state.zoom);
+	},
+	UNDO: (state) => {
+	    if(len(state.history) > 1) {
+		var h = state.history.pop();
+		state.zoom = h.zoom;
+		state.highlights = h.highlight;
+	    }
+	    else {
+		state.zoom = state.history[0].zoom;
+		state.highlights = state.history[0].highlight;
+	    }
+	    state.subgraph = state.graph.subgraph(state.zoom);
+	},
+	HIGHLIGHT: (state, nodes) => {
+	    state.highlights = nodes;
+	    state.history.push({"zoom":state.zoom, "highlight":state.highlights});
+	},
 	METADATA: (state, g) => {
 	    console.log("MD",g);
-	    state.graph = new CatGraph(g["nodes"], g["edges"])
+	    state.graph = new CatGraph(g["nodes"], g["edges"]);
+	    state.subgraph = state.graph;
+	    state.zoom = state.graph.nodes;
+	    state.highlights = {};
+	    state.history = [{"zoom":state.zoom, "highlight":state.highlights}];
 	    state.recent = [];
 	    state.ready = true;
 	    state.query = "is category";
-	}
+	}	
     },
     actions: {
 	cache: (context, nodes) => {
 	    context.commit('CACHE',nodes);
+	},
+	dohighlight: (context, nodes) => {
+	    context.commit('HIGHLIGHT',nodes);
+	},
+	dozoom: (context, nodes, highlight_nodes) => {
+	    context.commit('ZOOM',nodes, highlight_nodes);
 	},
 	clear_history: (context) => {
 	    context.commit('CLEAR_HISTORY');
