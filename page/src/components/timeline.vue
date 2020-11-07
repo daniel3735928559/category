@@ -1,59 +1,130 @@
 <template>
-    <div id="working_set">
-	<h4>
-	    Working set <span v-on:click="clear_history()" class="badge_button">clear</span>
-	</h4>
-	<!-- <div v-for="node in recent">
-	     <span v-on:click="remove_from_history(node)" style="cursor:pointer;margin-right:5px;">[x]</span> <router-link :to="{name:'node', params: {id: node}}">{{nodes && nodes[node] ? nodes[node].name : "loading..."}}</router-link> -->
-	<!-- <draggable v-model="recent" element="span">
-	     <li v-for="node in recent">
-	     <i :class="element.fixed? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" @click=" element.fixed=! element.fixed" aria-hidden="true"></i>
-	     <router-link :to="{name:'doc', params: {id: node}}">{{nodes[node].name}}</router-link>
-	     
-	     </li>
-	     </draggable> -->
-	
-	<draggable v-if="ready" element="span" v-model="recent" v-bind="dragOptions" :move="onMove">
-            <transition-group name="no" class="list-group" tag="ul">
-		<li class="list-group-item" v-for="node in recent" :key="node.id">
-		    <i :class="node.fixed ? 'fa fa-lock' : 'fa fa-pin'" @click="node.fixed = !node.fixed" aria-hidden="true"></i>
-		    <div style="width:90%;float:left;">
-			<router-link :to="{name:'node', params: {id: node.id}}">{{nodes[node.id].name}}</router-link>
-			<br />
-			<span class="node_snippet">{{nodes[node.id].snippet}}</span>
-		    </div>
-		    <span v-on:click="remove_from_history(node.id)" class="badge_button">x</span>
-		</li>
-            </transition-group>
-	</draggable>
-	<!-- </div> -->
+    <div id="histogram">
+	<histogram-slider
+	    style="margin: 10px auto"
+	    :width="600"
+	    :bar-height="50"
+	    :bar-gap="2"
+	    :data="hist_data"
+	    :prettify="prettify"
+	    :drag-interval="true"
+	    :force-edges="false"
+	    :colors="['#4facfe', '#00ccff']"
+	    :min="data_min"
+	    :max="data_max"
+	    v-on:update="slid"
+	    v-on:finish="slid"
+	    v-on:change="slid"
+	    v-if="hist_data.length > 0"></histogram-slider>
+	<li v-for="n in sortedby(selected, date, true)">
+	    <router-link :to="{name:'node', params: {id: n}}">{{graph.nodes[n].name}} <span v-if="'date' in graph.nodes[n]" style="font-size:.5em;color:#666;">{{graph.nodes[n].date}}</span></router-link>
+	</li>
+
     </div>
 </template>
 
 <script>
  import { mapState } from 'vuex'
- import { Bar, mixins } from 'vue-chartjs'
- const { reactiveProp } = mixins
+ import { mapGetters } from 'vuex'
+ import "vue-histogram-slider/dist/histogram-slider.css";
  
  export default {
      name: 'timeline-display',
-     extends: Bar,
-     mixins: [reactiveProp], // creates chartData prop
-     props: ['options'],
+     props: ['prop'],
      data() {
 	 return {
-	     editable: true,
-	     isDragging: false,
-	     delayedDragging: false
+	     select_begin: new Date(1990,1,1),
+	     select_end: new Date(3000,1,1),
+	     prettify: function(ts) {
+		 return new Date(ts).toLocaleDateString("en", {
+		     year: "numeric",
+		     month: "short",
+		     day: "numeric"
+		 });
+	     }
 	 };
      },
      
      computed: {
+	 date_to_node: function() {
+	     var ans = {"none":[]};
+	     for(var n in this.subgraph.nodes) {
+		 if("date" in this.subgraph.nodes[n]) {
+		     var d = this.subgraph.nodes[n].date;
+		     if(isNaN((new Date(d)).getTime())) {
+			 ans["none"].push(n);
+		     }
+		     else {
+			 if(!(d in ans)){ ans[d] = []; }
+			 ans[d].push(n);
+		     }
+		 }
+		 else{
+		     ans["none"].push(n);
+		 }
+	     }
+	     return ans;
+	 },
+	 hist_data: function() {
+	     var ans = [];
+	     for(var n in this.zoom) {
+		 if("date" in this.subgraph.nodes[n]) {
+		     var d = new Date(this.subgraph.nodes[n].date);
+		     if(!isNaN(d.getTime())){ ans.push(d); }
+		 }
+	     }
+	     console.log("DS",ans);
+	     return ans;
+	 },
+	 data_min: function(){
+	     if(this.hist_data.length == 0) return 0;
+	     var ans = this.hist_data[0];
+	     for(var d of this.hist_data) {
+		 if(d < ans) ans = d;
+	     }
+	     return ans.valueOf();
+	 },
+	 data_max: function(){
+	     if(this.hist_data.length == 0) return 0;
+	     var ans = this.hist_data[0];
+	     for(var d of this.hist_data) {
+		 if(d > ans) ans = d;
+	     }
+	     return ans.valueOf();
+	 },
+	 selected: function() {
+	     var ans = [];
+	     for(var n in this.zoom) {
+		 if("date" in this.subgraph.nodes[n]) {
+		     var d = new Date(this.subgraph.nodes[n].date);
+		     if(isNaN(d.getTime())){ continue; }
+		     if(this.select_begin <= d && d <= this.select_end) {
+			 ans.push(n);
+		     }
+		 }
+	     }
+	     var self = this;
+	     ans.sort(function(a, b) {
+		 var d1 = new Date(self.graph.nodes[a].date)
+		 var d2 = new Date(self.graph.nodes[b].date)
+		 return d2.valueOf()-d1.valueOf();
+	     });
+	     return ans;
+	 },
+	 ...mapState(['graph','subgraph','zoom']),
+	 ...mapGetters(['sorted','sortedby'])
      },
      methods: {
+	 slid: function(e) {
+	     var ans = [];
+	     this.select_begin = new Date(e.from);
+	     this.select_end = new Date(e.to);
+	     this.$nextTick(function() {
+		 this.$emit("select", this.selected);
+	     });
+	 }
      },
      mounted () {
-	 this.renderChart(this.chartdata, this.options)
      }
  }
 </script>

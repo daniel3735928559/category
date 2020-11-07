@@ -3,6 +3,7 @@ import builtins from 'rollup-plugin-node-builtins';
 import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import postcss from 'rollup-plugin-postcss';
 
 export default {
     input: 'src/main.js',
@@ -19,6 +20,9 @@ export default {
 	file: 'dist/static/js/cafe.js'
     },
     plugins: [
+	postcss({
+	    plugins: []
+	}),
 	builtins(),
 	commonjs({
 	    include: ['node_modules/**'],

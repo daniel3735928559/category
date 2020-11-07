@@ -27,6 +27,7 @@
 		<span v-on:click="clear_filter()" class="close_x"><span class="fas fa-globe"></span></span>
 		<span v-on:click="mode='list'" class="close_x"><span class="fas fa-list"></span></span>
 		<span v-on:click="mode='graph'" class="close_x"><span class="fas fa-project-diagram"></span></span>
+		<span v-on:click="mode='timeline'" class="close_x"><span class="fas fa-chart-bar"></span></span>
 		<span style="float:right;padding-left:10px;">Display:</span>
 		<span v-on:click="expand_highlight()" class="close_x"><span class="fas fa-expand-arrows-alt"></span></span>
 		<span v-on:click="zoom_to_highlight()" class="close_x"><span class="fas fa-eye"></span></span>
@@ -40,13 +41,17 @@
 		    <br />
 		    <graph-index :nodeset="resultset" :highlight="highlightset" v-if="!is_empty" v-on:selectedNode="toggle_highlight" v-on:clickedNode="preview_a_node" v-on:doubleClickedNode="goto_node"></graph-index>
 		    <br />
-		    Reasonableness: {{reasonableness}}
+		    
+		    Reasonableness: {{reasonableness}} <br />
+		    
+		    <timeline-display v-on:select="time_select"></timeline-display>
 		</div>
 	    </div>
 	    <div v-if="mode=='list'">
 		<node-index :nodeset="resultset"></node-index>
 	    </div>
 	    <div v-if="mode=='timeline'">
+		<timeline-display v-on:select="time_select"></timeline-display>
 		<!-- <node-index :nodeset="resultset" v-if="result.length > 0"></node-index> -->
 	    </div>
 	</div>
@@ -180,6 +185,14 @@
 	 }
      },
      methods: {
+	 time_select: function(nodes) {
+	     var ans = {};
+	     for(var n of nodes) {
+		 ans[n] = true;
+	     }
+	     this.dohighlight(ans);
+	     console.log(nodes);
+	 },
 	 new_node: function(node, event){
 	     var self = this;
 	     var fetch_headers = new Headers();

@@ -175,13 +175,13 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
  .graph_index {
-     height: 80%;
-     min-height:80vh;
+     height: 60%;
+     min-height:60vh;
      width: 100%;
  }
  #graph_container {
-     height: 80%;
-     min-height:80vh;
+     height: 60%;
+     min-height:60vh;
      width: 100%;
      color: unset;
      border: 1px solid #ccc;

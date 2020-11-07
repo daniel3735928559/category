@@ -3,10 +3,13 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 
+import HistogramSlider from "vue-histogram-slider";
+
 import NodeIndex from './components/nodes.vue'
 import LabelIndex from './components/labels.vue'
 import NodeFilter from './components/filter.vue'
 import HistoryDisplay from './components/history.vue'
+import TimelineDisplay from './components/timeline.vue'
 import EdgeDisplay from './components/edges.vue'
 import SearchDisplay from './components/search/search.vue'
 import GraphIndex from './components/graph.vue'
@@ -39,6 +42,8 @@ Vue.component('labelIndex', LabelIndex);
 Vue.component('nodeFilter', NodeFilter);
 Vue.component('historyDisplay', HistoryDisplay);
 Vue.component('edgeDisplay', EdgeDisplay);
+Vue.component('timelineDisplay', TimelineDisplay);
+Vue.component('histogramSlider', HistogramSlider);
 
 Vue.category_plugins = {
     'cat-slideshow': Vue.component('catSlideshow', SlideshowPlugin),

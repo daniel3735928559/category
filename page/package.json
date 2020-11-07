@@ -11,9 +11,11 @@
     "codemirror": "^5.48.4",
     "graphology": "^0.17.1",
     "graphology-layout-forceatlas2": "^0.4.3",
+    "rollup-plugin-postcss": "^3.1.8",
     "sigma": "^2.0.0-alpha32",
     "vue": "^2.6.10",
     "vue-chartjs": "^3.5.0",
+    "vue-histogram-slider": "^0.3.8",
     "vue-router": "^3.0.3",
     "vuedraggable": "^2.23.2",
     "vuex": "^3.0.1"
