@@ -42,22 +42,23 @@ export default new Vuex.Store({
 		else return state.graph.nodes[a].name.localeCompare(state.graph.nodes[b].name);
 	    });
 	},
-	sortedby: state => (nodeset, nodelist, key, ascending) => {
+	sortedby: state => (nodelist, key, ascending) => {
+	    console.log("NLNL",JSON.stringify(nodelist));
 	    var ans = nodelist.sort(function(a, b){
 		var res = 0;
-		if (key in nodeset[a] && key in nodeset[b]) {
+		if (key in state.graph.nodes[a] && key in state.graph.nodes[b]) {
 		    //console.log("arr by",key);
 		    if (key == 'index') {
-			var res = parseInt(nodeset[a].index) - parseInt(nodeset[b].index)
+			var res = parseInt(state.graph.nodes[a].index) - parseInt(state.graph.nodes[b].index)
 			return ascending ? res : -res;
 		    }
-		    var res = nodeset[a][key].localeCompare(nodeset[b][key]);
+		    var res = state.graph.nodes[a][key].localeCompare(state.graph.nodes[b][key]);
 		    return ascending ? res : -res;
 		} // Place things without properties 
-		else if (!(key in nodeset[a]) && key in nodeset[b]) {
+		else if (!(key in state.graph.nodes[a]) && key in state.graph.nodes[b]) {
 		    return 1;
 		}
-		else if ((key in nodeset[a]) && !(key in nodeset[b])) {
+		else if ((key in state.graph.nodes[a]) && !(key in state.graph.nodes[b])) {
 		    return -1;
 		}
 		return ascending ? res : -res;

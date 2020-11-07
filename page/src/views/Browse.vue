@@ -44,7 +44,10 @@
 		</div>
 	    </div>
 	    <div v-if="mode=='list'">
-		<node-index :nodeset="resultset" v-if="result.length > 0"></node-index>
+		<node-index :nodeset="resultset"></node-index>
+	    </div>
+	    <div v-if="mode=='timeline'">
+		<!-- <node-index :nodeset="resultset" v-if="result.length > 0"></node-index> -->
 	    </div>
 	</div>
 	<div class="querypanel" style="float:left;width:30%;padding-left:10px;">
@@ -60,7 +63,7 @@
 		<span style="float:right;" v-on:click="preview_mode = false" class="close_x"><span class="fas fa-times"></span></span>
 		<h4>{{graph.nodes[preview_node].name}}</h4>
 		<read :node="preview_node" />
-		<edge-display :node="node" />
+		<edge-display :node="preview_node" />
 	    </div>
 	    <div v-if="!highlight_is_empty && !preview_mode">
 		<b>Top nodes in result</b>
@@ -157,7 +160,6 @@
      },
      data() {
 	 return {
-	     entered_query: '',
 	     preview_mode: false,
 	     preview_node: '',
 	     query: '*',
@@ -239,7 +241,6 @@
 	 },
 	 run_search: function(qry, nodeset) {
 	     if(!this.ready) return {};
-	     this.entered_query = qry;
 	     this.errormsg = "";
 	     console.log("QQQ",qry);
 	     if(qry.trim().length == 0) {
@@ -327,6 +328,7 @@
 	     this.do_highlight();
 	 },
 	 clear_filter: function() {
+	     this.query = "*"
 	     this.dozoom(this.graph.nodes, {});
 	 },
 	 ...mapActions(['dozoom', 'dohighlight'])

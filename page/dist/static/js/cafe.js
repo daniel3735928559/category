@@ -11592,7 +11592,6 @@
        },
        data() {
   	 return {
-  	     entered_query: '',
   	     preview_mode: false,
   	     preview_node: '',
   	     query: '*',
@@ -11673,7 +11672,6 @@
   	 },
   	 run_search: function(qry, nodeset) {
   	     if(!this.ready) return {};
-  	     this.entered_query = qry;
   	     this.errormsg = "";
   	     console.log("QQQ",qry);
   	     if(qry.trim().length == 0) {
@@ -11761,6 +11759,7 @@
   	     this.do_highlight();
   	 },
   	 clear_filter: function() {
+  	     this.query = "*";
   	     this.dozoom(this.graph.nodes, {});
   	 },
   	 ...mapActions(['dozoom', 'dohighlight'])
@@ -12080,14 +12079,11 @@
           _vm.mode == "list"
             ? _c(
                 "div",
-                [
-                  _vm.result.length > 0
-                    ? _c("node-index", { attrs: { nodeset: _vm.resultset } })
-                    : _vm._e()
-                ],
+                [_c("node-index", { attrs: { nodeset: _vm.resultset } })],
                 1
               )
-            : _vm._e()
+            : _vm._e(),
+          _vm.mode == "timeline" ? _c("div") : _vm._e()
         ]
       ),
       _c(
@@ -12157,7 +12153,7 @@
                     _vm._v(_vm._s(_vm.graph.nodes[_vm.preview_node].name))
                   ]),
                   _c("read", { attrs: { node: _vm.preview_node } }),
-                  _c("edge-display", { attrs: { node: _vm.node } })
+                  _c("edge-display", { attrs: { node: _vm.preview_node } })
                 ],
                 1
               )
@@ -12231,11 +12227,11 @@
     /* style */
     const __vue_inject_styles__$2 = function (inject) {
       if (!inject) return
-      inject("data-v-09f2ed16_0", { source: "\n.sidebar-item[data-v-09f2ed16] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-09f2ed16] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-09f2ed16] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-09f2ed16]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-09f2ed16]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AA2VA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"querypanel\" style=\"float:left;width:20%;padding-left:10px;\">\n\t    <b v-if=\"num_hidden > 0\">Hidden: {{num_hidden}}</b><br />\n\t    <b>Top nodes</b>\n\t    <div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"hide_node(n)\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n\t<div class=\"browse_container\" style=\"float:left;width:50%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span><input type=\"search\" id=\"query_input\" v-model=\"query\" v-on:search=\"search\" v-on:keyup.enter=\"search\" /></span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-globe\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t\t<span style=\"float:right;padding-left:10px;\">Display:</span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-expand-arrows-alt\"></span></span>\n\t\t<span v-on:click=\"zoom_to_highlight()\" class=\"close_x\"><span class=\"fas fa-eye\"></span></span>\n\t\t<span v-on:click=\"hide_highlight()\" class=\"close_x\"><span class=\"fas fa-eye-slash\"></span></span>\n\t\t<span style=\"float:right;padding-left:10px;\">Highlight:</span>\n\t\t<span v-on:click=\"new_node()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span style=\"float:right;padding-left:10px;\">Node:</span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:selectedNode=\"toggle_highlight\" v-on:clickedNode=\"preview_a_node\" v-on:doubleClickedNode=\"goto_node\"></graph-index>\n\t\t    <br />\n\t\t    Reasonableness: {{reasonableness}}\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index>\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"search\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:search=\"do_highlight\" v-on:keyup.enter=\"do_highlight\" />\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\n\t    \n\t    <div v-if=\"preview_mode\">\n\t\t<span style=\"float:right;\" v-on:click=\"preview_mode = false\" class=\"close_x\"><span class=\"fas fa-times\"></span></span>\n\t\t<h4>{{graph.nodes[preview_node].name}}</h4>\n\t\t<read :node=\"preview_node\" />\n\t\t<edge-display :node=\"node\" />\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty && !preview_mode\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"hide_node(n)\">x</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"toggle_highlight(n)\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"goto_node(n)\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n import { mapActions } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t reasonableness: function() {\n\t     if(!(this.ready)) return 1;\n\t     var d = 0;\n\t     var ns = 0;\n\t     for(var n in this.resultset) {\n\t\t d += this.graph.nodes[n]['_degree'];\n\t\t ns++;\n\t     }\n\t     if(ns == 0) return 1;\n\t     return d/ns;\n\t },\n\t resultset: function() {\n\t     if(!this.ready || !this.graph || !this.zoom) return {};\n\t     var ans = {};\n\t     for(var r in this.zoom) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.zoom) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlights) {\n\t\t ans[r] = true;\n\t     }\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var ans = [];\n\t     if(!this.ready) return ans;\n\t     var best = this.subgraph.best_nodes();\n\t     for(var n of best){\n\t\t if(n in this.highlightset) {\n\t\t     ans.push(n);\n\t\t     if(ans.length >= 10) break;\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     console.log(\"SG\",this.subgraph);\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     console.log(\"RRR\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t num_hidden: function() {\n\t     var ans = 0;\n\t     for(var n in this.hidden) {\n\t\t ans++\n\t     }\n\t     return ans;\n\t },\n\t ...mapState(['graph', 'subgraph', 'ready', 'node_data', 'zoom', 'highlights'])\n     },\n     data() {\n\t return {\n\t     entered_query: '',\n\t     preview_mode: false,\n\t     preview_node: '',\n\t     query: '*',\n\t     preview_id: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     hidden: {},\n\t     mode: 'graph',\n\t }\n     },\n     watch: {\n\t ready: function(val) {\n\t     if(val) {\n\t\t this.$nextTick(function () {\n\t\t     this.search();\n\t\t });\n\t     }\n\t }\n     },\n     methods: {\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t preview_a_node: function(e) {\n\t     console.log(\"Preview\",e);\n\t     this.preview_node = e;\n\t     this.preview_mode = true;\n\t },\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t toggle_highlight: function(n) {\n\t     console.log(\"toggle\",n);\n\t     var ans = {};\n\t     for(var nodeid in this.highlights) {\n\t\t ans[nodeid] = true;\n\t     }\n\t     if(n in ans) {\n\t\t delete ans[n];\n\t     }\n\t     else {\n\t\t ans[n] = true;\n\t     }\n\t     this.dohighlight(ans);\n\t     console.log(\"HANS\",ans);\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return {};\n\t     this.entered_query = qry;\n\t     this.errormsg = \"\";\n\t     console.log(\"QQQ\",qry);\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     console.log(nodeset);\n\t     var res = this.graph.search(nodeset, q);\n\t     return res;\n\t },\n\t search: function() {\n\t     if(!this.ready) return;\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.resultset);\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.dozoom(query_result, this.highlights);\n\t\t this.do_highlight();\n\t\t this.$forceUpdate();\n\t     }\n\t },\n\t hide_highlight: function() {\n\t     var ans = {};\n\t     for(var n in this.zoom) {\n\t\t if(n in this.highlights) {\n\t\t     this.hidden[n] = true;\n\t\t }\n\t\t else {\n\t\t     ans[n] = true;\n\t\t }\n\t     }\n\t     this.dozoom(ans, {});\n\t },\n\t hide_node: function(n) {\n\t     var ans = {};\n\t     for(var x in this.zoom) {\n\t\t if(x == n) {\n\t\t     this.hidden[x] = true;\n\t\t }\n\t\t else {\n\t\t     ans[x] = true;\n\t\t }\n\t     }\n\t     this.dozoom(ans, this.highlights);\n\t },\n\t zoom_to_highlight: function() {\n\t     var ans = {};\n\t     for(var n in this.zoom) {\n\t\t if(n in this.highlights) {\n\t\t     ans[n] = true;\n\t\t }\n\t\t else {\n\t\t     this.hidden[n] = true;\n\t\t }\n\t     }\n\t     this.dozoom(ans, this.highlights);\n\t },\n\t do_highlight: function() {\n\t     var ans = this.run_search(this.highlight_query, this.resultset);\n\t     console.log(\"doing highlight\",ans);\n\t     this.dohighlight(ans);\n\t },\n\t expand_highlight: function() {\n\t     var res = this.resultset;\n\t     this.dohighlight(this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, \"any\", \"*\", true));\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t clear_filter: function() {\n\t     this.dozoom(this.graph.nodes, {});\n\t },\n\t ...mapActions(['dozoom', 'dohighlight'])\n     },\n     beforeRouteUpdate (to, from, next) {\n\t console.log('222222222222',to);\n\t this.search();\n\t next();\n     },\n     mounted: function() {\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-12cdbf40_0", { source: "\n.sidebar-item[data-v-12cdbf40] {\n    border:1px solid #66f;\n    border-radius:3px;\n    margin:1px;\n    overflow:hidden;\n    white-space:nowrap;\n    padding:2px;\n}\n.search-error[data-v-12cdbf40] {\n    font-family: monospace;\n    white-space: pre;\n    color: #e33;\n}\n.badge_button[data-v-12cdbf40] {\n    cursor:pointer;\n    margin-right:5px;\n    display: inline-block;\n    min-width: 10px;\n    padding: 3px 7px;\n    font-size: 12px;\n    font-weight: bold;\n    line-height: 1;\n    color: #fff;\n    text-align: center;\n    white-space: nowrap;\n    vertical-align: middle;\n    background-color: #777;\n    border-radius: 10px;\n    float:right;\n}\n.snippet_header[data-v-12cdbf40]{\n    border-radius: 10px;\n    padding: 5px;\n    width: 100%;\n    margin-bottom: 10px;\n}\n.snippet_title[data-v-12cdbf40]{\n    font-size: 20pt;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/views/Browse.vue"],"names":[],"mappings":";AA6VA;IACA,qBAAA;IACA,iBAAA;IACA,UAAA;IACA,eAAA;IACA,kBAAA;IACA,WAAA;AACA;AACA;IACA,sBAAA;IACA,gBAAA;IACA,WAAA;AACA;AACA;IACA,cAAA;IACA,gBAAA;IACA,qBAAA;IACA,eAAA;IACA,gBAAA;IACA,eAAA;IACA,iBAAA;IACA,cAAA;IACA,WAAA;IACA,kBAAA;IACA,mBAAA;IACA,sBAAA;IACA,sBAAA;IACA,mBAAA;IACA,WAAA;AACA;AACA;IACA,mBAAA;IACA,YAAA;IACA,WAAA;IACA,mBAAA;AACA;AAEA;IACA,eAAA;AACA","file":"Browse.vue","sourcesContent":["<template>\n    <div class=\"browse\">\n\t<div class=\"querypanel\" style=\"float:left;width:20%;padding-left:10px;\">\n\t    <b v-if=\"num_hidden > 0\">Hidden: {{num_hidden}}</b><br />\n\t    <b>Top nodes</b>\n\t    <div v-for=\"n in best_nodes\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"hide_node(n)\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t    </div>\n\t    <hr />\n\t    <b>Top labels</b>\n\t    <div v-for=\"e in best_edges\" class=\"query_result\">\n\t\t<div style=\"display:inline-block;\">\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('(has ' + e.label + ' / is ' + e.label + ')')\">+</span>\n\t\t    <span class=\"badge_button\" v-on:click=\"add_to_query('!(is ' + e.label + ')')\">-</span>\n\t\t</div>\n\t\t<a href=\"#\" v-on:click=\"set_highlight('(is ' + e.label + ')')\">{{e.label}} ({{e.count}})</a>\n\t    </div>\n\t</div>\n\t<div class=\"browse_container\" style=\"float:left;width:50%;\">\n\t    <div class=\"filterquery\">\n\t\t<!-- <input type=\"text\" id=\"query_input\" v-model=\"query\" v-on:keyup.enter=\"search\" /> -->\n\t\t<span><input type=\"search\" id=\"query_input\" v-model=\"query\" v-on:search=\"search\" v-on:keyup.enter=\"search\" /></span>\n\t\t<span v-on:click=\"clear_filter()\" class=\"close_x\"><span class=\"fas fa-globe\"></span></span>\n\t\t<span v-on:click=\"mode='list'\" class=\"close_x\"><span class=\"fas fa-list\"></span></span>\n\t\t<span v-on:click=\"mode='graph'\" class=\"close_x\"><span class=\"fas fa-project-diagram\"></span></span>\n\t\t<span style=\"float:right;padding-left:10px;\">Display:</span>\n\t\t<span v-on:click=\"expand_highlight()\" class=\"close_x\"><span class=\"fas fa-expand-arrows-alt\"></span></span>\n\t\t<span v-on:click=\"zoom_to_highlight()\" class=\"close_x\"><span class=\"fas fa-eye\"></span></span>\n\t\t<span v-on:click=\"hide_highlight()\" class=\"close_x\"><span class=\"fas fa-eye-slash\"></span></span>\n\t\t<span style=\"float:right;padding-left:10px;\">Highlight:</span>\n\t\t<span v-on:click=\"new_node()\" class=\"close_x\"><span class=\"fas fa-plus\"></span></span>\n\t\t<span style=\"float:right;padding-left:10px;\">Node:</span>\n\t    </div>\n\t    <div v-if=\"mode=='graph'\">\n\t\t<div style=\"float:left;width:100%;\">\n\t\t    <br />\n\t\t    <graph-index :nodeset=\"resultset\" :highlight=\"highlightset\" v-if=\"!is_empty\" v-on:selectedNode=\"toggle_highlight\" v-on:clickedNode=\"preview_a_node\" v-on:doubleClickedNode=\"goto_node\"></graph-index>\n\t\t    <br />\n\t\t    Reasonableness: {{reasonableness}}\n\t\t</div>\n\t    </div>\n\t    <div v-if=\"mode=='list'\">\n\t\t<node-index :nodeset=\"resultset\"></node-index>\n\t    </div>\n\t    <div v-if=\"mode=='timeline'\">\n\t\t<!-- <node-index :nodeset=\"resultset\" v-if=\"result.length > 0\"></node-index> -->\n\t    </div>\n\t</div>\n\t<div class=\"querypanel\" style=\"float:left;width:30%;padding-left:10px;\">\n\t    <div style=\"float:left\">\n\t\t<input type=\"search\" id=\"highlight_input\" v-model=\"highlight_query\" v-on:search=\"do_highlight\" v-on:keyup.enter=\"do_highlight\" />\n\t    </div>\n\n\t    <span class=\"search-error\" v-if=\"errormsg.length > 0\">{{errormsg}}</span>\n\t    <br /><br />\n\n\t    \n\t    <div v-if=\"preview_mode\">\n\t\t<span style=\"float:right;\" v-on:click=\"preview_mode = false\" class=\"close_x\"><span class=\"fas fa-times\"></span></span>\n\t\t<h4>{{graph.nodes[preview_node].name}}</h4>\n\t\t<read :node=\"preview_node\" />\n\t\t<edge-display :node=\"preview_node\" />\n\t    </div>\n\t    <div v-if=\"!highlight_is_empty && !preview_mode\">\n\t\t<b>Top nodes in result</b>\n\t\t<div v-for=\"n in best_highlights\" class=\"query_result\">\n\t\t    <div style=\"display:inline-block;\">\n\t\t\t<span class=\"badge_button\" v-on:click=\"hide_node(n)\">x</span>\n\t\t\t<span class=\"badge_button\" v-on:click=\"toggle_highlight(n)\">-</span>\n\t\t    </div>\n\t\t    <a href=\"#\" v-on:click=\"goto_node(n)\">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> \n\t\t</div>\n\t    </div>\n\t    <hr />\n\t</div>\n    </div>\n</template>\n\n<script>\n import Vue from 'vue'\n import { mapState } from 'vuex'\n import { mapActions } from 'vuex'\n\n export default {\n     name: 'browse',\n     computed: {\n\t reasonableness: function() {\n\t     if(!(this.ready)) return 1;\n\t     var d = 0;\n\t     var ns = 0;\n\t     for(var n in this.resultset) {\n\t\t d += this.graph.nodes[n]['_degree'];\n\t\t ns++;\n\t     }\n\t     if(ns == 0) return 1;\n\t     return d/ns;\n\t },\n\t resultset: function() {\n\t     if(!this.ready || !this.graph || !this.zoom) return {};\n\t     var ans = {};\n\t     for(var r in this.zoom) {\n\t\t ans[r] = this.graph.nodes[r];\n\t     }\n\t     return ans;\n\t },\n\t is_empty: function() {\n\t     for(var n in this.zoom) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlight_is_empty: function() {\n\t     for(var n in this.highlightset) {\n\t\t return false;\n\t     }\n\t     return true;\n\t },\n\t highlightset: function() {\n\t     var ans = {};\n\t     for(var r in this.highlights) {\n\t\t ans[r] = true;\n\t     }\n\t     return ans;\n\t },\n\t best_highlights: function() {\n\t     var ans = [];\n\t     if(!this.ready) return ans;\n\t     var best = this.subgraph.best_nodes();\n\t     for(var n of best){\n\t\t if(n in this.highlightset) {\n\t\t     ans.push(n);\n\t\t     if(ans.length >= 10) break;\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t best_nodes: function() {\n\t     console.log(\"BN\",this.ready);\n\t     if(!this.ready) return [];\n\t     console.log(\"SG\",this.subgraph);\n\t     return this.subgraph.best_nodes().slice(0,10);\n\t },\n\t best_edges: function() {\n\t     console.log(\"RRR\",this.ready);\n\t     if(!this.ready) return [];\n\t     return this.subgraph.best_labels().slice(0,10);\n\t },\n\t num_hidden: function() {\n\t     var ans = 0;\n\t     for(var n in this.hidden) {\n\t\t ans++\n\t     }\n\t     return ans;\n\t },\n\t ...mapState(['graph', 'subgraph', 'ready', 'node_data', 'zoom', 'highlights'])\n     },\n     data() {\n\t return {\n\t     preview_mode: false,\n\t     preview_node: '',\n\t     query: '*',\n\t     preview_id: '',\n\t     highlight_query: '',\n\t     errormsg: '',\n\t     hidden: {},\n\t     mode: 'graph',\n\t }\n     },\n     watch: {\n\t ready: function(val) {\n\t     if(val) {\n\t\t this.$nextTick(function () {\n\t\t     this.search();\n\t\t });\n\t     }\n\t }\n     },\n     methods: {\n\t new_node: function(node, event){\n\t     var self = this;\n\t     var fetch_headers = new Headers();\n\t     fetch_headers.append('pragma', 'no-cache');\n\t     fetch_headers.append('cache-control', 'no-cache');\n\t     \n\t     var fetch_params = {\n\t\t method: 'GET',\n\t\t headers: fetch_headers,\n\t     };\n\t     fetch('/new', fetch_params).then(function(response){\n\t\t response.text().then(function(data){\n\t\t     console.log(data);\n\t\t });\n\t     });\n\t },\n\t preview_a_node: function(e) {\n\t     console.log(\"Preview\",e);\n\t     this.preview_node = e;\n\t     this.preview_mode = true;\n\t },\n\t goto_node: function(e) {\n\t     console.log(\"GOTO\",e);\n\t     this.$router.push(\"/node/\"+e);\n\t },\n\t add_to_query: function(qry) {\n\t     if(this.query.trim().length > 0 && this.query.trim() != \"*\") {\n\t\t this.query = \"(\"+this.query+\"),\"+qry;\n\t     }\n\t     else {\n\t\t this.query = qry;\n\t     }\n\t     this.search();\n\t },\n\t toggle_highlight: function(n) {\n\t     console.log(\"toggle\",n);\n\t     var ans = {};\n\t     for(var nodeid in this.highlights) {\n\t\t ans[nodeid] = true;\n\t     }\n\t     if(n in ans) {\n\t\t delete ans[n];\n\t     }\n\t     else {\n\t\t ans[n] = true;\n\t     }\n\t     this.dohighlight(ans);\n\t     console.log(\"HANS\",ans);\n\t },\n\t set_query: function(qry) {\n\t     this.query = qry;\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t     this.search();\n\t },\n\t set_highlight: function(qry) {\n\t     this.highlight_query = qry;\n\t     this.do_highlight();\n\t },\n\t run_search: function(qry, nodeset) {\n\t     if(!this.ready) return {};\n\t     this.errormsg = \"\";\n\t     console.log(\"QQQ\",qry);\n\t     if(qry.trim().length == 0) {\n\t\t return [];\n\t     }\n\t     try {\n\t\t var q = Vue.category_query.parse(qry);\n\t     }\n\t     catch(e){\n\t\t this.errormsg = e.toString();\n\t\t return [];\n\t     }\n\t     console.log(\"QQ\",q,this.graph);\n\t     console.log(nodeset);\n\t     var res = this.graph.search(nodeset, q);\n\t     return res;\n\t },\n\t search: function() {\n\t     if(!this.ready) return;\n\t     if(this.query.trim().length == 0) {\n\t\t this.query = \"*\";\n\t     }\n\t     this.graph.debug_search = true;\n\t     var query_result = this.run_search(this.query,this.resultset);\n\t     console.log(\"RES\",query_result);\n\t     if(query_result.length == 0) {\n\t\t return;\n\t     }\n\t     if(query_result.length == 1) {\n\t\t this.$router.push('/node/'+query_result[0]);\n\t     }\n\t     else {\n\t\t this.dozoom(query_result, this.highlights);\n\t\t this.do_highlight();\n\t\t this.$forceUpdate();\n\t     }\n\t },\n\t hide_highlight: function() {\n\t     var ans = {};\n\t     for(var n in this.zoom) {\n\t\t if(n in this.highlights) {\n\t\t     this.hidden[n] = true;\n\t\t }\n\t\t else {\n\t\t     ans[n] = true;\n\t\t }\n\t     }\n\t     this.dozoom(ans, {});\n\t },\n\t hide_node: function(n) {\n\t     var ans = {};\n\t     for(var x in this.zoom) {\n\t\t if(x == n) {\n\t\t     this.hidden[x] = true;\n\t\t }\n\t\t else {\n\t\t     ans[x] = true;\n\t\t }\n\t     }\n\t     this.dozoom(ans, this.highlights);\n\t },\n\t zoom_to_highlight: function() {\n\t     var ans = {};\n\t     for(var n in this.zoom) {\n\t\t if(n in this.highlights) {\n\t\t     ans[n] = true;\n\t\t }\n\t\t else {\n\t\t     this.hidden[n] = true;\n\t\t }\n\t     }\n\t     this.dozoom(ans, this.highlights);\n\t },\n\t do_highlight: function() {\n\t     var ans = this.run_search(this.highlight_query, this.resultset);\n\t     console.log(\"doing highlight\",ans);\n\t     this.dohighlight(ans);\n\t },\n\t expand_highlight: function() {\n\t     var res = this.resultset;\n\t     this.dohighlight(this.graph.search_nbhd(this.resultset, this.highlightset, 0, 1, \"any\", \"*\", true));\n\t },\n\t clear_highlight: function() {\n\t     this.highlight_query = \"\";\n\t     this.do_highlight();\n\t },\n\t clear_filter: function() {\n\t     this.query = \"*\"\n\t     this.dozoom(this.graph.nodes, {});\n\t },\n\t ...mapActions(['dozoom', 'dohighlight'])\n     },\n     beforeRouteUpdate (to, from, next) {\n\t console.log('222222222222',to);\n\t this.search();\n\t next();\n     },\n     mounted: function() {\n\t this.search();\n     }\n }\n\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n .sidebar-item {\n     border:1px solid #66f;\n     border-radius:3px;\n     margin:1px;\n     overflow:hidden;\n     white-space:nowrap;\n     padding:2px;\n }\n .search-error {\n     font-family: monospace;\n     white-space: pre;\n     color: #e33;\n }\n .badge_button {\n     cursor:pointer;\n     margin-right:5px;\n     display: inline-block;\n     min-width: 10px;\n     padding: 3px 7px;\n     font-size: 12px;\n     font-weight: bold;\n     line-height: 1;\n     color: #fff;\n     text-align: center;\n     white-space: nowrap;\n     vertical-align: middle;\n     background-color: #777;\n     border-radius: 10px;\n     float:right;\n }\n .snippet_header{\n     border-radius: 10px;\n     padding: 5px;\n     width: 100%;\n     margin-bottom: 10px;\n }\n\n .snippet_title{\n     font-size: 20pt;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$2 = "data-v-09f2ed16";
+    const __vue_scope_id__$2 = "data-v-12cdbf40";
     /* module identifier */
     const __vue_module_identifier__$2 = undefined;
     /* functional template */
@@ -12973,7 +12969,7 @@
       constructor(nodes, edges) {
   	this.nodes = {};
   	this.edges = {};
-  	this.index_edge_label = {};
+  	this.index_edge_label = {}; // node -> label -> {in:[edgeids],out:[edgeids]}
   	this.debug_search = false;
   	for(var n of nodes) {
   	    this.add_node(n);
@@ -13505,22 +13501,23 @@
   		else return state.graph.nodes[a].name.localeCompare(state.graph.nodes[b].name);
   	    });
   	},
-  	sortedby: state => (nodeset, nodelist, key, ascending) => {
+  	sortedby: state => (nodelist, key, ascending) => {
+  	    console.log("NLNL",JSON.stringify(nodelist));
   	    var ans = nodelist.sort(function(a, b){
   		var res = 0;
-  		if (key in nodeset[a] && key in nodeset[b]) {
+  		if (key in state.graph.nodes[a] && key in state.graph.nodes[b]) {
   		    //console.log("arr by",key);
   		    if (key == 'index') {
-  			var res = parseInt(nodeset[a].index) - parseInt(nodeset[b].index);
+  			var res = parseInt(state.graph.nodes[a].index) - parseInt(state.graph.nodes[b].index);
   			return ascending ? res : -res;
   		    }
-  		    var res = nodeset[a][key].localeCompare(nodeset[b][key]);
+  		    var res = state.graph.nodes[a][key].localeCompare(state.graph.nodes[b][key]);
   		    return ascending ? res : -res;
   		} // Place things without properties 
-  		else if (!(key in nodeset[a]) && key in nodeset[b]) {
+  		else if (!(key in state.graph.nodes[a]) && key in state.graph.nodes[b]) {
   		    return 1;
   		}
-  		else if ((key in nodeset[a]) && !(key in nodeset[b])) {
+  		else if ((key in state.graph.nodes[a]) && !(key in state.graph.nodes[b])) {
   		    return -1;
   		}
   		return ascending ? res : -res;
@@ -13702,10 +13699,10 @@
        computed: {
   	 sorted_nodes: function() {
   	     var ans = [];
-  	     for(var n in this.nodeset) {
+  	     for(var n in this.subgraph.nodes) {
   		 ans.push(n);
   	     }
-  	     return this.sortedby(this.nodeset, ans, this.sort_method, this.sort_is_ascending)
+  	     return this.sortedby(ans, this.sort_method, this.sort_is_ascending)
   	 },
   	 nodelist: function() {
   	     var ans = [];
@@ -13738,44 +13735,46 @@
   	     //   has: the list of nodes that "have" this edge
   	     //   is: the list of nodes that "is" this edge
   	     // }
-  	     var all_labels = {}; 
-  	     for(var n in this.nodeset) {
-  		 for(var e in this.nodeset[n].edges.has) {
-  		     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
-  		     for(var t in this.nodeset[n].edges.has[e]){
-  			 t = this.nodeset[n].edges.has[e][t].target;
-  			 if(!(t in this.nodeset)) continue;
-  			 if(!all_labels[e].covered[t]){
-  			     // We haven't seen this node before
-  			     all_labels[e].covered[t] = true;
-  			     all_labels[e].count++;
-  			 }
-  			 if(all_labels[e].has.indexOf(n) == -1)
-  			     all_labels[e].has.push(n);
-  		     }
+  	     var all_labels = {};
+  	     for(var edgeid in this.subgraph.edges) {
+  		 var edge = this.subgraph.edges[edgeid];
+  		 // Make sure both ends of this edge are in the nodeset
+  		 var lab = edge["label"];
+  		 
+  		 if(!(lab in all_labels)) {
+  		     all_labels[lab] = {
+  			 'num_covered':0,
+  			 'num_in':0, 
+  			 'num_out':0,
+  			 'covered':{}, // set of nodes connected to this label
+  			 'in':{}, // set of nodes with this label as an outbound edge
+  			 'out':{}, // set of nodes with this label as an inbound edge
+  			 'mode':'' // whether displaying by source node or target node is more useful
+  		     };
   		 }
-  		 for(var e in this.nodeset[n].edges.is){
-  		     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
-  		     for(var t in this.nodeset[n].edges.is[e]){
-  			 t = this.nodeset[n].edges.is[e][t].target;
-  			 if(!(t in this.nodeset)) continue;
-  			 if(!all_labels[e].covered[t]){
-  			     // We haven't seen this node before
-  			     all_labels[e].covered[t] = true;
-  			     all_labels[e].count++;
-  			 }
-  			 if(all_labels[e].is.indexOf(n) == -1)
-  			     all_labels[e].is.push(n);
-  		     }
-  		 }
+  		 var src = edge["_from"];
+  		 var tgt = edge["_to"];
+  		 
+  		 // Increment the counts as appropriate:
+  		 if(!(all_labels[lab].covered[src])) all_labels[lab].num_covered++;
+  		 if(!(all_labels[lab].covered[tgt])) all_labels[lab].num_covered++;
+  		 if(!(all_labels[lab]['in'][tgt])) all_labels[lab].num_in++;
+  		 if(!(all_labels[lab]['out'][src])) all_labels[lab].num_out++;
+  		 
+  		 // Then add the src and target to the appropriate nodesets:
+  		 all_labels[lab].covered[src] = true;
+  		 all_labels[lab].covered[tgt] = true;
+  		 all_labels[lab]['in'][tgt] = true;
+  		 all_labels[lab]['out'][src] = true;
   	     }
+
   	     // Place the labels into a sorted list in order of
   	     // most edges to fewest edges (also, take this
   	     // opportunity to select the mode)
   	     var sorted_labels = [];
   	     for(var l in all_labels){
-  		 if(all_labels[l].count == 0) continue;
-  		 modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';
+  		 if(all_labels[l].num_covered == 0) continue;
+  		 modes[l] = all_labels[l].num_in < all_labels[l].num_out ? 'by' : 'menu';
   		 sorted_labels.push(l);
   	     }
   	     var discriminitivity = function(l){
@@ -13787,10 +13786,10 @@
   		 // However, we also want to normalise for number of
   		 // nodes, to a point, and we want to penalise being too close to the useless values of 
 
-  		 var N = all_labels[l].count;
+  		 var N = all_labels[l].num_covered;
   		 var tgt = Math.sqrt(N);
   		 var scores = [];
-  		 var ns = [all_labels[l].has.length, all_labels[l].is.length];
+  		 var ns = [all_labels[l].num_out, all_labels[l].num_in];
   		 for(var i = 0; i < 2; i++) {
   		     var n = ns[i];
   		     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better
@@ -13804,14 +13803,8 @@
   		 return Math.max(scores[0], scores[1]);
   	     };
   	     console.log("ALAL",all_labels);
-  	     sorted_labels.sort(function(a, b){
-  		 var da = discriminitivity(a);
-  		 var db = discriminitivity(b);
-  		 // We want to sort in increa
-  		 if(da < db) return 1; // Sort a before b
-  		 if(da > db) return -1; // Sort b before a
-  		 return 0;
-  	     });
+  	     sorted_labels.sort(function(a, b){ return discriminitivity(b) - discriminitivity(a); });
+  	     
   	     // Prep a set of all nodes so we can mark which ones we've finished
   	     var finished_nodes = {};
   	     var nodes_count = 0;
@@ -13820,17 +13813,10 @@
   		 // Only count nodes with actual edges; we'll deal
   		 // with disconnected ones separately
   		 var disconnected = true;
-  		 for(var e in this.nodeset[n].edges.has){
-  		     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){
-  			 t = this.nodeset[n].edges.has[e][i].target;
-  			 if(this.nodeset[t]) disconnected = false;
-  		     }
-  		 }
-  		 for(var e in this.nodeset[n].edges.is){
-  		     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){
-  			 t = this.nodeset[n].edges.is[e][i].target;
-  			 if(this.nodeset[t]) disconnected = false;
-  		     }
+  		 // If there's an edge 
+  		 for(var lab in this.subgraph.index_edge_label[n]) {
+  		     disconnected = false;
+  		     break;
   		 }
   		 if(disconnected){
   		     disconnected_nodes.push(n);
@@ -13875,7 +13861,7 @@
   		 'labels': best_labels
   	     };
   	 },
-  	 ...mapState(['graph']),
+  	 ...mapState(['graph','subgraph']),
   	 ...mapGetters(['sorted','sortedby'])
        },
        methods: {
@@ -14260,11 +14246,11 @@
     /* style */
     const __vue_inject_styles__$3 = function (inject) {
       if (!inject) return
-      inject("data-v-b751439e_0", { source: "\n.sortkey_selected[data-v-b751439e] {\n    text-decoration:underline;\n}\n.node-index-menu[data-v-b751439e] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-b751439e] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-b751439e] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-b751439e] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AA8RA;IACA,yBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span>\n\t\t<span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t</span>\n\t\t<span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t<span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t    </h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" v-bind:sortkey=\"sort_method\" v-bind:sortasc=\"sort_is_ascending\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes\n\t\t    <span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t    </span>\n\t\t    <span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t    </span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t    <span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t\t</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"n in sorted_nodes\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{nodeset[n].name}} <span v-if=\"'date' in nodeset[n]\" style=\"font-size:.5em;color:#666;\">{{nodeset[n].date}}</span></router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in sorted(labeldata.disconnected)\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodeset[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {},\n\t     'sort_method': 'name',\n\t     'sort_is_ascending': true\n\t }\n     },\n     computed: {\n\t sorted_nodes: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return this.sortedby(this.nodeset, ans, this.sort_method, this.sort_is_ascending)\n\t },\n\t nodelist: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return ans;\n\t },\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {}; \n\t     for(var n in this.nodeset) {\n\t\t for(var e in this.nodeset[n].edges.has) {\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.has[e]){\n\t\t\t t = this.nodeset[n].edges.has[e][t].target;\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].has.indexOf(n) == -1)\n\t\t\t     all_labels[e].has.push(n);\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};\n\t\t     for(var t in this.nodeset[n].edges.is[e]){\n\t\t\t t = this.nodeset[n].edges.is[e][t].target;\n\t\t\t if(!(t in this.nodeset)) continue;\n\t\t\t if(!all_labels[e].covered[t]){\n\t\t\t     // We haven't seen this node before\n\t\t\t     all_labels[e].covered[t] = true;\n\t\t\t     all_labels[e].count++;\n\t\t\t }\n\t\t\t if(all_labels[e].is.indexOf(n) == -1)\n\t\t\t     all_labels[e].is.push(n);\n\t\t     }\n\t\t }\n\t     }\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].count == 0) continue;\n\t\t modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t // Intuitively, we are going to arrange the |count|\n\t\t // nodes in a rectangle with |has| or |is| columns. This\n\t\t // is the most \"discriminitave\" if the rectangle is a\n\t\t // square, i.e. |has| or |is| is close to sqrt(|count|).\n\t\t     \n\t\t // However, we also want to normalise for number of\n\t\t // nodes, to a point, and we want to penalise being too close to the useless values of \n\n\t\t var N = all_labels[l].count;\n\t\t var tgt = Math.sqrt(N);\n\t\t var scores = [];\n\t\t var ns = [all_labels[l].has.length, all_labels[l].is.length]\n\t\t for(var i = 0; i < 2; i++) {\n\t\t     var n = ns[i];\n\t\t     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better\n\t\t     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better\n\t\t     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)\n\t\t     var score = nodes_score*(tgt_score + avoid_ends_score);\n\t\t     \n\t\t     console.log(\"D\",l,i,tgt_score, avoid_ends_score, nodes_score,score)   \n\t\t     scores.push(score);\n\t\t }\n\t\t return Math.max(scores[0], scores[1]);\n\t     }\n\t     console.log(\"ALAL\",all_labels);\n\t     sorted_labels.sort(function(a, b){\n\t\t var da = discriminitivity(a);\n\t\t var db = discriminitivity(b);\n\t\t // We want to sort in increa\n\t\t if(da < db) return 1; // Sort a before b\n\t\t if(da > db) return -1; // Sort b before a\n\t\t return 0;\n\t     });\n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t for(var e in this.nodeset[n].edges.has){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.has[e][i].target;\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t for(var e in this.nodeset[n].edges.is){\n\t\t     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){\n\t\t\t t = this.nodeset[n].edges.is[e][i].target;\n\t\t\t if(this.nodeset[t]) disconnected = false;\n\t\t     }\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['graph']),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t sortasc: function(ascending) {\n\t     Vue.set(this, 'sort_is_ascending', ascending);\n\t },\n\t sortby: function(key) {\n\t     Vue.set(this, 'sort_method', key);\n\t },\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .sortkey_selected {\n     text-decoration:underline;\n }\n \n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
+      inject("data-v-56e5b7eb_0", { source: "\n.sortkey_selected[data-v-56e5b7eb] {\n    text-decoration:underline;\n}\n.node-index-menu[data-v-56e5b7eb] {\n    width: 24%;\n    float:left;\n}\n.node-index-menu-item[data-v-56e5b7eb] {\n    width: 90%;\n    border-radius:8px;\n    padding:5px;\n    margin:2px;\n    cursor:pointer;\n    background-color: #ccf !important;\n}\n.node-index-menu-selected[data-v-56e5b7eb] {\n    background-color: #99c !important;\n}\n.node-index-list[data-v-56e5b7eb] {\n    width: 72%;\n    float:left;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/nodes.vue"],"names":[],"mappings":";AAmRA;IACA,yBAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA;AAEA;IACA,UAAA;IACA,iBAAA;IACA,WAAA;IACA,UAAA;IACA,cAAA;IACA,iCAAA;AACA;AAGA;IACA,iCAAA;AACA;AAEA;IACA,UAAA;IACA,UAAA;AACA","file":"nodes.vue","sourcesContent":["<template>\n    <div class=\"node-index-container\">\n\t<div class=\"node-index-menu\">\n            <div v-on:click=\"toggle_display('all')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'all' ? 'node-index-menu-selected' : '')\" v-if=\"num_nodes > 0\">\n\t\t(all)\n            </div>\n            <div v-on:click=\"toggle_display(l)\" v-bind:class=\"'node-index-menu-item ' + (current_label == l ? 'node-index-menu-selected' : '')\" v-for=\"l in labeldata.labels\">\n\t\t{{l}}\n            </div>\n            <div v-on:click=\"toggle_display('unlinked')\" v-bind:class=\"'node-index-menu-item ' + (current_label == 'unlinked' ? 'node-index-menu-selected' : '')\" v-if=\"labeldata.disconnected && labeldata.disconnected.length > 0 && labeldata.disconnected.length < num_nodes\">\n\t\t(unlinked)\n            </div>\n\t</div>\n\t\n\t<!-- List of edges associated with current_label -->\n\t<div class=\"node-index-list\" v-if=\"current_label != 'all' && current_label != 'unlinked'\">\n            <h3>{{modes[current_label] == 'by' ? 'By ' + current_label : 'Has ' + current_label}} <span style=\"cursor:pointer;font-size:.5em;\" v-on:click=\"swap_mode(current_label)\"><span class=\"fas fa-random\"></span></span>\n\t\t<span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t</span>\n\t\t<span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t    <span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t<span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t<span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t    </h3>\n            <label-index :label=\"current_label\" :mode=\"modes[current_label]\" :nodeset=\"nodeset\" v-bind:sortkey=\"sort_method\" v-bind:sortasc=\"sort_is_ascending\" />\n\t</div>\n\t\n\t<!-- List of all edges -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'all' && num_nodes > 0\">\n            <div v-if=\"node\">\n\t\t<h3>All edges</h3>\n    \t\t<edge-display :node=\"node\"></edge-display>\n            </div>\n            <div v-if=\"!node\">\n\t\t<h3>All nodes\n\t\t    <span v-if=\"!sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(true)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-up\"></span>\n\t\t    </span>\n\t\t    <span v-if=\"sort_is_ascending\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortasc(false)\">\n\t\t\t<span class=\"fas fa-long-arrow-alt-down\"></span>\n\t\t    </span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'name'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('name')\">name</span>\n\t\t    <span v-bind:class=\"{'sortkey_selected': sort_method == 'date'}\" style=\"margin-left:1em;float:right;cursor:pointer;font-size:.5em;\" v-on:click=\"sortby('date')\">date</span>\n\t\t    <span style=\"margin-left:1em;float:right;font-size:.5em;\">Sort by:</span>\n\t\t</h3>\n    \t\t<ul>\n\t\t    <li v-for=\"n in sorted_nodes\">\n\t\t\t<router-link :to=\"'/node/'+n\">{{nodeset[n].name}} <span v-if=\"'date' in nodeset[n]\" style=\"font-size:.5em;color:#666;\">{{nodeset[n].date}}</span></router-link>\n\t\t    </li>\n    \t\t</ul>\n            </div>\n\t</div>\n\t\n\t<!-- List of unlinked nodes -->\n\t<div class=\"node-index-list\" v-if=\"current_label == 'unlinked'\">\n            <h3>Unlinked</h3>\n            <ul>\n    \t\t<li v-for=\"n in sorted(labeldata.disconnected)\">\n    \t\t    <router-link :to=\"'/node/'+n\">{{nodeset[n].name}}</router-link>\n    \t\t</li>\n            </ul>\n\t</div>\n\t\n\t<div class=\"spacer\" style=\"clear: both;\"></div>\n    </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'node-index',\n     props: ['nodeset','node'],\n     data() {\n\t return {\n\t     'current_label': 'blah',\n\t     'modes': {},\n\t     'sort_method': 'name',\n\t     'sort_is_ascending': true\n\t }\n     },\n     computed: {\n\t sorted_nodes: function() {\n\t     var ans = [];\n\t     for(var n in this.subgraph.nodes) {\n\t\t ans.push(n);\n\t     }\n\t     return this.sortedby(ans, this.sort_method, this.sort_is_ascending)\n\t },\n\t nodelist: function() {\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t ans.push(n);\n\t     }\n\t     return ans;\n\t },\n\t num_nodes: function() {\n\t     var ans = 0;\n\t     for(var n in this.nodeset) ans++;\n\t     return ans;\n\t },\n\t labeldata: function() {\n\t     // The result is:\n\t     // {\n\t     //   disconnected: [],\n\t     //   labels: {},\n\t     // }\n\n\t     var disconnected_nodes = [];\n\t     var modes = {};\n\t     var best_label = ''\n\t     \n\t     // We build the data structure needed to prepare the index.\n\t     // For each label, we create an entry like:\n\t     // {\n\t     //   count: how many nodes does this label cover\n\t     //   covered: the set of nodes hit by the eddge\n\t     //   has: the list of nodes that \"have\" this edge\n\t     //   is: the list of nodes that \"is\" this edge\n\t     // }\n\t     var all_labels = {};\n\t     for(var edgeid in this.subgraph.edges) {\n\t\t var edge = this.subgraph.edges[edgeid];\n\t\t // Make sure both ends of this edge are in the nodeset\n\t\t var lab = edge[\"label\"];\n\t\t \n\t\t if(!(lab in all_labels)) {\n\t\t     all_labels[lab] = {\n\t\t\t 'num_covered':0,\n\t\t\t 'num_in':0, \n\t\t\t 'num_out':0,\n\t\t\t 'covered':{}, // set of nodes connected to this label\n\t\t\t 'in':{}, // set of nodes with this label as an outbound edge\n\t\t\t 'out':{}, // set of nodes with this label as an inbound edge\n\t\t\t 'mode':'' // whether displaying by source node or target node is more useful\n\t\t     };\n\t\t }\n\t\t var src = edge[\"_from\"];\n\t\t var tgt = edge[\"_to\"];\n\t\t \n\t\t // Increment the counts as appropriate:\n\t\t if(!(all_labels[lab].covered[src])) all_labels[lab].num_covered++;\n\t\t if(!(all_labels[lab].covered[tgt])) all_labels[lab].num_covered++;\n\t\t if(!(all_labels[lab]['in'][tgt])) all_labels[lab].num_in++;\n\t\t if(!(all_labels[lab]['out'][src])) all_labels[lab].num_out++;\n\t\t \n\t\t // Then add the src and target to the appropriate nodesets:\n\t\t all_labels[lab].covered[src] = true;\n\t\t all_labels[lab].covered[tgt] = true;\n\t\t all_labels[lab]['in'][tgt] = true;\n\t\t all_labels[lab]['out'][src] = true;\n\t     }\n\n\t     // Place the labels into a sorted list in order of\n\t     // most edges to fewest edges (also, take this\n\t     // opportunity to select the mode)\n\t     var sorted_labels = [];\n\t     for(var l in all_labels){\n\t\t if(all_labels[l].num_covered == 0) continue;\n\t\t modes[l] = all_labels[l].num_in < all_labels[l].num_out ? 'by' : 'menu';\n\t\t sorted_labels.push(l);\n\t     }\n\t     var discriminitivity = function(l){\n\t\t // Intuitively, we are going to arrange the |count|\n\t\t // nodes in a rectangle with |has| or |is| columns. This\n\t\t // is the most \"discriminitave\" if the rectangle is a\n\t\t // square, i.e. |has| or |is| is close to sqrt(|count|).\n\t\t     \n\t\t // However, we also want to normalise for number of\n\t\t // nodes, to a point, and we want to penalise being too close to the useless values of \n\n\t\t var N = all_labels[l].num_covered;\n\t\t var tgt = Math.sqrt(N);\n\t\t var scores = [];\n\t\t var ns = [all_labels[l].num_out, all_labels[l].num_in]\n\t\t for(var i = 0; i < 2; i++) {\n\t\t     var n = ns[i];\n\t\t     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better\n\t\t     var avoid_ends_score = Math.min(0, (n-1)*(N/2-n)/(N*N)); // This penalises being too close to 1 or N/2--bigger is better\n\t\t     var nodes_score = Math.log(N+1); // This factors in number of nodes a little (containing more is better than few, but only meaningfully so if an order of magnitude more)\n\t\t     var score = nodes_score*(tgt_score + avoid_ends_score);\n\t\t     \n\t\t     console.log(\"D\",l,i,tgt_score, avoid_ends_score, nodes_score,score)   \n\t\t     scores.push(score);\n\t\t }\n\t\t return Math.max(scores[0], scores[1]);\n\t     }\n\t     console.log(\"ALAL\",all_labels);\n\t     sorted_labels.sort(function(a, b){ return discriminitivity(b) - discriminitivity(a); });\n\t     \n\t     // Prep a set of all nodes so we can mark which ones we've finished\n\t     var finished_nodes = {};\n\t     var nodes_count = 0;\n\t     var finished_count = 0;\n\t     for(var n in this.nodeset) {\n\t\t // Only count nodes with actual edges; we'll deal\n\t\t // with disconnected ones separately\n\t\t var disconnected = true;\n\t\t // If there's an edge \n\t\t for(var lab in this.subgraph.index_edge_label[n]) {\n\t\t     disconnected = false;\n\t\t     break;\n\t\t }\n\t\t if(disconnected){\n\t\t     disconnected_nodes.push(n);\n\t\t }\n\t\t else {\n\t\t     finished_nodes[n] = false;\n\t\t     nodes_count++;\n\t\t }\n\t     }\n\n\t     // Now we want to collect the labels we will use for\n\t     // indexing as well as figure out what modes to\n\t     // display them in\n\t     var best_labels = [];\n\t     \n\t     // Run through the labels\n\t     for(var i = 0; i < sorted_labels.length; i++) {\n\t\t best_labels.push(sorted_labels[i]);\n\t\t // Mark all nodes covered as finished:\n\t\t for(var n in sorted_labels[i].covered){\n\t\t     if(!finished_nodes[n]){\n\t\t\t finished_count++;\n\t\t\t finished_nodes[n] = true;\n\t\t     }\n\t\t }\n\t\t // We cut short the use of labels, but only if we have\n\t\t // exhausted all the connected nodes, each under at\n\t\t // least one label already _and_ only if we already\n\t\t // have a lot of labels (> 20)\n\t\t if(finished_count == nodes_count && best_labels.length > 20) {\n\t\t     break;\n\t\t }\n\t     }\n\n\t     // Now we are done!\n\t     if(best_labels.length == 1) best_label = best_labels[0];\n\t     else best_label = 'all';\n\t     this.current_label = best_label;\n\t     this.modes = modes;\n\t     return {\n\t\t 'disconnected': disconnected_nodes,\n\t\t 'labels': best_labels\n\t     };\n\t },\n\t ...mapState(['graph','subgraph']),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t sortasc: function(ascending) {\n\t     Vue.set(this, 'sort_is_ascending', ascending);\n\t },\n\t sortby: function(key) {\n\t     Vue.set(this, 'sort_method', key);\n\t },\n\t toggle_display: function(l) {\n \t     this.current_label = l;\n\t },\n\t swap_mode: function(l) {\n \t     this.modes[l] = (this.modes[l] == 'by' ? 'menu' : 'by');\n \t     //this.$forceUpdate();\n\t },\n\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\n\n .sortkey_selected {\n     text-decoration:underline;\n }\n \n .node-index-menu {\n     width: 24%;\n     float:left;\n }\n\n .node-index-menu-item {\n     width: 90%;\n     border-radius:8px;\n     padding:5px;\n     margin:2px;\n     cursor:pointer;\n     background-color: #ccf !important;\n }\n\n\n .node-index-menu-selected {\n     background-color: #99c !important;\n }\n\n .node-index-list {\n     width: 72%;\n     float:left;\n }\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$3 = "data-v-b751439e";
+    const __vue_scope_id__$3 = "data-v-56e5b7eb";
     /* module identifier */
     const __vue_module_identifier__$3 = undefined;
     /* functional template */
@@ -14291,41 +14277,26 @@
        props: ['mode','label','nodeset','sortkey','sortasc'],
        computed: {
   	 headers: function() {
-  	     if(this.mode == 'menu'){
-  		 var ans = [];
-  		 for(var n in this.nodeset) {
-  		     if(this.nodeset[n].edges['has'][this.label]){
-  			 ans.push(n);
-  		     }
+  	     var dir = this.mode == "menu" ? 'out' : 'in';
+  	     var ans = [];
+  	     for(var n in this.nodeset) {
+  		 if(this.label in this.subgraph.index_edge_label[n] && this.subgraph.index_edge_label[n][this.label][dir].length > 0) {
+  		     ans.push(n);
   		 }
-  		 return ans;
   	     }
-  	     else if(this.mode == 'by') {
-  		 var ans = [];
-  		 for(var n in this.nodeset) {
-  		     if(this.nodeset[n].edges['is'][this.label]){
-  			 ans.push(n);
-  		     }
-  		 }
-  		 return ans;
-  	     }
+  	     return ans;
   	 },
-  	 ...mapState([
-  	     'nodes'
-  	 ]),
+  	 ...mapState(['graph','subgraph']),
   	 ...mapGetters(['sorted','sortedby'])
        },
        methods: {
   	 label_neighbours: function(n, label) {
+  	     // return the nodes adjacent to n via the given label
+  	     var dir = this.mode == "menu" ? 'out' : 'in';
   	     var ans = [];
-  	     console.log("NL",n,label);
-  	     var tgts = this.nodeset[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];
-  	     for(var i = 0; i < tgts.length; i++) {
-  		 var m = tgts[i];
-  		 console.log(m);
-  		 if(m.target in this.nodeset) ans.push(m.target);
+  	     for(var eid of this.subgraph.index_edge_label[n][label][dir]) {
+  		 ans.push(this.subgraph.edges[eid][this.mode == "menu" ? "_to" : "_from"]);
   	     }
-  	     console.log(ans);
   	     return ans;
   	 }
        }
@@ -14343,79 +14314,72 @@
       _vm.mode == "by" || _vm.mode == "menu"
         ? _c(
             "ul",
-            _vm._l(
-              _vm.sortedby(_vm.nodeset, _vm.headers, _vm.sortkey, _vm.sortasc),
-              function(n) {
-                return _c(
-                  "li",
-                  [
-                    _c(
-                      "router-link",
-                      { attrs: { to: { name: "node", params: { id: n } } } },
-                      [
-                        _vm._v(_vm._s(_vm.nodeset[n].name) + " "),
-                        "date" in _vm.nodeset[n]
-                          ? _c(
-                              "span",
-                              {
-                                staticStyle: {
-                                  "font-size": ".5em",
-                                  color: "#666"
-                                }
-                              },
-                              [_vm._v(_vm._s(_vm.nodeset[n].date))]
-                            )
-                          : _vm._e()
-                      ]
-                    ),
-                    _c(
-                      "ul",
-                      _vm._l(
-                        _vm.sortedby(
-                          _vm.nodeset,
-                          _vm.label_neighbours(n, _vm.label),
-                          _vm.sortkey,
-                          _vm.sortasc
-                        ),
-                        function(m) {
-                          return _c(
-                            "li",
-                            [
-                              _c(
-                                "router-link",
-                                {
-                                  attrs: {
-                                    to: { name: "node", params: { id: m } }
-                                  }
-                                },
-                                [
-                                  _vm._v(_vm._s(_vm.nodeset[m].name) + " "),
-                                  "date" in _vm.nodeset[m]
-                                    ? _c(
-                                        "span",
-                                        {
-                                          staticStyle: {
-                                            "font-size": ".5em",
-                                            color: "#666"
-                                          }
-                                        },
-                                        [_vm._v(_vm._s(_vm.nodeset[m].date))]
-                                      )
-                                    : _vm._e()
-                                ]
-                              )
-                            ],
-                            1
+            _vm._l(_vm.sortedby(_vm.headers, _vm.sortkey, _vm.sortasc), function(
+              n
+            ) {
+              return _c(
+                "li",
+                [
+                  _c(
+                    "router-link",
+                    { attrs: { to: { name: "node", params: { id: n } } } },
+                    [
+                      _vm._v(_vm._s(_vm.nodeset[n].name) + " "),
+                      "date" in _vm.nodeset[n]
+                        ? _c(
+                            "span",
+                            {
+                              staticStyle: { "font-size": ".5em", color: "#666" }
+                            },
+                            [_vm._v(_vm._s(_vm.nodeset[n].date))]
                           )
-                        }
+                        : _vm._e()
+                    ]
+                  ),
+                  _c(
+                    "ul",
+                    _vm._l(
+                      _vm.sortedby(
+                        _vm.label_neighbours(n, _vm.label),
+                        _vm.sortkey,
+                        _vm.sortasc
                       ),
-                      0
-                    )
-                  ],
-                  1
-                )
-              }
-            ),
+                      function(m) {
+                        return _c(
+                          "li",
+                          [
+                            _c(
+                              "router-link",
+                              {
+                                attrs: { to: { name: "node", params: { id: m } } }
+                              },
+                              [
+                                _vm._v(_vm._s(_vm.nodeset[m].name) + " "),
+                                "date" in _vm.nodeset[m]
+                                  ? _c(
+                                      "span",
+                                      {
+                                        staticStyle: {
+                                          "font-size": ".5em",
+                                          color: "#666"
+                                        }
+                                      },
+                                      [_vm._v(_vm._s(_vm.nodeset[m].date))]
+                                    )
+                                  : _vm._e()
+                              ]
+                            )
+                          ],
+                          1
+                        )
+                      }
+                    ),
+                    0
+                  )
+                ],
+                1
+              )
+            }),
             0
           )
         : _vm._e()
@@ -14427,11 +14391,11 @@
     /* style */
     const __vue_inject_styles__$4 = function (inject) {
       if (!inject) return
-      inject("data-v-d989b788_0", { source: "\nh3[data-v-d989b788] {\n  margin: 40px 0 0;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/labels.vue"],"names":[],"mappings":";AAmEA;EACA,gBAAA;AACA","file":"labels.vue","sourcesContent":["<template>\n  <div class=\"label_index\">\n      <ul v-if=\"mode == 'by' || mode == 'menu'\">\n\t  <li v-for=\"n in sortedby(nodeset, headers, sortkey, sortasc)\">\n\t      <router-link :to=\"{name:'node', params: {id: n}}\">{{nodeset[n].name}} <span v-if=\"'date' in nodeset[n]\" style=\"font-size:.5em;color:#666;\">{{nodeset[n].date}}</span></router-link>\n\t      <ul>\n\t\t  <li v-for=\"m in sortedby(nodeset, label_neighbours(n, label), sortkey, sortasc)\">\n\t\t      <router-link :to=\"{name:'node', params: {id: m}}\">{{nodeset[m].name}} <span v-if=\"'date' in nodeset[m]\" style=\"font-size:.5em;color:#666;\">{{nodeset[m].date}}</span></router-link>\n\t\t  </li>\n\t      </ul>\n\t  </li>\n      </ul>\n  </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'label-index',\n     props: ['mode','label','nodeset','sortkey','sortasc'],\n     computed: {\n\t headers: function() {\n\t     if(this.mode == 'menu'){\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodeset[n].edges['has'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t     else if(this.mode == 'by') {\n\t\t var ans = []\n\t\t for(var n in this.nodeset) {\n\t\t     if(this.nodeset[n].edges['is'][this.label]){\n\t\t\t ans.push(n);\n\t\t     }\n\t\t }\n\t\t return ans;\n\t     }\n\t },\n\t ...mapState([\n\t     'nodes'\n\t ]),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     var ans = [];\n\t     console.log(\"NL\",n,label);\n\t     var tgts = this.nodeset[n].edges[this.mode == 'menu' ? 'has' : 'is'][label];\n\t     for(var i = 0; i < tgts.length; i++) {\n\t\t var m = tgts[i];\n\t\t console.log(m);\n\t\t if(m.target in this.nodeset) ans.push(m.target);\n\t     }\n\t     console.log(ans);\n\t     return ans;\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\nh3 {\n  margin: 40px 0 0;\n}\n</style>\n"]}, media: undefined });
+      inject("data-v-29098360_0", { source: "\nh3[data-v-29098360] {\n  margin: 40px 0 0;\n}\n", map: {"version":3,"sources":["/home/zoom/suit/category/page/src/components/labels.vue"],"names":[],"mappings":";AAoDA;EACA,gBAAA;AACA","file":"labels.vue","sourcesContent":["<template>\n  <div class=\"label_index\">\n      <ul v-if=\"mode == 'by' || mode == 'menu'\">\n\t  <li v-for=\"n in sortedby(headers, sortkey, sortasc)\">\n\t      <router-link :to=\"{name:'node', params: {id: n}}\">{{nodeset[n].name}} <span v-if=\"'date' in nodeset[n]\" style=\"font-size:.5em;color:#666;\">{{nodeset[n].date}}</span></router-link>\n\t      <ul>\n\t\t  <li v-for=\"m in sortedby(label_neighbours(n, label), sortkey, sortasc)\">\n\t\t      <router-link :to=\"{name:'node', params: {id: m}}\">{{nodeset[m].name}} <span v-if=\"'date' in nodeset[m]\" style=\"font-size:.5em;color:#666;\">{{nodeset[m].date}}</span></router-link>\n\t\t  </li>\n\t      </ul>\n\t  </li>\n      </ul>\n  </div>\n</template>\n\n<script>\n import { mapState } from 'vuex'\n import { mapGetters } from 'vuex'\n \n export default {\n     name: 'label-index',\n     props: ['mode','label','nodeset','sortkey','sortasc'],\n     computed: {\n\t headers: function() {\n\t     var dir = this.mode == \"menu\" ? 'out' : 'in';\n\t     var ans = [];\n\t     for(var n in this.nodeset) {\n\t\t if(this.label in this.subgraph.index_edge_label[n] && this.subgraph.index_edge_label[n][this.label][dir].length > 0) {\n\t\t     ans.push(n);\n\t\t }\n\t     }\n\t     return ans;\n\t },\n\t ...mapState(['graph','subgraph']),\n\t ...mapGetters(['sorted','sortedby'])\n     },\n     methods: {\n\t label_neighbours: function(n, label) {\n\t     // return the nodes adjacent to n via the given label\n\t     var dir = this.mode == \"menu\" ? 'out' : 'in';\n\t     var ans = [];\n\t     for(var eid of this.subgraph.index_edge_label[n][label][dir]) {\n\t\t ans.push(this.subgraph.edges[eid][this.mode == \"menu\" ? \"_to\" : \"_from\"]);\n\t     }\n\t     return ans;\n\t }\n     }\n }\n</script>\n\n<!-- Add \"scoped\" attribute to limit CSS to this component only -->\n<style scoped>\nh3 {\n  margin: 40px 0 0;\n}\n</style>\n"]}, media: undefined });
 
     };
     /* scoped */
-    const __vue_scope_id__$4 = "data-v-d989b788";
+    const __vue_scope_id__$4 = "data-v-29098360";
     /* module identifier */
     const __vue_module_identifier__$4 = undefined;
     /* functional template */

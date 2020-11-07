@@ -86,10 +86,10 @@
      computed: {
 	 sorted_nodes: function() {
 	     var ans = [];
-	     for(var n in this.nodeset) {
+	     for(var n in this.subgraph.nodes) {
 		 ans.push(n);
 	     }
-	     return this.sortedby(this.nodeset, ans, this.sort_method, this.sort_is_ascending)
+	     return this.sortedby(ans, this.sort_method, this.sort_is_ascending)
 	 },
 	 nodelist: function() {
 	     var ans = [];
@@ -122,44 +122,46 @@
 	     //   has: the list of nodes that "have" this edge
 	     //   is: the list of nodes that "is" this edge
 	     // }
-	     var all_labels = {}; 
-	     for(var n in this.nodeset) {
-		 for(var e in this.nodeset[n].edges.has) {
-		     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
-		     for(var t in this.nodeset[n].edges.has[e]){
-			 t = this.nodeset[n].edges.has[e][t].target;
-			 if(!(t in this.nodeset)) continue;
-			 if(!all_labels[e].covered[t]){
-			     // We haven't seen this node before
-			     all_labels[e].covered[t] = true;
-			     all_labels[e].count++;
-			 }
-			 if(all_labels[e].has.indexOf(n) == -1)
-			     all_labels[e].has.push(n);
-		     }
+	     var all_labels = {};
+	     for(var edgeid in this.subgraph.edges) {
+		 var edge = this.subgraph.edges[edgeid];
+		 // Make sure both ends of this edge are in the nodeset
+		 var lab = edge["label"];
+		 
+		 if(!(lab in all_labels)) {
+		     all_labels[lab] = {
+			 'num_covered':0,
+			 'num_in':0, 
+			 'num_out':0,
+			 'covered':{}, // set of nodes connected to this label
+			 'in':{}, // set of nodes with this label as an outbound edge
+			 'out':{}, // set of nodes with this label as an inbound edge
+			 'mode':'' // whether displaying by source node or target node is more useful
+		     };
 		 }
-		 for(var e in this.nodeset[n].edges.is){
-		     if(!(e in all_labels)) all_labels[e] = {'count':0, 'covered':{},'has':[],'is':[], 'mode':''};
-		     for(var t in this.nodeset[n].edges.is[e]){
-			 t = this.nodeset[n].edges.is[e][t].target;
-			 if(!(t in this.nodeset)) continue;
-			 if(!all_labels[e].covered[t]){
-			     // We haven't seen this node before
-			     all_labels[e].covered[t] = true;
-			     all_labels[e].count++;
-			 }
-			 if(all_labels[e].is.indexOf(n) == -1)
-			     all_labels[e].is.push(n);
-		     }
-		 }
+		 var src = edge["_from"];
+		 var tgt = edge["_to"];
+		 
+		 // Increment the counts as appropriate:
+		 if(!(all_labels[lab].covered[src])) all_labels[lab].num_covered++;
+		 if(!(all_labels[lab].covered[tgt])) all_labels[lab].num_covered++;
+		 if(!(all_labels[lab]['in'][tgt])) all_labels[lab].num_in++;
+		 if(!(all_labels[lab]['out'][src])) all_labels[lab].num_out++;
+		 
+		 // Then add the src and target to the appropriate nodesets:
+		 all_labels[lab].covered[src] = true;
+		 all_labels[lab].covered[tgt] = true;
+		 all_labels[lab]['in'][tgt] = true;
+		 all_labels[lab]['out'][src] = true;
 	     }
+
 	     // Place the labels into a sorted list in order of
 	     // most edges to fewest edges (also, take this
 	     // opportunity to select the mode)
 	     var sorted_labels = [];
 	     for(var l in all_labels){
-		 if(all_labels[l].count == 0) continue;
-		 modes[l] = all_labels[l].is.length < all_labels[l].has.length ? 'by' : 'menu';
+		 if(all_labels[l].num_covered == 0) continue;
+		 modes[l] = all_labels[l].num_in < all_labels[l].num_out ? 'by' : 'menu';
 		 sorted_labels.push(l);
 	     }
 	     var discriminitivity = function(l){
@@ -171,10 +173,10 @@
 		 // However, we also want to normalise for number of
 		 // nodes, to a point, and we want to penalise being too close to the useless values of 
 
-		 var N = all_labels[l].count;
+		 var N = all_labels[l].num_covered;
 		 var tgt = Math.sqrt(N);
 		 var scores = [];
-		 var ns = [all_labels[l].has.length, all_labels[l].is.length]
+		 var ns = [all_labels[l].num_out, all_labels[l].num_in]
 		 for(var i = 0; i < 2; i++) {
 		     var n = ns[i];
 		     var tgt_score = 1-(tgt-n)*(tgt-n)/(N*N); // This rewards being close to sqrt(N) -- bigger is better
@@ -188,14 +190,8 @@
 		 return Math.max(scores[0], scores[1]);
 	     }
 	     console.log("ALAL",all_labels);
-	     sorted_labels.sort(function(a, b){
-		 var da = discriminitivity(a);
-		 var db = discriminitivity(b);
-		 // We want to sort in increa
-		 if(da < db) return 1; // Sort a before b
-		 if(da > db) return -1; // Sort b before a
-		 return 0;
-	     });
+	     sorted_labels.sort(function(a, b){ return discriminitivity(b) - discriminitivity(a); });
+	     
 	     // Prep a set of all nodes so we can mark which ones we've finished
 	     var finished_nodes = {};
 	     var nodes_count = 0;
@@ -204,17 +200,10 @@
 		 // Only count nodes with actual edges; we'll deal
 		 // with disconnected ones separately
 		 var disconnected = true;
-		 for(var e in this.nodeset[n].edges.has){
-		     for(var i = 0; i < this.nodeset[n].edges.has[e].length; i++){
-			 t = this.nodeset[n].edges.has[e][i].target;
-			 if(this.nodeset[t]) disconnected = false;
-		     }
-		 }
-		 for(var e in this.nodeset[n].edges.is){
-		     for(var i = 0; i < this.nodeset[n].edges.is[e].length; i++){
-			 t = this.nodeset[n].edges.is[e][i].target;
-			 if(this.nodeset[t]) disconnected = false;
-		     }
+		 // If there's an edge 
+		 for(var lab in this.subgraph.index_edge_label[n]) {
+		     disconnected = false;
+		     break;
 		 }
 		 if(disconnected){
 		     disconnected_nodes.push(n);
@@ -259,7 +248,7 @@
 		 'labels': best_labels
 	     };
 	 },
-	 ...mapState(['graph']),
+	 ...mapState(['graph','subgraph']),
 	 ...mapGetters(['sorted','sortedby'])
      },
      methods: {

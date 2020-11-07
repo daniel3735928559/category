@@ -4,7 +4,7 @@ class CatGraph {
     constructor(nodes, edges) {
 	this.nodes = {};
 	this.edges = {};
-	this.index_edge_label = {};
+	this.index_edge_label = {}; // node -> label -> {in:[edgeids],out:[edgeids]}
 	this.debug_search = false;
 	for(var n of nodes) {
 	    this.add_node(n);
