@@ -1,6 +1,9 @@
 <template>
     <div class="graph_index">
 	<div id="graph_container"></div>
+	<br />
+	<a href="#" v-on:click="start_layout()" v-if="!running">start</a>
+	<a href="#" v-on:click="stop_layout()" v-if="running">stop</a>
     </div>
 </template>
 
@@ -16,6 +19,10 @@
  export default {
      name: 'graph-index',
      props: ['nodeset','highlight'],
+     data: {
+	 running: false,
+	 layout: null
+     },
      computed: {
 	 num_nodes: function() {
 	     var ans = 0;
@@ -78,16 +85,39 @@
 		     color: node in this.highlight ? "#f00" : "#00f"
 		 });
 	     });
-	     
+
+	     this.stop_layout();
+	     this.start_layout();
+	     var self = this;
+	     this.layout_timer = setTimeout(function(){ self.stop_layout(); self.layout_timer = null; }, Math.max(10, 3+(this.num_nodes/100)*1000));
+	 },
+	 stop_layout: function() {
+	     console.log("stopping...");
+	     if(this.layout) {
+		 this.layout.stop();
+		 this.layout.kill();
+		 this.layout = null;
+	     }
+	     this.running = false;
+	     this.$forceUpdate();
+	 },
+	 start_layout: function() {
+	     if(this.running || this.layout) {
+		 console.log("already running!");
+		 return;
+	     }
+	     console.log("starting");
+	     this.running = true;
 	     var settings = FA2.inferSettings(this.graph_display);
 	     console.log(settings);
 	     settings.slowDown = 10;
 	     //saneSettings.strongGravityMode = true;
 	     //saneSettings.gravity = 3;
 	     this.layout = new FA2Layout(this.graph_display, {settings: settings});
+	     console.log("layout made!");
 	     this.layout.start();
-	     var self = this;
-	     this.layout_timer = setTimeout(function(){self.layout.stop(); self.layout.kill(); self.layout = null; self.layout_timer = null;}, Math.max(10, 3+(this.num_nodes/100)*1000));
+	     console.log("layout running!");
+	     this.$forceUpdate();
 	 },
 	 update_highlight: function() {
 	     console.log("updating highlight",this.highlight);

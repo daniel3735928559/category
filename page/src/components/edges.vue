@@ -55,6 +55,11 @@ export default {
      ]),
      created: function() {
 	 console.log('ed',this.graph.get_edges(this.node));
+     },
+     methods: {
+	 clickedNode: function(n) {
+	     this.$emit("clickedNode",n);
+	 }
      }
 }
 </script>

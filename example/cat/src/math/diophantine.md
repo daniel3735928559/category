@@ -5,11 +5,12 @@ name: Diophantine equations
 # The Problem
 
 I have a bowl on my shelf. Every time I go into my room, I like to
-empty my pockets so I can sit comfortably, and so any change I still
-have rattling around I'll place into this bowl. I don't take pennies
-in change, so it's only quarters, nickels, and dimes. Today, I need
-money, and the bowl is looking pretty full. However, the last thing I
-want is to count all the coins to tally up how much I have.
+empty my pockets so that I can sit comfortably, and therefore any
+change I still have rattling around I'll place into this bowl. I don't
+take pennies in change, so it's only quarters, nickels, and
+dimes. Today, I need money, and the bowl is looking pretty
+full. However, the last thing I want is to count all the coins to
+tally up how much I have.
 
 In a moment of lazy genius, I realise: I can weigh the coins! But if I
 find I have 1kg of coins or something, how much money is that? A

@@ -9,6 +9,7 @@ fs.readFile(mdfile, function(err,data){
     if (!err) {
 	var metadata = JSON.parse(data);
 	var g = new CatGraph(metadata.nodes, metadata.edges);
+	g.debug_search = false;
 	var q = query.parse(query_str);
 	var ans = g.search(g.nodes, q);
 	var ans_list = [];

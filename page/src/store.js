@@ -6,6 +6,7 @@ Vue.use(Vuex)
 
 export default new Vuex.Store({
     state: {
+	updated: 0,
 	query: 'is category',
 	ready: false,
 	current: '',
@@ -124,6 +125,7 @@ export default new Vuex.Store({
 	    state.highlights = highlight_nodes;
 	    state.history.push({"zoom":state.zoom, "highlight":state.highlights});
 	    state.subgraph = state.graph.subgraph(state.zoom);
+	    state.updated = (new Date()).valueOf();
 	},
 	UNDO: (state) => {
 	    if(len(state.history) > 1) {
@@ -136,6 +138,7 @@ export default new Vuex.Store({
 		state.highlights = state.history[0].highlight;
 	    }
 	    state.subgraph = state.graph.subgraph(state.zoom);
+	    state.updated = (new Date()).valueOf();
 	},
 	HIGHLIGHT: (state, nodes) => {
 	    state.highlights = nodes;

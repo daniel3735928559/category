@@ -123,19 +123,12 @@ def import_metadata(fn):
     try:
         with open(fn,"r") as f:
             data = json.loads(f.read())
+        return data
     except:
         traceback.print_exc()
-        print("WARNING: no existing metadata found -- assuming empty")
+        print("WARNING: metadata not found or corrupt -- assuming empty")
         return {}
-    metadata = {}
-    for node_id in data:
-        node = data[node_id]
-        name = node['name']
-        metadata[name] = node
-        metadata[name]['id'] = node_id
-        metadata[name]['edges'] = {'has':{en:[data[edge["target"]]['name'] for edge in node['edges']['has'][en]] for en in node['edges']['has']}}
 
-    return metadata
 
 def get_targets(node):
     targets = set()

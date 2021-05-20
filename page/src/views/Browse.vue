@@ -2,13 +2,13 @@
     <div class="browse">
 	<div class="querypanel" style="float:left;width:20%;padding-left:10px;">
 	    <b v-if="num_hidden > 0">Hidden: {{num_hidden}}</b><br />
-	    <b>Top nodes</b>
+	    <b>Top nodes (of {{num_nodes}})</b>
 	    <div v-for="n in best_nodes" class="query_result">
 		<div style="display:inline-block;">
 		    <span class="badge_button" v-on:click="add_to_query('((=' + graph.nodes[n].name + ')[2], !(=' + graph.nodes[n].name + '))')">+</span>
 		    <span class="badge_button" v-on:click="hide_node(n)">-</span>
 		</div>
-		<a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[1], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> 
+		<a href="#" v-on:click="set_highlight('(=' + graph.nodes[n].name + ')[2], !(='+graph.nodes[n].name+')')">{{graph.nodes[n].name}} ({{graph.nodes[n]['_degree']}})</a> 
 	    </div>
 	    <hr />
 	    <b>Top labels</b>
@@ -65,13 +65,14 @@
 
 	    
 	    <div v-if="preview_mode">
+		<span style="float:right;" v-on:click="expand_preview()" class="close_x"><span class="fas fa-expand-arrows-alt"></span></span>
 		<span style="float:right;" v-on:click="preview_mode = false" class="close_x"><span class="fas fa-times"></span></span>
 		<h4>{{graph.nodes[preview_node].name}}</h4>
 		<read :node="preview_node" />
 		<edge-display :node="preview_node" />
 	    </div>
 	    <div v-if="!highlight_is_empty && !preview_mode">
-		<b>Top nodes in result</b>
+		<b>Top nodes in result (of {{num_highlight}})</b>
 		<div v-for="n in best_highlights" class="query_result">
 		    <div style="display:inline-block;">
 			<span class="badge_button" v-on:click="hide_node(n)">x</span>
@@ -138,7 +139,7 @@
 	     for(var n of best){
 		 if(n in this.highlightset) {
 		     ans.push(n);
-		     if(ans.length >= 10) break;
+		     if(ans.length >= 30) break;
 		 }
 	     }
 	     return ans;
@@ -154,12 +155,26 @@
 	     if(!this.ready) return [];
 	     return this.subgraph.best_labels().slice(0,10);
 	 },
-	 num_hidden: function() {
+	 num_nodes: function() {
 	     var ans = 0;
-	     for(var n in this.hidden) {
+	     for(var n in this.zoom) {
 		 ans++
 	     }
 	     return ans;
+	 },
+	 num_highlight: function() {
+	     var ans = 0;
+	     for(var n in this.highlights) {
+		 ans++
+	     }
+	     return ans;
+	 },
+	 num_hidden: function() {
+	     var ans = 0;
+	     for(var n in this.graph.nodes) {
+		 ans++
+	     }
+	     return ans-this.num_nodes;
 	 },
 	 ...mapState(['graph', 'subgraph', 'ready', 'node_data', 'zoom', 'highlights'])
      },
@@ -176,7 +191,12 @@
 	 }
      },
      watch: {
+	 /* $route: function(to, from) {
+	    console.log("333333333333333",to,"444444444",from);
+	    // react to route changes...
+	    },*/
 	 ready: function(val) {
+	     console.log("RTRT",this.$route.params);
 	     if(val) {
 		 this.$nextTick(function () {
 		     this.search();
@@ -211,8 +231,14 @@
 	 },
 	 preview_a_node: function(e) {
 	     console.log("Preview",e);
-	     this.preview_node = e;
-	     this.preview_mode = true;
+	     
+	     this.$router.push("/browse/preview/"+e);
+	     //this.preview_node = e;
+	     //this.preview_mode = true;
+	 },
+	 expand_preview: function() {
+	     if(this.preview_mode)
+		 this.$router.push("/node/"+this.preview_node);
 	 },
 	 goto_node: function(e) {
 	     console.log("GOTO",e);
@@ -348,10 +374,24 @@
      },
      beforeRouteUpdate (to, from, next) {
 	 console.log('222222222222',to);
-	 this.search();
+	 if("id" in to.params) {
+	     this.preview_mode = true;
+	     this.preview_node = to.params.id;
+	 }
+	 else {
+	     this.preview_mode = false;
+	 }
 	 next();
      },
      mounted: function() {
+	 console.log("RTRTRT",this.$route);
+	 if("id" in this.$route.params) {
+	     this.preview_mode = true;
+	     this.preview_node = this.$route.params.id;
+	 }
+	 else {
+	     this.preview_mode = false;
+	 }
 	 this.search();
      }
  }

@@ -12,6 +12,7 @@
 	    :colors="['#4facfe', '#00ccff']"
 	    :min="data_min"
 	    :max="data_max"
+	    :key="updated"
 	    v-on:update="slid"
 	    v-on:finish="slid"
 	    v-on:change="slid"
@@ -111,7 +112,7 @@
 	     });
 	     return ans;
 	 },
-	 ...mapState(['graph','subgraph','zoom']),
+	 ...mapState(['graph','subgraph','zoom','updated']),
 	 ...mapGetters(['sorted','sortedby'])
      },
      methods: {
@@ -122,6 +123,11 @@
 	     this.$nextTick(function() {
 		 this.$emit("select", this.selected);
 	     });
+	 }
+     },
+     watch: {
+	 updated: function() {
+	     this.$forceUpdate();
 	 }
      },
      mounted () {

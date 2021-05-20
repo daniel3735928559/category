@@ -355,10 +355,10 @@ class CatGraph {
 	}
 	else if(q[0] == "before"){
 	    // ["before", <date>]
-	    var cutoff_date = date_from_string(q[1]);
+	    var cutoff_date = new Date(q[1]);
 	    for(var n in resultset){
-		if(!(nodes[n].date)) continue;
-		var d = date_from_string(nodes[n].date);
+		if(!(this.nodes[n].date)) continue;
+		var d = new Date(this.nodes[n].date);
 		if(d && d < cutoff_date){
 		    result[n] = true;
 		}
@@ -366,10 +366,10 @@ class CatGraph {
 	}
 	else if(q[0] == "after"){
 	    // ["after", <date>]
-	    var cutoff_date = date_from_string(q[1]);
+	    var cutoff_date = new Date(q[1]);
 	    for(var n in resultset){
-		if(!(nodes[n].date)) continue;
-		var d = date_from_string(nodes[n].date);
+		if(!(this.nodes[n].date)) continue;
+		var d = new Date(this.nodes[n].date);
 		if(d && d > cutoff_date){
 		    result[n] = true;
 		}

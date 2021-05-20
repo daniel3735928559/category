@@ -11,7 +11,7 @@ from . backends.md.plugins import *
 
 NUM_WORKERS=30
 
-def build_worker(inputs, outputs, build_only_new=False, md_only=True):
+def build_worker(inputs, outputs, build_new_only=False, md_only=True):
     for input_dir, output_dir, fn, extra_edges, md_time in iter(inputs.get, 'STOP'):
         ans = {'empty':True}
         try:
@@ -24,7 +24,7 @@ def build_worker(inputs, outputs, build_only_new=False, md_only=True):
                 ans['empty'] = False
                 common_prefix = os.path.commonprefix([input_dir, fn])
                 src_path = os.path.relpath(fn, common_prefix)
-                if os.path.getmtime(fn) < md_time and build_only_new:
+                if os.path.getmtime(fn) < md_time and build_new_only:
                     print("ALREADY DONE",fn)
                     ans['error'] = "Already up-to-date: {}".format(fn)
                     ans['empty'] = True
@@ -50,10 +50,20 @@ class cat_builder:
         self.md_time = 0
         self.metadata = {}
         self.agraph = AGraph()
+        self.by_src = {}
         if os.path.isfile(md_file) and build_new_only:
             self.metadata = import_metadata(md_file)
             self.md_time = os.path.getmtime(md_file)
-
+            # Get all nodes and edges and organise by source
+            for t in ["nodes","edges"]:
+                for o in self.metadata[t]:
+                    if "src" in o:
+                        if not o["src"] in self.by_src:
+                            self.by_src[o["src"]] = {"nodes":[],"edges":[]}
+                        self.by_src[o["src"]][t].append(o)
+        for s in self.by_src:
+            print("BY_SRC",s)
+            
         input_queue = Queue()
         output_queue = Queue()
         num_inputs = 0
@@ -65,9 +75,6 @@ class cat_builder:
         # The current set of edges read from a config file
         self.config_edges = {}
         
-        # Save off all the source paths so we can check if a file has been compiled already
-        srcs = {x.get('src','') for x in self.metadata.values()}
-
         # If we're not rebuilding, iterate through the metadata
         # elements and remove those whose source files no longer exist
         # if not force_rebuild:
@@ -80,6 +87,8 @@ class cat_builder:
                     
         #     for node_id in to_del:
         #         del self.metadata[node_id]
+
+        
         
         for dirname,dirs,files in os.walk(input_dir):
             # Skip the OLD directory
@@ -109,7 +118,25 @@ class cat_builder:
             for fn in files:
                 if fn[0] == ".":
                     continue
-                fn = os.path.join(dirname, fn)
+                fn = os.path.realpath(os.path.join(dirname, fn))
+
+                # If we're only building new, then skip this file if
+                # it's in our known sources and it has not been
+                # updated since our last build
+                print("TO BUILD?",fn,build_new_only, fn in self.by_src, os.path.getmtime(fn), self.md_time, os.path.getmtime(fn) < self.md_time)
+                if build_new_only and fn in self.by_src and os.path.getmtime(fn) < self.md_time:
+                    continue
+                
+                if fn in self.by_src:
+                    # First remove the output files:
+                    for n in self.by_src[fn]["nodes"]:
+                        output_path = os.path.join(output_dir,'{}.html'.format(n["_key"]))
+                        if os.path.exists(output_path):
+                            os.remove(output_path)
+                    # Then remove from our graph organised by source file
+                    del self.by_src[fn]
+                    
+                print("ACTUALLY REBUILDING",fn)
                 input_queue.put([input_dir, output_dir, fn, config_edges, self.md_time])
                 num_inputs += 1
 
@@ -198,8 +225,19 @@ class cat_builder:
 
         # Now every non-category node should have a category
             
-        self.agraph.write(output_dir)
-        
+        md_output = self.agraph.write(output_dir)
+        if build_new_only:
+            md_nodes = {n["_id"]:n for n in md_output["nodes"]}
+            md_edges = {e["_id"]:e for e in md_output["edges"]}
+            for s in self.by_src:
+                for n in self.by_src[s]["nodes"]:
+                    md_nodes[n["_id"]] = n
+                for e in self.by_src[s]["edges"]:
+                    md_edges[e["_id"]] = e
+            with open(os.path.join(output_dir, "metadata.json"), "w") as f:
+                ans = {"nodes":[md_nodes[n] for n in md_nodes],"edges":[md_edges[e] for e in md_edges]}
+                f.write(json.dumps(ans))
+
         if len(errors) > 0:
             print("ERRORS: ", "\n-----\n".join(errors))
         

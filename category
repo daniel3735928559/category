@@ -5,6 +5,7 @@
 Usage: 
   category init <path>
   category rebuild <path>
+  category incbuild <path>
   category subcat [--static] <path> <query> <subcat_path>
   category query <path> <query> [--json | --name | --src | --edit | (--pdf <pdf_path>)]
   category serve <path> [(-p <port>)] [(-a <bind_addr>)]
@@ -20,7 +21,7 @@ Options:
 from pyArango.connection import *
 from flask import Flask, send_from_directory, send_file, request, jsonify
 import docopt, yaml, os, subprocess, shlex, select, json, shutil, signal, threading, datetime
-from neo4j import GraphDatabase
+#from neo4j import GraphDatabase
 from src.build import cat_builder
 import src.util
 
@@ -124,7 +125,7 @@ def cat_init_db(db_name, db_un, db_pw, db_port, db_addr):
         db.createCollection(name="nodes")
         db.createCollection(className='Edges', name="edges")
         
-def cat_init(cat_path):
+def cat_init(cat_path, use_arango=False):
     emacs_path = subprocess.check_output("which emacs", shell=True).decode().strip()
     ed_path = input("Enter your editor path (default:{})".format(emacs_path))
     ed_path = ed_path.strip()
@@ -136,16 +137,7 @@ def cat_init(cat_path):
     if not os.path.exists(cat_path):
         os.makedirs(cat_path, exist_ok=True)
 
-    arango_yn = " "
-    while not arango_yn in {"y", "n"}:
-        if arango_yn != " ":
-            print("Please enter y or n")
-        arango_yn = input("Do you want to use arangodb to back this? (y/N)")
-        arango_yn = arango_yn.strip().lower()
-        if len(arango_yn) == 0:
-            arango_yn = "n"
-        
-    if arango_yn == "y":
+    if use_arango:
         db_un = input("Arango username:")
         db_pw = input("Arango password:")
         db_name = input("Arango db name:")
@@ -461,9 +453,9 @@ def cat_serve(cat_path, port, bind_addr):
 if __name__ == "__main__":
     args = docopt.docopt(__doc__)
     if args['init']:
-        cat_init(args['<path>'])
-    # elif args['incbuild']:
-    #     cat_build(args['<path>'])
+        cat_init(args['<path>'], False)
+    elif args['incbuild']:
+        cat_build(args['<path>'])
     elif args['rebuild']:
         cat_rebuild(args['<path>'])
     elif args['subcat']:

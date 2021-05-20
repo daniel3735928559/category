@@ -202,4 +202,6 @@ class AGraph:
             for n in self.nodes:
                 f.write(json.dumps(self.nodes[n].to_json())+"\n")
         with open(os.path.join(path, "metadata.json"), "w") as f:
-            f.write(json.dumps({"nodes":[self.nodes[n].to_json() for n in self.nodes],"edges":[e.to_json() for e in self.edges]}))
+            ans = {"nodes":[self.nodes[n].to_json() for n in self.nodes],"edges":[e.to_json() for e in self.edges]}
+            f.write(json.dumps(ans))
+            return ans
