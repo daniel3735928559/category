@@ -233,8 +233,8 @@
 	     console.log("Preview",e);
 	     
 	     this.$router.push("/browse/preview/"+e);
-	     //this.preview_node = e;
-	     //this.preview_mode = true;
+	     this.preview_node = e;
+	     this.preview_mode = true;
 	 },
 	 expand_preview: function() {
 	     if(this.preview_mode)
